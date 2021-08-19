@@ -144,7 +144,7 @@ export const makeRootOutputFromClasses = (classes: PrismaClass[]) => {
 export type writeFromDMMFInput = {
   dmmf: DMMFClass;
   outputType: "console" | "file";
-  targetDir?: string;
+  targetDir: string;
   useSwagger?: boolean;
 };
 
@@ -160,7 +160,7 @@ export const writeFromDMMF = (input: writeFromDMMFInput) => {
       return;
     }
     writeToFile({
-      _dirPath: targetDir,
+      dirPath: targetDir,
       fileName: `${snakeCase(_class.name)}.ts`,
       content: classOutput,
     });
@@ -168,7 +168,7 @@ export const writeFromDMMF = (input: writeFromDMMFInput) => {
 
   if (outputType === "file") {
     writeToFile({
-      _dirPath: targetDir,
+      dirPath: targetDir,
       fileName: `model.ts`,
       content: makeRootOutputFromClasses(classes),
     });
@@ -178,15 +178,16 @@ export const writeFromDMMF = (input: writeFromDMMFInput) => {
 };
 
 export const writeToFile = (input: {
-  _dirPath: string;
+  dirPath: string;
   fileName: string;
   content: string;
 }) => {
-  const { _dirPath, fileName, content } = input;
-  const dirPath = path.resolve(__dirname, _dirPath, "_gen");
-  if (fs.existsSync(dirPath) === false) {
-    fs.mkdirSync(dirPath, { recursive: true });
+  const { dirPath, fileName, content } = input;
+  const targetDirPath = path.resolve(dirPath, "_gen");
+  if (fs.existsSync(targetDirPath) === false) {
+    fs.mkdirSync(targetDirPath, { recursive: true });
   }
-  const filePath = path.resolve(dirPath, fileName);
+  const filePath = path.resolve(targetDirPath, fileName);
+  console.log(`write to ${filePath}..`);
   fs.writeFileSync(filePath, content);
 };
