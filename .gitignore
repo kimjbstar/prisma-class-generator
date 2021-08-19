@@ -1,0 +1,6 @@
+dist/
+node_modules/
+src/practice.ts
+**/_gen
+**/_gen/*
+prisma/
