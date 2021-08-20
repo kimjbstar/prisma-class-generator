@@ -8,10 +8,10 @@
     "prisma",
     "typescript"
   ],
-  "homepage": "https://github.com/kimjbstar/prisma-to-class",
+  "homepage": "https://github.com/kimjbstar/prisma-class-generator",
   "repository": {
     "type": "git",
-    "url": "git://github.com/kimjbstar/prisma-to-class.git"
+    "url": "git://github.com/kimjbstar/prisma-class-generator.git"
   },
   "author": {
     "name": "kimjbstar",
