@@ -34,6 +34,7 @@ export const convertField = (field: DMMF.Field): PrismaField => {
   // primitive type
   if (type) {
     result.type = type;
+    result.swaggerOption.type = type.charAt(0).toUpperCase() + type.slice(1)
     return result;
   }
   type = field.type;
