@@ -8,7 +8,7 @@ const dmmf: DMMFClass = prisma._dmmf;
 
 writeFromDMMF({
   dmmf: dmmf,
-  outputType: "file",
+  outputType: "console",
   targetDir: "./output",
   useSwagger: true,
 });

@@ -1,4 +1,4 @@
-export const rootTemplates = `#!{IMPORTS}
+export const ROOT_TEMPLATE = `#!{IMPORTS}
 
 export namespace PrismaModel {
 #!{CLASSES}
@@ -6,11 +6,11 @@ export namespace PrismaModel {
 export const extraModels = #!{CLASSE_NAMES}
 }`;
 
-export const fieldTemplates = `	#!{DECORATORS}
+export const FIELD_TEMPLATE = `	#!{DECORATORS}
 	#!{NAME}: #!{TYPE}
 	`;
 
-export const classTemplates = `#!{IMPORTS}
+export const CLASS_TEMPLATE = `#!{IMPORTS}
 
 export class #!{NAME} {
 #!{FIELDS}
