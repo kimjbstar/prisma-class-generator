@@ -1,15 +1,18 @@
-# Prisma Class Generator
+**# Prisma Class Generator**
 
-## Prisma
+**## Prisma**
 
-[Prisma](~https://www.prisma.io/~)는 Node.js, Typescript 진영에서 사용되는 Database ORM 라이브러리 입니다.
+[Prisma](~~https://www.prisma.io/~~)is Database ORM Library for Node.js, Typescript.
 
-Prisma에서는 기본적으로 schema에 정의된 각 모델을 type으로 generate해주는 기능이 있습니다.
+Prisma basically has the function of generating each model defined in schema in type.
 
-## NestJS
+**## NestJS**
 
-다만 class로 정의되어 있는 모델이 필요한 경우도 있습니다. 특히 NestJS 등 decorator 패턴을 사용할 경우 더욱 그 필요성이 증가하게 됩니다.
-예를 들어서 아래와 같이 NestJS 모델이 각각 class로 정의된다면, decorator를 통해 swagger, TypeGraphQL 등을 적용하기 용이해집니다.
+However, when we develop it, we may need a model defined as class.
+
+In particular, when using NestJS using decorator patterns, the need increases.
+
+For example, if the NestJS model is defined as class as below, it will be easier to apply swagger, TypeGraphQL, etc. through decorator.
 
 ```
 export class Company {
@@ -25,11 +28,117 @@ export class Company {
 }
 ```
 
-### Hot it works?
+**### Hot it works?**
 
-Prisma는 내부적으로 metadata를 dmmf 객체에 담아 정의하는데, 이 데이터를 이용하여 Class definition을 자동화할 수 있는 툴입니다.
+Prima internally defines metadata as a dmmf object.
+Prisma-class-generator can automate class definition using this dmff.
 
-## Feature
+**## Usage**
+
+Suppose that two classes are declared in prisma.schema as below.
+
+here is example of prisma.schema.
+
+```
+model Company {
+    id            Int       @id @default(autoincrement())
+    name      String    @db.VarChar(128)
+    createdAt     DateTime  @default(now()) @db.DateTime(6)
+    updatedAt     DateTime? @default(now()) @db.DateTime(6)
+    deletedAt     DateTime? @db.DateTime(6)
+}
+
+model Account {
+    id            Int       @id @default(autoincrement())
+    bankName      String    @db.VarChar(128)
+    accountNumber String    @db.VarChar(128)
+    depositor     String    @db.VarChar(128)
+    companyId     Int
+    company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    createdAt     DateTime  @default(now()) @db.DateTime(6)
+    updatedAt     DateTime? @default(now()) @db.DateTime(6)
+    deletedAt     DateTime? @db.DateTime(6)
+}
+```
+
+get dmmf client and pass to 'writeFromDMMF'
+
+```
+import { PrismaClient } from '@prisma/client'
+import { DMMFClass } from '@prisma/client/runtime'
+import { writeFromDMMF } from 'prisma-class-generator'
+
+// @ts-ignore
+const dmmf: DMMFClass = new PrismaClient()._dmmf
+
+writeFromDMMF({
+    dmmf: dmmf as any,
+    outputType: 'file',
+    targetDir: <PATH DIRECTORY TO WRITE RESULT CLASSES>,
+    useSwagger: true,
+})
+```
+
+```
+import { ApiProperty } from '@nestjs/swagger'
+
+export class _Company {
+    @ApiProperty({type:Number})
+    id: number
+
+    @ApiProperty({type:String})
+    name: string
+
+    @ApiProperty({type:Date})
+    createdAt: Date
+
+    @ApiProperty({type:Date})
+    updatedAt: Date
+
+    @ApiProperty({type:Date})
+    deletedAt: Date
+
+}
+```
+
+Company, Account 2 classes are created.
+The reason why the class name has an underbar is to indicate that it has been automatically created.
+
+```
+import { _Company } from './company'
+import { ApiProperty } from '@nestjs/swagger'
+
+export class _Account {
+    @ApiProperty({type:Number})
+    id: number
+
+    @ApiProperty({type:String})
+    bankName: string
+
+    @ApiProperty({type:String})
+    accountNumber: string
+
+    @ApiProperty({type:String})
+    depositor: string
+
+    @ApiProperty({type:Number})
+    companyId: number
+
+    @ApiProperty({type:() => _Company})
+    company: _Company
+
+    @ApiProperty({type:Date})
+    createdAt: Date
+
+    @ApiProperty({type:Date})
+    updatedAt: Date
+
+    @ApiProperty({type:Date})
+    deletedAt: Date
+}
+```
+
+**## Feature**
 
 - Class generate ( default )
 - swagger Decorator
