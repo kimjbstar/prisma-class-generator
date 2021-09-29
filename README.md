@@ -156,8 +156,10 @@ export namespace PrismaModel {
 
 ### Feature
 
-Class generate ( default )
+(default)Generating Class
 
-swagger Decorator
+- Support Basic Type and Relation
+
+Swagger Decorator
 
 TypeGraphQL ( To be supported later )
