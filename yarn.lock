@@ -274,16 +274,6 @@
   resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.1.tgz#d8f1c0d0dc23afad6dc16a9e993a0865774b4065"
   integrity sha512-xoDlM2S4ortawSWORYqsdU+2rxdh4LRW9ytc3zmT37RIKQh6IHyKwwtKhKis9ah8ol07DCkZxPt8BBvPjC6v4g==
 
-"@vegardit/prisma-generator-nestjs-dto@^1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@vegardit/prisma-generator-nestjs-dto/-/prisma-generator-nestjs-dto-1.4.0.tgz#db8fed2570f044df95924f8969258302ca10fa6b"
-  integrity sha512-NLf32LxbtBVQ2SBLX5139mMn+m5B1+H7gW5cnf2ekIWi1Q1k02+q5aXN8WZ4OpNDyyEirhcw5OdModKR+tfh1A==
-  dependencies:
-    "@prisma/generator-helper" "^3.1.1"
-    "@prisma/sdk" "^3.1.1"
-    case "^1.6.3"
-    make-dir "^3.1.0"
-
 acorn-walk@^8.1.1:
   version "8.1.1"
   resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-8.1.1.tgz#3ddab7f84e4a7e2313f6c414c5b7dac85f4e3ebc"
@@ -452,11 +442,6 @@ capital-case@^1.0.4:
     no-case "^3.0.4"
     tslib "^2.0.3"
     upper-case-first "^2.0.2"
-
-case@^1.6.3:
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
-  integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
 chalk@4.1.2, chalk@^4.0.0:
   version "4.1.2"
@@ -1078,7 +1063,7 @@ lower-case@^2.0.2:
   dependencies:
     tslib "^2.0.3"
 
-make-dir@3.1.0, make-dir@^3.0.0, make-dir@^3.0.2, make-dir@^3.1.0:
+make-dir@3.1.0, make-dir@^3.0.0, make-dir@^3.0.2:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/make-dir/-/make-dir-3.1.0.tgz#415e967046b3a7f1d185277d84aa58203726a13f"
   integrity sha512-g3FeP20LNwhALb/6Cz6Dd4F2ngze0jz7tbzrD2wAV+o9FeNHe4rL+yK2md0J/fiSf1sa1ADhXqi5+oVwOM/eGw==

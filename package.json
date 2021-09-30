@@ -2,16 +2,24 @@
   "name": "prisma-class-generator",
   "version": "0.0.5",
   "description": "Class generator from Prisma schema",
-  "main": "dist/prismaToClass.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "keywords": [
     "prisma",
-    "typescript"
+    "nestjs",
+    "typescript",
+    "generator"
   ],
   "homepage": "https://github.com/kimjbstar/prisma-class-generator",
   "repository": {
     "type": "git",
     "url": "git://github.com/kimjbstar/prisma-class-generator.git"
+  },
+  "bin": {
+    "prisma-class-generator": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=14"
   },
   "author": {
     "name": "kimjbstar",
@@ -19,11 +27,12 @@
   },
   "dependencies": {
     "@prisma/client": "^3.0.2",
+    "@prisma/generator-helper": "^3.1.1",
+    "@prisma/sdk": "^3.1.1",
     "@types/node": "^16.6.2",
     "change-case": "^4.1.2"
   },
   "devDependencies": {
-    "@vegardit/prisma-generator-nestjs-dto": "^1.4.0",
     "prisma": "^3.0.2",
     "ts-node": "^10.2.1",
     "typescript": "^4.3.5"
