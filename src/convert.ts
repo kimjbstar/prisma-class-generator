@@ -81,6 +81,18 @@ export const convertField = (input: {
   return field;
 };
 
+export const parseModels = (
+  dmmf: DMMF.Document,
+  config: PrismaClassGeneratorOptions,
+): PrismaClass[] => {
+  return dmmf.datamodel.models.map((model) =>
+    convertModel({
+      model: model,
+      config: config,
+    }),
+  );
+};
+
 export const convertModel = (input: {
   model: DMMF.Model;
   config: PrismaClassGeneratorOptions;

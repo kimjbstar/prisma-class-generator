@@ -3,10 +3,8 @@ import { Dictionary, parseEnvValue } from "@prisma/sdk";
 import { snakeCase } from "change-case";
 import * as fs from "fs";
 import * as path from "path";
-import { PrismaClassGeneratorOptions } from "./classes";
-import { convertModel } from "./convert";
-import { echoClassContent } from "./createContent";
-import { CLASS_TEMPLATE, FIELD_TEMPLATE } from "./templates";
+import { PrismaClassFile, PrismaClassGeneratorOptions } from "./classes";
+import { convertModel, parseModels } from "./convert";
 
 export const validateGeneratorConfig = (config: Dictionary<string>) => {
   return true;
@@ -26,29 +24,19 @@ export const applyDefaultConfig = (
   ) as PrismaClassGeneratorOptions;
 };
 
-export const generateClasses = async (
-  options: GeneratorOptions,
-): Promise<any> => {
+export const generate = async (options: GeneratorOptions): Promise<any> => {
   const output = parseEnvValue(options.generator.output!);
   const { generator, dmmf } = options;
   validateGeneratorConfig(generator.config);
   const config = applyDefaultConfig(generator.config);
-  const { useSwagger, dryRun } = config;
+  const { dryRun } = config;
 
-  const models = dmmf.datamodel.models;
-
-  const classes = models.map((model) =>
-    convertModel({
-      model: model,
-      config: config,
-    }),
-  );
-  console.dir(classes, { depth: null });
+  const classes = parseModels(dmmf, config);
   classes.forEach((_class) => {
     write({
       dirPath: output,
       fileName: `${snakeCase(_class.name)}.ts`,
-      content: echoClassContent(_class, useSwagger),
+      content: new PrismaClassFile(_class).echo(),
       dryRun: dryRun,
     });
   });
