@@ -15,6 +15,9 @@
     "type": "git",
     "url": "git://github.com/kimjbstar/prisma-class-generator.git"
   },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\""
+  },
   "bin": {
     "prisma-class-generator": "dist/index.js"
   },
@@ -26,13 +29,13 @@
     "email": "kimjbstar@gmail.com"
   },
   "dependencies": {
-    "@prisma/client": "^3.0.2",
     "@prisma/generator-helper": "^3.1.1",
     "@prisma/sdk": "^3.1.1",
     "@types/node": "^16.6.2",
     "change-case": "^4.1.2"
   },
   "devDependencies": {
+    "prettier": "^2.4.1",
     "prisma": "^3.0.2",
     "ts-node": "^10.2.1",
     "typescript": "^4.3.5"
