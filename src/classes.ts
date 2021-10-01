@@ -6,8 +6,6 @@ export interface IDecorator {
   params: any[];
 }
 
-export type ISwaggerOption = Record<string, any>;
-
 export class Decoratable {
   decorators?: IDecorator[] = [];
 
@@ -15,14 +13,11 @@ export class Decoratable {
     Object.assign(this, obj);
   }
 
-  setDecoratorObjectValue = (input: {
-    name: string;
-    param: { key: string; value: any };
-  }): void => {
+  addDecorator = (input: { name: string; param: any }): void => {
     const { name, param } = input;
-    const oldDecorator = this.decorators.find((v) => v.name === name);
-    if (oldDecorator) {
-      oldDecorator.params.push({
+    const oldIndex = this.decorators.findIndex((v) => v.name === name);
+    if (oldIndex > -1) {
+      this.decorators[oldIndex].params.push({
         value: param,
       });
       return;
@@ -85,30 +80,23 @@ export class PrismaClass extends Decoratable {
   };
 }
 
-export interface PrismaClassGeneratorOptions {
-  foo: string;
-  bar: string;
-  useSwagger: boolean;
-  dryRun: boolean;
-}
-
 export interface IImport {
   exportedItems: string[];
   from: string;
 }
 
 export class PrismaClassFile {
-  path: string;
+  dir?: string;
+  fileName?: string;
   imports?: IImport[] = [];
   prismaClass: PrismaClass;
 
   constructor(prismaClass: PrismaClass) {
-    this.path = "";
     this.prismaClass = prismaClass;
     this.addDefaultImports();
   }
 
-  static getImportPhrase = (items: IImport[]) =>
+  static echoImports = (items: IImport[]) =>
     items
       .reduce((result, item) => {
         result.push(
@@ -121,33 +109,38 @@ export class PrismaClassFile {
   echo = () => {
     return this.prismaClass
       .echo()
-      .replace("#!{IMPORTS}", PrismaClassFile.getImportPhrase(this.imports));
+      .replace("#!{IMPORTS}", PrismaClassFile.echoImports(this.imports));
   };
+
+  addImport(exportedItem: string, from: string) {
+    const oldIndex = this.imports.findIndex((_import) => _import.from === from);
+    if (oldIndex > -1) {
+      if (
+        this.imports[oldIndex].exportedItems.includes(exportedItem) === false
+      ) {
+        this.imports[oldIndex].exportedItems.push(exportedItem);
+      }
+      return;
+    }
+    this.imports.push({
+      exportedItems: [exportedItem],
+      from: from,
+    });
+  }
 
   addDefaultImports() {
     this.prismaClass.relationTypes.forEach((relationClassName) => {
-      this.imports.push({
-        exportedItems: [`${pascalCase(relationClassName)}`],
-        from: relationClassName,
-      });
+      this.addImport(`${pascalCase(relationClassName)}`, relationClassName);
     });
     this.prismaClass.enumTypes.forEach((enumName) => {
-      this.imports.push({
-        exportedItems: [enumName],
-        from: "@prisma/client",
-      });
+      this.addImport(enumName, "@prisma/client");
     });
 
     const apiPropertyDecorator = this.prismaClass.decorators.find(
-      (decorator) => {
-        decorator.name === "ApiProperty";
-      },
+      (decorator) => decorator.name === "ApiProperty",
     );
     if (apiPropertyDecorator) {
-      this.imports.push({
-        exportedItems: ["ApiProperty"],
-        from: "@nestjs/swagger",
-      });
+      this.addImport("ApiProperty", "@nestjs/swagger");
     }
   }
 }
