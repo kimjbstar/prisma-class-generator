@@ -21,7 +21,7 @@ export class PrismaClass extends Decoratable {
 
 	toFileClass(output: string): PrismaClassFile {
 		const prismaClassFile = new PrismaClassFile(this)
-		prismaClassFile.setDir(path.resolve(output, '_gen'))
+		prismaClassFile.setDir(path.resolve(output))
 		prismaClassFile.setFileName(`${snakeCase(this.name)}.ts`)
 		return prismaClassFile
 	}

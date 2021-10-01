@@ -3,6 +3,7 @@ import { PrismaClass } from './prisma-class'
 import { PrismaImport } from './prisma-import'
 import * as fs from 'fs'
 import * as path from 'path'
+import { logger } from '@prisma/sdk'
 
 export class PrismaClassFile {
 	private dir?: string
@@ -69,17 +70,16 @@ export class PrismaClassFile {
 	}
 
 	write(dryRun: boolean) {
-		if (dryRun) {
-			console.log(this.echo())
-			return
-		}
-
-		const targetDirPath = path.resolve(this.dir, '_gen')
+		const targetDirPath = path.resolve(this.dir)
 		if (fs.existsSync(targetDirPath) === false) {
 			fs.mkdirSync(targetDirPath, { recursive: true })
 		}
 		const filePath = path.resolve(targetDirPath, this.filename)
-		console.log(`write to ${filePath}..`)
+		logger.info(`${dryRun ? '[dryRun] ' : ''}Generate ${filePath}`)
+		if (dryRun) {
+			console.log(this.echo())
+			return
+		}
 		fs.writeFileSync(filePath, this.echo())
 	}
 }

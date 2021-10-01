@@ -1,5 +1,6 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { Dictionary, parseEnvValue } from '@prisma/sdk'
+import { GeneratorFormatNotValidError } from '..'
 import { convertModels } from '../convertor'
 
 export interface PrismaClassGeneratorOptions {
@@ -14,15 +15,15 @@ export class PrismaClassGenerator {
 		if (PrismaClassGenerator.instance) {
 			return PrismaClassGenerator.instance
 		}
-		this.instance = new PrismaClassGenerator()
-		return this.instance
+		PrismaClassGenerator.instance = new PrismaClassGenerator()
+		return PrismaClassGenerator.instance
 	}
 
 	run = async (options: GeneratorOptions): Promise<any> => {
 		const output = parseEnvValue(options.generator.output!)
 		const { generator, dmmf } = options
-		this.validateGeneratorConfig(generator.config)
-		const config = this.applyDefaultConfig(generator.config)
+
+		const config = this.setConfig(generator.config)
 		const { dryRun } = config
 
 		const prismaClasses = convertModels(dmmf, config)
@@ -37,19 +38,26 @@ export class PrismaClassGenerator {
 		return null
 	}
 
-	validateGeneratorConfig = (config: Dictionary<string>) => {
-		return true
-	}
-
-	applyDefaultConfig = (
-		config: Dictionary<string>,
-	): PrismaClassGeneratorOptions => {
-		return Object.assign(
+	setConfig = (config: Dictionary<string>): PrismaClassGeneratorOptions => {
+		const result = Object.assign(
 			{
 				useSwagger: true,
 				dryRun: true,
 			},
 			config,
-		) as PrismaClassGeneratorOptions
+		)
+		result.useSwagger = this.parseBoolean(result.useSwagger)
+		result.dryRun = this.parseBoolean(result.dryRun)
+
+		console.log(result)
+
+		return result
+	}
+
+	parseBoolean(value: unknown): boolean {
+		if (['true', 'false'].includes(value.toString()) === false) {
+			throw new GeneratorFormatNotValidError(config)
+		}
+		return value.toString() === 'true'
 	}
 }
