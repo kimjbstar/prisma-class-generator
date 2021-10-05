@@ -1,6 +1,4 @@
-import { pascalCase } from 'change-case'
-import { CLASS_TEMPLATE, FIELD_TEMPLATE } from '../templates'
-import { Decoratable } from './prisma-decorator'
+import { PrismaClassFile } from './prisma-class-file'
 
 export class PrismaImport {
 	from: string
@@ -15,6 +13,14 @@ export class PrismaImport {
 			return
 		}
 		this.items.push(item)
+	}
+
+	getReplacePath(classToPath: Record<string, string>): string {
+		if (this.from.includes(PrismaClassFile.TEMP_PREFIX) === false) {
+			return null
+		}
+		const key = this.from.replace(PrismaClassFile.TEMP_PREFIX, '')
+		return classToPath[key] ?? null
 	}
 
 	constructor(from: string, items: string | string[]) {

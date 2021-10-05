@@ -4,6 +4,7 @@ import { CLASS_TEMPLATE } from '../templates'
 import { PrismaClassFile } from './prisma-class-file'
 import { Decoratable } from './prisma-decorator'
 import { PrismaField } from './prisma-field'
+import { PrismaImport } from './prisma-import'
 
 export class PrismaClass extends Decoratable {
 	name: string
@@ -23,6 +24,8 @@ export class PrismaClass extends Decoratable {
 
 		prismaClassFile.dir = path.resolve(output)
 		prismaClassFile.filename = `${snakeCase(this.name)}.ts`
+		prismaClassFile.resolveImports()
+
 		return prismaClassFile
 	}
 }

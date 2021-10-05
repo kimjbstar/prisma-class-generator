@@ -3,13 +3,26 @@ import { PrismaClass } from './prisma-class'
 import { PrismaImport } from './prisma-import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { logger } from '@prisma/sdk'
+import { log } from '../../src/util'
+
+const getRelativePath = (from: string, to: string): string => {
+	let rel = path
+		.relative(path.resolve(path.dirname(from)), to)
+		.replace('.ts', '')
+	if (path.dirname(from) === path.dirname(to)) {
+		rel = `./${rel}`
+	}
+	return rel
+}
 
 export class PrismaClassFile {
 	private _dir?: string
 	private _filename?: string
 	private _imports?: PrismaImport[] = []
 	private _prismaClass: PrismaClass
+	static TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__'
+	static PRISMA_CLIENT_PATH
+	static ROOT_PATH
 
 	public get dir() {
 		return this._dir
@@ -45,7 +58,6 @@ export class PrismaClassFile {
 
 	constructor(prismaClass: PrismaClass) {
 		this.prismaClass = prismaClass
-		this.addDefaultImports()
 	}
 
 	echoImports = () => {
@@ -63,7 +75,7 @@ export class PrismaClassFile {
 			.replace('#!{IMPORTS}', this.echoImports())
 	}
 
-	addImport(exportedItem: string, from: string) {
+	registerImport(exportedItem: string, from: string) {
 		const oldIndex = this.imports.findIndex(
 			(_import) => _import.from === from,
 		)
@@ -74,23 +86,32 @@ export class PrismaClassFile {
 		this.imports.push(new PrismaImport(from, exportedItem))
 	}
 
-	addDefaultImports() {
+	resolveImports() {
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
-			this.addImport(
+			this.registerImport(
 				`${pascalCase(relationClassName)}`,
-				relationClassName,
+				PrismaClassFile.TEMP_PREFIX + relationClassName,
 			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
-			this.addImport(enumName, '@prisma/client')
+			const pathToImport = path
+				.relative(
+					PrismaClassFile.ROOT_PATH,
+					PrismaClassFile.PRISMA_CLIENT_PATH,
+				)
+				.replace('node_modules/', '')
+			this.registerImport(enumName, pathToImport)
 		})
 
-		const apiPropertyDecorator = this.prismaClass.decorators.find(
-			(decorator) => decorator.name === 'ApiProperty',
-		)
-		if (apiPropertyDecorator) {
-			this.addImport('ApiProperty', '@nestjs/swagger')
-		}
+		this.prismaClass.decorators.forEach((decorator) => {
+			this.registerImport(decorator.name, decorator.importFrom)
+		})
+
+		this.prismaClass.fields.forEach((field) => {
+			field.decorators.forEach((decorator) => {
+				this.registerImport(decorator.name, decorator.importFrom)
+			})
+		})
 	}
 
 	write(dryRun: boolean) {
@@ -99,7 +120,7 @@ export class PrismaClassFile {
 			fs.mkdirSync(targetDirPath, { recursive: true })
 		}
 		const filePath = path.resolve(targetDirPath, this.filename)
-		logger.info(`${dryRun ? '[dryRun] ' : ''}Generate ${filePath}`)
+		log(`${dryRun ? '[dryRun] ' : ''}Generate ${filePath}`)
 		if (dryRun) {
 			console.log(this.echo())
 			return
@@ -107,10 +128,8 @@ export class PrismaClassFile {
 		fs.writeFileSync(filePath, this.echo())
 	}
 
-	getRelativePath(prismaClassFile: PrismaClassFile): string {
-		const from = path.resolve(this.dir, this.filename)
-		const to = path.resolve(prismaClassFile.dir, prismaClassFile.filename)
-		return path.relative(from, to)
+	getRelativePath(to: string): string {
+		return getRelativePath(this.getPath(), to)
 	}
 
 	getPath() {

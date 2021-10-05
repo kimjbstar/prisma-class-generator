@@ -33,7 +33,8 @@
 		"stripInternal": false,
 		"sourceMap": true,
 		"forceConsistentCasingInFileNames": true,
-		"allowJs": true
+		"allowJs": true,
+		"esModuleInterop": true
 	},
 	"exclude": [
 		"node_modules",

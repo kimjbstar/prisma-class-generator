@@ -1,15 +1,18 @@
 export class PrismaDecorator {
 	name: string
 	params: any[] = []
+	importFrom: string
 
 	echo() {
 		const content = this.params.reduce((result, param) => {
 			if (typeof param === 'object') {
-				result.push(
-					`{${Object.entries(param)
-						.map(([k, v]) => `${k}:${v}`)
-						.join(',')}}`,
-				)
+				if (Object.keys(param).length > 0) {
+					result.push(
+						`{${Object.entries(param)
+							.map(([k, v]) => `${k}: ${v}`)
+							.join(', ')}}`,
+					)
+				}
 			} else {
 				result.push(param)
 			}
@@ -25,11 +28,17 @@ export class PrismaDecorator {
 		this.params.push(param)
 	}
 
-	constructor(name: string, params?: any | any[]) {
+	constructor(input: {
+		name: string
+		params?: any | any[]
+		importFrom: string
+	}) {
+		const { name, params, importFrom } = input
 		this.name = name
 		if (params) {
 			this.params = Array.isArray(params) ? params : [params]
 		}
+		this.importFrom = importFrom
 	}
 }
 
@@ -40,8 +49,12 @@ export class Decoratable {
 		Object.assign(this, obj)
 	}
 
-	addDecorator = (input: { name: string; param: any }): void => {
-		const { name, param } = input
+	addDecorator = (input: {
+		name: string
+		param: any
+		importFrom: string
+	}): void => {
+		const { name, param, importFrom } = input
 		const oldIndex = this.decorators.findIndex((v) => v.name === name)
 		if (oldIndex > -1) {
 			this.decorators[oldIndex].params.push({
@@ -49,7 +62,11 @@ export class Decoratable {
 			})
 			return
 		}
-		const decorator = new PrismaDecorator(name, param)
+		const decorator = new PrismaDecorator({
+			name: name,
+			params: param,
+			importFrom: importFrom,
+		})
 		this.decorators.push(decorator)
 		return
 	}

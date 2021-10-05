@@ -1,10 +1,11 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { Dictionary, parseEnvValue } from '@prisma/sdk'
-import { getRelativePath } from '../util'
 import * as path from 'path'
-import { GeneratorFormatNotValidError } from '..'
+import { GeneratorFormatNotValidError } from '../error-handler'
 import { convertModels } from '../convertor'
+import { PrismaClassFile } from './prisma-class-file'
 
+export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorOptions {
 	useSwagger: boolean
 	dryRun: boolean
@@ -21,18 +22,42 @@ export class PrismaClassGenerator {
 		return PrismaClassGenerator.instance
 	}
 
+	setPrismaClientPath(options: GeneratorOptions) {
+		const { otherGenerators, schemaPath } = options
+
+		PrismaClassFile.ROOT_PATH = schemaPath.replace(
+			'/prisma/schema.prisma',
+			'',
+		)
+		const prismaClientGenerator = otherGenerators.find(
+			(g) => g.provider.value === 'prisma-client-js',
+		)
+		let found
+		if (prismaClientGenerator === null) {
+			found = path.resolve(
+				PrismaClassFile.ROOT_PATH,
+				'node_modules/@prisma/client',
+			)
+		} else {
+			found = prismaClientGenerator.output.value
+		}
+		PrismaClassFile.PRISMA_CLIENT_PATH = found
+	}
+
 	run = async (options: GeneratorOptions): Promise<any> => {
 		// TODO : error handling
-		const output = parseEnvValue(options.generator.output!)
 		const { generator, dmmf } = options
+		const output = parseEnvValue(generator.output!)
 
 		const config = this.setConfig(generator.config)
-		const { dryRun } = config
+
+		this.setPrismaClientPath(options)
 
 		const prismaClasses = convertModels(dmmf, config)
-		const files = prismaClasses.map((_class) => _class.toFileClass(output))
+		const files = prismaClasses.map((c) => c.toFileClass(output))
 
-		const classToFilePath = files.reduce((result, fileRow) => {
+		// match relative imports
+		const classToPath = files.reduce((result, fileRow) => {
 			const fullPath = path.resolve(fileRow.dir, fileRow.filename)
 			result[fileRow.prismaClass.name] = fullPath
 			return result
@@ -40,20 +65,16 @@ export class PrismaClassGenerator {
 
 		files.forEach((fileRow) => {
 			fileRow.imports = fileRow.imports.map((importRow) => {
-				if (classToFilePath[importRow.from]) {
-					importRow.from = getRelativePath(
-						fileRow.getPath(),
-						classToFilePath[importRow.from],
-					)
+				const pathToReplace = importRow.getReplacePath(classToPath)
+				if (pathToReplace !== null) {
+					importRow.from = fileRow.getRelativePath(pathToReplace)
 				}
 				return importRow
 			})
 		})
 
-		console.log(files)
-
 		files.forEach((fileRow) => {
-			fileRow.write(false)
+			fileRow.write(config.dryRun)
 		})
 		return null
 	}
@@ -74,7 +95,7 @@ export class PrismaClassGenerator {
 
 	parseBoolean(value: unknown): boolean {
 		if (['true', 'false'].includes(value.toString()) === false) {
-			throw new GeneratorFormatNotValidError(config)
+			throw new GeneratorFormatNotValidError('parseBoolean failed')
 		}
 		return value.toString() === 'true'
 	}

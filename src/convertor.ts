@@ -3,7 +3,13 @@ import { PrismaClass } from './classes/prisma-class'
 import { PrismaDecorator } from './classes/prisma-decorator'
 import { PrismaField } from './classes/prisma-field'
 import { PrismaClassGeneratorOptions } from './classes/prisma-class-generator'
-import { capitalizeFirst, uniquify } from './util'
+import {
+	arrayify,
+	capitalizeFirst,
+	uniquify,
+	wrapArrowFunction,
+	wrapQuote,
+} from './util'
 
 const primitiveMapType: Record<string, string> = {
 	Int: 'number',
@@ -20,34 +26,37 @@ const primitiveMapType: Record<string, string> = {
 export const extractSwaggerDecoratorFromField = (
 	dmmfField: DMMF.Field,
 ): PrismaDecorator => {
-	const apiPropertyParams: Record<string, any> = {}
-	const result = new PrismaDecorator('ApiProperty')
+	const options: Record<string, any> = {}
+	const decorator = new PrismaDecorator({
+		name: 'ApiProperty',
+		importFrom: '@nestjs/swagger',
+	})
 
 	let type = primitiveMapType[dmmfField.type]
-	if (type) {
-		apiPropertyParams['type'] = capitalizeFirst(type)
-		result.params.push(apiPropertyParams)
-		return result
+	if (type && type !== 'any') {
+		options.type = capitalizeFirst(type)
+		decorator.params.push(options)
+		return decorator
 	}
 	type = dmmfField.type
 
 	if (dmmfField.isList) {
-		apiPropertyParams['isArray'] = true
+		options['isArray'] = true
 	}
 
 	if (dmmfField.relationName) {
-		apiPropertyParams['type'] = `() => ${dmmfField.type}`
-		result.params.push(apiPropertyParams)
-		return result
+		options.type = wrapArrowFunction(dmmfField.type)
+		decorator.params.push(options)
+		return decorator
 	}
 
 	if (dmmfField.kind === 'enum') {
-		apiPropertyParams['enum'] = dmmfField.type
-		apiPropertyParams['enumName'] = `'${dmmfField.type}'`
+		options.enum = dmmfField.type
+		options.enumName = wrapQuote(dmmfField.type)
 	}
 
-	result.params.push(apiPropertyParams)
-	return result
+	decorator.params.push(options)
+	return decorator
 }
 
 export const convertField = (dmmfField: DMMF.Field): PrismaField => {
@@ -63,7 +72,7 @@ export const convertField = (dmmfField: DMMF.Field): PrismaField => {
 	type = dmmfField.type
 
 	if (dmmfField.isList) {
-		field.type = type += '[]'
+		field.type = arrayify(type)
 	}
 
 	if (dmmfField.relationName) {
@@ -120,11 +129,11 @@ export const convertModel = (input: {
 	pClass.relationTypes = uniquify(relationTypes)
 	pClass.enumTypes = enums.map((field) => field.type)
 
-	const apiExtraModelsDecorator = new PrismaDecorator(
-		'ApiExtraModels',
-		pClass.name,
-	)
-	// TODO import info
+	const apiExtraModelsDecorator = new PrismaDecorator({
+		name: 'ApiExtraModels',
+		params: pClass.name,
+		importFrom: '@nestjs/swagger',
+	})
 	pClass.decorators.push(apiExtraModelsDecorator)
 
 	return pClass
