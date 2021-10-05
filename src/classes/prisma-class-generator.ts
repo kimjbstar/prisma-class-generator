@@ -1,6 +1,6 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { Dictionary, parseEnvValue } from '@prisma/sdk'
-import { doNothing, getRelativePath } from '../util'
+import { getRelativePath } from '../util'
 import * as path from 'path'
 import { GeneratorFormatNotValidError } from '..'
 import { convertModels } from '../convertor'
