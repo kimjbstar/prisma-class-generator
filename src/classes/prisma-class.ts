@@ -13,16 +13,16 @@ export class PrismaClass extends Decoratable {
 
 	echo = () => {
 		const fieldContent = this.fields.map((_field) => _field.echo())
-		return CLASS_TEMPLATE.replace('#!{NAME}', `${this.name}`).replace(
-			'#!{FIELDS}',
-			fieldContent.join('\r\n'),
-		)
+		return CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())
+			.replace('#!{NAME}', `${this.name}`)
+			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
 	}
 
 	toFileClass(output: string): PrismaClassFile {
 		const prismaClassFile = new PrismaClassFile(this)
-		prismaClassFile.setDir(path.resolve(output))
-		prismaClassFile.setFileName(`${snakeCase(this.name)}.ts`)
+
+		prismaClassFile.dir = path.resolve(output)
+		prismaClassFile.filename = `${snakeCase(this.name)}.ts`
 		return prismaClassFile
 	}
 }

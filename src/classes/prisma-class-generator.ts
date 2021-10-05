@@ -1,5 +1,7 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { Dictionary, parseEnvValue } from '@prisma/sdk'
+import { doNothing, getRelativePath } from '../util'
+import * as path from 'path'
 import { GeneratorFormatNotValidError } from '..'
 import { convertModels } from '../convertor'
 
@@ -20,6 +22,7 @@ export class PrismaClassGenerator {
 	}
 
 	run = async (options: GeneratorOptions): Promise<any> => {
+		// TODO : error handling
 		const output = parseEnvValue(options.generator.output!)
 		const { generator, dmmf } = options
 
@@ -29,12 +32,29 @@ export class PrismaClassGenerator {
 		const prismaClasses = convertModels(dmmf, config)
 		const files = prismaClasses.map((_class) => _class.toFileClass(output))
 
-		// TODO : check import path each other
+		const classToFilePath = files.reduce((result, fileRow) => {
+			const fullPath = path.resolve(fileRow.dir, fileRow.filename)
+			result[fileRow.prismaClass.name] = fullPath
+			return result
+		}, {} as Record<string, string>)
 
-		files.forEach((_file) => {
-			_file.write(dryRun)
+		files.forEach((fileRow) => {
+			fileRow.imports = fileRow.imports.map((importRow) => {
+				if (classToFilePath[importRow.from]) {
+					importRow.from = getRelativePath(
+						fileRow.getPath(),
+						classToFilePath[importRow.from],
+					)
+				}
+				return importRow
+			})
 		})
 
+		console.log(files)
+
+		files.forEach((fileRow) => {
+			fileRow.write(false)
+		})
 		return null
 	}
 
@@ -48,8 +68,6 @@ export class PrismaClassGenerator {
 		)
 		result.useSwagger = this.parseBoolean(result.useSwagger)
 		result.dryRun = this.parseBoolean(result.dryRun)
-
-		console.log(result)
 
 		return result
 	}

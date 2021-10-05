@@ -3,7 +3,7 @@ import { PrismaClass } from './classes/prisma-class'
 import { PrismaDecorator } from './classes/prisma-decorator'
 import { PrismaField } from './classes/prisma-field'
 import { PrismaClassGeneratorOptions } from './classes/prisma-class-generator'
-import { capitalizeFirst } from './util'
+import { capitalizeFirst, uniquify } from './util'
 
 const primitiveMapType: Record<string, string> = {
 	Int: 'number',
@@ -107,7 +107,7 @@ export const convertModel = (input: {
 			const decorator = extractSwaggerDecoratorFromField(field)
 			converted.decorators.push(decorator)
 		}
-		console.dir(converted, { depth: null })
+		// console.dir(converted, { depth: null })
 		return converted
 	})
 
@@ -117,13 +117,14 @@ export const convertModel = (input: {
 	const enums = model.fields.filter((field) => field.kind === 'enum')
 
 	pClass.fields = fields
-	pClass.relationTypes = [...new Set(relationTypes)]
+	pClass.relationTypes = uniquify(relationTypes)
 	pClass.enumTypes = enums.map((field) => field.type)
 
 	const apiExtraModelsDecorator = new PrismaDecorator(
 		'ApiExtraModels',
 		pClass.name,
 	)
+	// TODO import info
 	pClass.decorators.push(apiExtraModelsDecorator)
 
 	return pClass

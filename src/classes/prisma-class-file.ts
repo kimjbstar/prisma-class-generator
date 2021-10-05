@@ -6,22 +6,46 @@ import * as path from 'path'
 import { logger } from '@prisma/sdk'
 
 export class PrismaClassFile {
-	private dir?: string
-	private filename?: string
-	private imports?: PrismaImport[] = []
-	private prismaClass: PrismaClass
+	private _dir?: string
+	private _filename?: string
+	private _imports?: PrismaImport[] = []
+	private _prismaClass: PrismaClass
+
+	public get dir() {
+		return this._dir
+	}
+
+	public set dir(value) {
+		this._dir = value
+	}
+
+	public get filename() {
+		return this._filename
+	}
+
+	public set filename(value) {
+		this._filename = value
+	}
+
+	public get imports() {
+		return this._imports
+	}
+
+	public set imports(value) {
+		this._imports = value
+	}
+
+	public get prismaClass() {
+		return this._prismaClass
+	}
+
+	public set prismaClass(value) {
+		this._prismaClass = value
+	}
 
 	constructor(prismaClass: PrismaClass) {
 		this.prismaClass = prismaClass
 		this.addDefaultImports()
-	}
-
-	setDir(dir: string) {
-		this.dir = dir
-	}
-
-	setFileName(filename: string) {
-		this.filename = filename
 	}
 
 	echoImports = () => {
@@ -81,5 +105,15 @@ export class PrismaClassFile {
 			return
 		}
 		fs.writeFileSync(filePath, this.echo())
+	}
+
+	getRelativePath(prismaClassFile: PrismaClassFile): string {
+		const from = path.resolve(this.dir, this.filename)
+		const to = path.resolve(prismaClassFile.dir, prismaClassFile.filename)
+		return path.relative(from, to)
+	}
+
+	getPath() {
+		return path.resolve(this.dir, this.filename)
 	}
 }
