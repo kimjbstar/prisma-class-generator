@@ -13,7 +13,7 @@ generatorHandler({
 	}),
 	onGenerate: async (options: GeneratorOptions) => {
 		try {
-			await PrismaClassGenerator.getInstance().run(options)
+			await PrismaClassGenerator.getInstance(options).run()
 		} catch (e) {
 			handleGenerateError(e)
 			return

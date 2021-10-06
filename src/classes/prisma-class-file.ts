@@ -3,17 +3,7 @@ import { PrismaClass } from './prisma-class'
 import { PrismaImport } from './prisma-import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { log } from '../../src/util'
-
-const getRelativePath = (from: string, to: string): string => {
-	let rel = path
-		.relative(path.resolve(path.dirname(from)), to)
-		.replace('.ts', '')
-	if (path.dirname(from) === path.dirname(to)) {
-		rel = `./${rel}`
-	}
-	return rel
-}
+import { getRelativeTSPath, log } from '../../src/util'
 
 export class PrismaClassFile {
 	private _dir?: string
@@ -129,7 +119,7 @@ export class PrismaClassFile {
 	}
 
 	getRelativePath(to: string): string {
-		return getRelativePath(this.getPath(), to)
+		return getRelativeTSPath(this.getPath(), to)
 	}
 
 	getPath() {

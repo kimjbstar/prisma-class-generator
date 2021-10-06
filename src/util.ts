@@ -6,7 +6,7 @@ export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)
 }
 
-export const getRelativePath = (from: string, to: string): string => {
+export const getRelativeTSPath = (from: string, to: string): string => {
 	let rel = path
 		.relative(path.resolve(path.dirname(from)), to)
 		.replace('.ts', '')
