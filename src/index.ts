@@ -1,7 +1,7 @@
 import { generatorHandler, GeneratorOptions } from '@prisma/generator-helper'
-import { GENERATOR_NAME, PrismaClassGenerator } from '@src/generator'
-import { log } from '@src/util'
-import { handleGenerateError } from '@src/error-handler'
+import { GENERATOR_NAME, PrismaClassGenerator } from './generator'
+import { log } from './util'
+import { handleGenerateError } from './error-handler'
 
 generatorHandler({
 	onManifest: () => ({

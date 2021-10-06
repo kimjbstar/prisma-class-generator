@@ -1,5 +1,5 @@
 import { Dictionary } from '@prisma/sdk'
-import { log } from '@src/util'
+import { log } from './util'
 
 export class GeneratorFormatNotValidError extends Error {
 	config: Dictionary<string>

@@ -1,8 +1,8 @@
 import { DMMF } from '@prisma/generator-helper'
-import { PrismaClass } from '@src/components/class'
-import { PrismaDecorator } from '@src/components/decorator'
-import { PrismaField } from '@src/components/field'
-import { PrismaClassGeneratorConfig } from '@src/generator'
+import { PrismaClass } from './components/class'
+import { PrismaDecorator } from './components/decorator'
+import { PrismaField } from './components/field'
+import { PrismaClassGeneratorConfig } from './generator'
 import {
 	arrayify,
 	capitalizeFirst,

@@ -1,7 +1,7 @@
 import { logger } from '@prisma/sdk'
 import * as path from 'path'
-import { GENERATOR_NAME } from '@src/generator'
-import { GeneratorFormatNotValidError } from '@src/error-handler'
+import { GENERATOR_NAME } from './generator'
+import { GeneratorFormatNotValidError } from './error-handler'
 
 export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)

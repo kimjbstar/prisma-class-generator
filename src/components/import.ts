@@ -1,6 +1,6 @@
-import { toArray } from '@src/util'
-import { Echoable } from '@src/interfaces/echoable'
-import { PrismaClassFile } from '@src/components/file'
+import { toArray } from '../util'
+import { Echoable } from '../interfaces/echoable'
+import { PrismaClassFile } from './file'
 
 export class PrismaImport implements Echoable {
 	from: string

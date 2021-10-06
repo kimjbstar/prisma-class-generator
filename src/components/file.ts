@@ -1,11 +1,11 @@
 import { pascalCase } from 'change-case'
-import { PrismaClass } from '@src/components/class'
-import { PrismaImport } from '@src/components/import'
+import { PrismaClass } from './class'
+import { PrismaImport } from './import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { getRelativeTSPath, log } from '@src/util'
-import { PrismaClassGenerator } from '@src/generator'
-import { Echoable } from '@src/interfaces/echoable'
+import { getRelativeTSPath, log } from '../util'
+import { PrismaClassGenerator } from '../generator'
+import { Echoable } from '../interfaces/echoable'
 
 export class PrismaClassFile implements Echoable {
 	private _dir?: string

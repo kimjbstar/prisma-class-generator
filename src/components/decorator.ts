@@ -1,4 +1,4 @@
-import { Echoable } from '@src/interfaces/echoable'
+import { Echoable } from '../interfaces/echoable'
 
 export class PrismaDecorator implements Echoable {
 	name: string

@@ -1,9 +1,9 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { parseEnvValue } from '@prisma/sdk'
 import * as path from 'path'
-import { GeneratorPathNotExists } from '@src/error-handler'
-import { PrismaConvertor } from '@src/convertor'
-import { parseBoolean } from '@src/util'
+import { GeneratorPathNotExists } from './error-handler'
+import { PrismaConvertor } from './convertor'
+import { parseBoolean } from './util'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorConfig {

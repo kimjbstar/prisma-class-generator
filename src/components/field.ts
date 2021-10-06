@@ -1,6 +1,6 @@
-import { FIELD_TEMPLATE } from '@src/templates/field'
-import { Echoable } from '@src/interfaces/echoable'
-import { Decoratable } from '@src/components/decorator'
+import { FIELD_TEMPLATE } from '../templates/field'
+import { Echoable } from '../interfaces/echoable'
+import { Decoratable } from '../components/decorator'
 
 export class PrismaField extends Decoratable implements Echoable {
 	name: string

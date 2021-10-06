@@ -1,10 +1,10 @@
 import { snakeCase } from 'change-case'
 import * as path from 'path'
-import { Echoable } from '@src/interfaces/echoable'
-import { PrismaClassFile } from '@src/components/file'
-import { Decoratable } from '@src/components/decorator'
-import { PrismaField } from '@src/components/field'
-import { CLASS_TEMPLATE } from '@src/templates/class'
+import { Echoable } from '../interfaces/echoable'
+import { PrismaClassFile } from './file'
+import { Decoratable } from './decorator'
+import { PrismaField } from './field'
+import { CLASS_TEMPLATE } from '../templates/class'
 
 export class PrismaClass extends Decoratable implements Echoable {
 	name: string
