@@ -1,8 +1,8 @@
 import { DMMF } from '@prisma/generator-helper'
-import { PrismaClass } from './classes/prisma-class'
-import { PrismaDecorator } from './classes/prisma-decorator'
-import { PrismaField } from './classes/prisma-field'
-import { PrismaClassGeneratorOptions } from './classes/prisma-class-generator'
+import { PrismaClass } from '@src/components/class'
+import { PrismaDecorator } from '@src/components/decorator'
+import { PrismaField } from '@src/components/field'
+import { PrismaClassGeneratorConfig } from '@src/generator'
 import {
 	arrayify,
 	capitalizeFirst,
@@ -23,118 +23,140 @@ const primitiveMapType: Record<string, string> = {
 	Bytes: 'Buffer',
 }
 
-export const extractSwaggerDecoratorFromField = (
-	dmmfField: DMMF.Field,
-): PrismaDecorator => {
-	const options: Record<string, any> = {}
-	const decorator = new PrismaDecorator({
-		name: 'ApiProperty',
-		importFrom: '@nestjs/swagger',
-	})
+export class PrismaConvertor {
+	static instance: PrismaConvertor
+	private _config: PrismaClassGeneratorConfig
+	private _dmmf: DMMF.Document
 
-	let type = primitiveMapType[dmmfField.type]
-	if (type && type !== 'any') {
-		options.type = capitalizeFirst(type)
-		decorator.params.push(options)
-		return decorator
-	}
-	type = dmmfField.type
-
-	if (dmmfField.isList) {
-		options['isArray'] = true
+	public get dmmf() {
+		return this._dmmf
 	}
 
-	if (dmmfField.relationName) {
-		options.type = wrapArrowFunction(dmmfField.type)
-		decorator.params.push(options)
-		return decorator
+	public set dmmf(value) {
+		this._dmmf = value
 	}
 
-	if (dmmfField.kind === 'enum') {
-		options.enum = dmmfField.type
-		options.enumName = wrapQuote(dmmfField.type)
+	public get config() {
+		return this._config
 	}
 
-	decorator.params.push(options)
-	return decorator
-}
-
-export const convertField = (dmmfField: DMMF.Field): PrismaField => {
-	const field = new PrismaField({
-		name: dmmfField.name,
-	})
-	let type = primitiveMapType[dmmfField.type]
-
-	if (type) {
-		field.type = type
-		return field
-	}
-	type = dmmfField.type
-
-	if (dmmfField.isList) {
-		field.type = arrayify(type)
+	public set config(value) {
+		this._config = value
 	}
 
-	if (dmmfField.relationName) {
-		field.type = `${type}`
-		return field
-	}
-
-	if (dmmfField.kind === 'enum') {
-		field.type = dmmfField.type
-	}
-
-	return field
-}
-
-export const convertModels = (
-	dmmf: DMMF.Document,
-	config: PrismaClassGeneratorOptions,
-): PrismaClass[] => {
-	return dmmf.datamodel.models.map((model) =>
-		convertModel({
-			model: model,
-			config: config,
-		}),
-	)
-}
-
-export const convertModel = (input: {
-	model: DMMF.Model
-	config: PrismaClassGeneratorOptions
-}): PrismaClass => {
-	const { model, config } = input
-	const { useSwagger } = config
-
-	const pClass = new PrismaClass({
-		name: model.name,
-	})
-
-	const fields = model.fields.map((field) => {
-		const converted = convertField(field)
-		if (useSwagger) {
-			const decorator = extractSwaggerDecoratorFromField(field)
-			converted.decorators.push(decorator)
+	static getInstance() {
+		if (PrismaConvertor.instance) {
+			return PrismaConvertor.instance
 		}
-		// console.dir(converted, { depth: null })
-		return converted
-	})
+		PrismaConvertor.instance = new PrismaConvertor()
+		return PrismaConvertor.instance
+	}
 
-	const relationTypes = model.fields
-		.filter((field) => field.relationName && model.name !== field.type)
-		.map((v) => v.type)
-	const enums = model.fields.filter((field) => field.kind === 'enum')
+	extractSwaggerDecoratorFromField = (
+		dmmfField: DMMF.Field,
+	): PrismaDecorator => {
+		const options: Record<string, any> = {}
+		const decorator = new PrismaDecorator({
+			name: 'ApiProperty',
+			importFrom: '@nestjs/swagger',
+		})
 
-	pClass.fields = fields
-	pClass.relationTypes = uniquify(relationTypes)
-	pClass.enumTypes = enums.map((field) => field.type)
+		let type = primitiveMapType[dmmfField.type]
+		if (type && type !== 'any') {
+			options.type = capitalizeFirst(type)
+			decorator.params.push(options)
+			return decorator
+		}
+		type = dmmfField.type
 
-	const apiExtraModelsDecorator = new PrismaDecorator({
-		name: 'ApiExtraModels',
-		params: pClass.name,
-		importFrom: '@nestjs/swagger',
-	})
-	pClass.decorators.push(apiExtraModelsDecorator)
+		if (dmmfField.isList) {
+			options['isArray'] = true
+		}
 
-	return pClass
+		if (dmmfField.relationName) {
+			options.type = wrapArrowFunction(dmmfField.type)
+			decorator.params.push(options)
+			return decorator
+		}
+
+		if (dmmfField.kind === 'enum') {
+			options.enum = dmmfField.type
+			options.enumName = wrapQuote(dmmfField.type)
+		}
+
+		decorator.params.push(options)
+		return decorator
+	}
+
+	convertModel = (model: DMMF.Model): PrismaClass => {
+		const { useSwagger } = this.config
+
+		const pClass = new PrismaClass({
+			name: model.name,
+		})
+
+		const fields = model.fields.map((field) => {
+			const converted = this.convertField(field)
+			if (useSwagger) {
+				const decorator = this.extractSwaggerDecoratorFromField(field)
+				converted.decorators.push(decorator)
+			}
+			// console.dir(converted, { depth: null })
+			return converted
+		})
+
+		const relationTypes = model.fields
+			.filter((field) => field.relationName && model.name !== field.type)
+			.map((v) => v.type)
+		const enums = model.fields.filter((field) => field.kind === 'enum')
+
+		pClass.fields = fields
+		pClass.relationTypes = uniquify(relationTypes)
+		pClass.enumTypes = enums.map((field) => field.type)
+
+		if (useSwagger) {
+			const apiExtraModelsDecorator = new PrismaDecorator({
+				name: 'ApiExtraModels',
+				params: pClass.name,
+				importFrom: '@nestjs/swagger',
+			})
+			pClass.decorators.push(apiExtraModelsDecorator)
+		}
+
+		return pClass
+	}
+
+	convertModels = (): PrismaClass[] => {
+		return this.dmmf.datamodel.models.map((model) =>
+			this.convertModel(model),
+		)
+	}
+
+	convertField = (dmmfField: DMMF.Field): PrismaField => {
+		const field = new PrismaField({
+			name: dmmfField.name,
+		})
+		let type = primitiveMapType[dmmfField.type]
+
+		if (type) {
+			field.type = type
+			return field
+		}
+		type = dmmfField.type
+
+		if (dmmfField.isList) {
+			field.type = arrayify(type)
+		}
+
+		if (dmmfField.relationName) {
+			field.type = `${type}`
+			return field
+		}
+
+		if (dmmfField.kind === 'enum') {
+			field.type = dmmfField.type
+		}
+
+		return field
+	}
 }

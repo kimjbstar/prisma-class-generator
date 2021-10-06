@@ -1,8 +1,15 @@
-import { PrismaClassFile } from './prisma-class-file'
+import { toArray } from '@src/util'
+import { Echoable } from '@src/interfaces/echoable'
+import { PrismaClassFile } from '@src/components/file'
 
-export class PrismaImport {
+export class PrismaImport implements Echoable {
 	from: string
 	items: string[]
+
+	constructor(from: string, items: string | string[]) {
+		this.from = from
+		this.items = toArray(items)
+	}
 
 	echo = () => {
 		return `import { ${this.items.join(',')} } from '${this.from}'`
@@ -21,10 +28,5 @@ export class PrismaImport {
 		}
 		const key = this.from.replace(PrismaClassFile.TEMP_PREFIX, '')
 		return classToPath[key] ?? null
-	}
-
-	constructor(from: string, items: string | string[]) {
-		this.from = from
-		this.items = Array.isArray(items) ? items : [items]
 	}
 }

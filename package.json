@@ -16,7 +16,8 @@
 		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
 	},
 	"scripts": {
-		"format": "prettier --write \"src/**/*.ts\""
+		"format": "prettier --write \"src/**/*.ts\"",
+		"dev": "node -r ts-node/register -r tsconfig-paths/register src/index.ts"
 	},
 	"bin": {
 		"prisma-class-generator": "dist/index.js"
@@ -40,6 +41,10 @@
 		"prisma": "3.1.1",
 		"swagger-ui-express": "^4.1.6",
 		"ts-node": "^10.2.1",
+		"tsconfig-paths": "^3.11.0",
 		"typescript": "^4.3.5"
+	},
+	"_moduleAliases": {
+		"@src": "dist"
 	}
 }

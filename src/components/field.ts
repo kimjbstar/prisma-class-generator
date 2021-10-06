@@ -1,7 +1,8 @@
-import { FIELD_TEMPLATE } from '../templates'
-import { Decoratable } from './prisma-decorator'
+import { FIELD_TEMPLATE } from '@src/templates/field'
+import { Echoable } from '@src/interfaces/echoable'
+import { Decoratable } from '@src/components/decorator'
 
-export class PrismaField extends Decoratable {
+export class PrismaField extends Decoratable implements Echoable {
 	name: string
 	type?: any
 

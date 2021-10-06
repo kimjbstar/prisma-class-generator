@@ -1,7 +1,22 @@
-export class PrismaDecorator {
+import { Echoable } from '@src/interfaces/echoable'
+
+export class PrismaDecorator implements Echoable {
 	name: string
 	params: any[] = []
 	importFrom: string
+
+	constructor(input: {
+		name: string
+		params?: any | any[]
+		importFrom: string
+	}) {
+		const { name, params, importFrom } = input
+		this.name = name
+		if (params) {
+			this.params = Array.isArray(params) ? params : [params]
+		}
+		this.importFrom = importFrom
+	}
 
 	echo() {
 		const content = this.params.reduce((result, param) => {
@@ -26,19 +41,6 @@ export class PrismaDecorator {
 			return
 		}
 		this.params.push(param)
-	}
-
-	constructor(input: {
-		name: string
-		params?: any | any[]
-		importFrom: string
-	}) {
-		const { name, params, importFrom } = input
-		this.name = name
-		if (params) {
-			this.params = Array.isArray(params) ? params : [params]
-		}
-		this.importFrom = importFrom
 	}
 }
 

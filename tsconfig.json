@@ -5,6 +5,9 @@
 		"moduleResolution": "node",
 		"allowSyntheticDefaultImports": true,
 		"baseUrl": "./",
+		"paths": {
+			"@src/*": ["./src/*"]
+		},
 		"outDir": "./dist",
 		"declaration": true,
 		"diagnostics": false,
@@ -43,6 +46,7 @@
 		"logs/**",
 		"test",
 		"**/*spec.ts",
-		"**/_gen/*.ts"
+		"**/_gen/*.ts",
+		"src/_gen/**"
 	]
 }

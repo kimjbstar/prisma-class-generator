@@ -1,18 +1,18 @@
 import { pascalCase } from 'change-case'
-import { PrismaClass } from './prisma-class'
-import { PrismaImport } from './prisma-import'
+import { PrismaClass } from '@src/components/class'
+import { PrismaImport } from '@src/components/import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { getRelativeTSPath, log } from '../../src/util'
+import { getRelativeTSPath, log } from '@src/util'
+import { PrismaClassGenerator } from '@src/generator'
+import { Echoable } from '@src/interfaces/echoable'
 
-export class PrismaClassFile {
+export class PrismaClassFile implements Echoable {
 	private _dir?: string
 	private _filename?: string
 	private _imports?: PrismaImport[] = []
 	private _prismaClass: PrismaClass
 	static TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__'
-	static PRISMA_CLIENT_PATH
-	static ROOT_PATH
 
 	public get dir() {
 		return this._dir
@@ -65,18 +65,19 @@ export class PrismaClassFile {
 			.replace('#!{IMPORTS}', this.echoImports())
 	}
 
-	registerImport(exportedItem: string, from: string) {
+	registerImport(item: string, from: string) {
 		const oldIndex = this.imports.findIndex(
 			(_import) => _import.from === from,
 		)
 		if (oldIndex > -1) {
-			this.imports[oldIndex].add(exportedItem)
+			this.imports[oldIndex].add(item)
 			return
 		}
-		this.imports.push(new PrismaImport(from, exportedItem))
+		this.imports.push(new PrismaImport(from, item))
 	}
 
 	resolveImports() {
+		const generator = PrismaClassGenerator.getInstance()
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
 			this.registerImport(
 				`${pascalCase(relationClassName)}`,
@@ -84,13 +85,7 @@ export class PrismaClassFile {
 			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
-			const pathToImport = path
-				.relative(
-					PrismaClassFile.ROOT_PATH,
-					PrismaClassFile.PRISMA_CLIENT_PATH,
-				)
-				.replace('node_modules/', '')
-			this.registerImport(enumName, pathToImport)
+			this.registerImport(enumName, generator.getClientImportPath())
 		})
 
 		this.prismaClass.decorators.forEach((decorator) => {
