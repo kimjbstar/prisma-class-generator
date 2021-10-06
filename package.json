@@ -1,6 +1,6 @@
 {
 	"name": "prisma-class-generator",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
@@ -20,7 +20,7 @@
 		"dev": "node -r ts-node/register -r tsconfig-paths/register src/index.ts"
 	},
 	"bin": {
-		"prisma-class-generator": "dist/index.js"
+		"prisma-class-generator": "dist/bin.js"
 	},
 	"engines": {
 		"node": ">=14"
