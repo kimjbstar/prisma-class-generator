@@ -3,12 +3,15 @@ import { parseEnvValue } from '@prisma/sdk'
 import * as path from 'path'
 import { GeneratorPathNotExists } from './error-handler'
 import { PrismaConvertor } from './convertor'
-import { parseBoolean } from './util'
+import { getRelativeTSPath, parseBoolean, writeTSFile } from './util'
+import { INDEX_TEMPLATE } from './templates'
+import { PrismaImport } from './components/import'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorConfig {
 	useSwagger: boolean
 	dryRun: boolean
+	makeIndexFile: boolean
 }
 
 export class PrismaClassGenerator {
@@ -95,6 +98,25 @@ export class PrismaClassGenerator {
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
 		})
+		if (config.makeIndexFile) {
+			const indexFilePath = path.resolve(output, 'index.ts')
+			const imports = files.map(
+				(fileRow) =>
+					new PrismaImport(
+						getRelativeTSPath(indexFilePath, fileRow.getPath()),
+						fileRow.prismaClass.name,
+					),
+			)
+
+			const content = INDEX_TEMPLATE.replace(
+				'#!{IMPORTS}',
+				imports.map((i) => i.echo()).join('\r\n'),
+			).replace(
+				'#!{CLASSES}',
+				files.map((f) => f.prismaClass.name).join(', '),
+			)
+			writeTSFile(indexFilePath, content, config.dryRun)
+		}
 		return
 	}
 
@@ -104,6 +126,7 @@ export class PrismaClassGenerator {
 			{
 				useSwagger: true,
 				dryRun: true,
+				makeIndexFile: true,
 			},
 			config,
 		)

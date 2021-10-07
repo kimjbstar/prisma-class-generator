@@ -1,5 +1,6 @@
 import { logger } from '@prisma/sdk'
 import * as path from 'path'
+import * as fs from 'fs'
 import { GENERATOR_NAME } from './generator'
 import { GeneratorFormatNotValidError } from './error-handler'
 
@@ -46,4 +47,21 @@ export const parseBoolean = (value: unknown): boolean => {
 
 export const toArray = <T>(value: T | T[]): T[] => {
 	return Array.isArray(value) ? value : [value]
+}
+
+export const writeTSFile = (
+	fullPath: string,
+	content: string,
+	dryRun = true,
+) => {
+	log(`${dryRun ? '[dryRun] ' : ''}Generate ${fullPath}`)
+	if (dryRun) {
+		console.log(content)
+		return
+	}
+	const dirname = path.dirname(fullPath)
+	if (fs.existsSync(dirname) === false) {
+		fs.mkdirSync(dirname, { recursive: true })
+	}
+	fs.writeFileSync(fullPath, content)
 }

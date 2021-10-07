@@ -3,11 +3,12 @@ import { PrismaClass } from './class'
 import { PrismaImport } from './import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { getRelativeTSPath, log } from '../util'
+import { getRelativeTSPath, log, writeTSFile } from '../util'
 import { PrismaClassGenerator } from '../generator'
 import { Echoable } from '../interfaces/echoable'
 
 export class PrismaClassFile implements Echoable {
+	// TODO : merge dir, filename field
 	private _dir?: string
 	private _filename?: string
 	private _imports?: PrismaImport[] = []
@@ -100,17 +101,8 @@ export class PrismaClassFile implements Echoable {
 	}
 
 	write(dryRun: boolean) {
-		const targetDirPath = path.resolve(this.dir)
-		if (fs.existsSync(targetDirPath) === false) {
-			fs.mkdirSync(targetDirPath, { recursive: true })
-		}
-		const filePath = path.resolve(targetDirPath, this.filename)
-		log(`${dryRun ? '[dryRun] ' : ''}Generate ${filePath}`)
-		if (dryRun) {
-			console.log(this.echo())
-			return
-		}
-		fs.writeFileSync(filePath, this.echo())
+		const filePath = path.resolve(this.dir, this.filename)
+		writeTSFile(filePath, this.echo(), dryRun)
 	}
 
 	getRelativePath(to: string): string {
