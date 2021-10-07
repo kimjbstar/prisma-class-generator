@@ -19,6 +19,10 @@ export class PrismaClass extends Decoratable implements Echoable {
 			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
 	}
 
+	reExportPrefixed = (prefix: string) => {
+		return `export class ${this.name} extends ${prefix}${this.name} {}`
+	}
+
 	toFileClass(output: string): PrismaClassFile {
 		const prismaClassFile = new PrismaClassFile(this)
 

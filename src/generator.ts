@@ -110,11 +110,18 @@ export class PrismaClassGenerator {
 
 			const content = INDEX_TEMPLATE.replace(
 				'#!{IMPORTS}',
-				imports.map((i) => i.echo()).join('\r\n'),
-			).replace(
-				'#!{CLASSES}',
-				files.map((f) => f.prismaClass.name).join(', '),
+				imports.map((i) => i.echo('_')).join('\r\n'),
 			)
+				.replace(
+					'#!{RE_EXPORT_CLASSES}',
+					files
+						.map((f) => `	${f.prismaClass.reExportPrefixed('_')}`)
+						.join('\r\n'),
+				)
+				.replace(
+					'#!{CLASSES}',
+					files.map((f) => f.prismaClass.name).join(', '),
+				)
 			writeTSFile(indexFilePath, content, config.dryRun)
 		}
 		return

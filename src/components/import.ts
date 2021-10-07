@@ -11,8 +11,12 @@ export class PrismaImport implements Echoable {
 		this.items = toArray(items)
 	}
 
-	echo = () => {
-		return `import { ${this.items.join(',')} } from '${this.from}'`
+	echo = (alias?: string) => {
+		let content: string[] = this.items
+		if (alias) {
+			content = content.map((item) => `${item} as ${alias}${item}`)
+		}
+		return `import { ${content.join(',')} } from '${this.from}'`
 	}
 
 	add(item: any) {
