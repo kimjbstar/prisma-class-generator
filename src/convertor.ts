@@ -114,15 +114,6 @@ export class PrismaConvertor {
 		pClass.relationTypes = uniquify(relationTypes)
 		pClass.enumTypes = enums.map((field) => field.type)
 
-		if (useSwagger) {
-			const apiExtraModelsDecorator = new PrismaDecorator({
-				name: 'ApiExtraModels',
-				params: pClass.name,
-				importFrom: '@nestjs/swagger',
-			})
-			pClass.decorators.push(apiExtraModelsDecorator)
-		}
-
 		return pClass
 	}
 
@@ -142,19 +133,10 @@ export class PrismaConvertor {
 			field.type = type
 			return field
 		}
-		type = dmmfField.type
+		field.type = dmmfField.type
 
 		if (dmmfField.isList) {
-			field.type = arrayify(type)
-		}
-
-		if (dmmfField.relationName) {
-			field.type = `${type}`
-			return field
-		}
-
-		if (dmmfField.kind === 'enum') {
-			field.type = dmmfField.type
+			field.type = arrayify(field.type)
 		}
 
 		return field

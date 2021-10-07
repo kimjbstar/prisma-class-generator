@@ -12,6 +12,7 @@ export interface PrismaClassGeneratorConfig {
 	useSwagger: boolean
 	dryRun: boolean
 	makeIndexFile: boolean
+	use: boolean
 }
 
 export class PrismaClassGenerator {
@@ -131,6 +132,7 @@ export class PrismaClassGenerator {
 		const config = this.options.generator.config
 		const result = Object.assign(
 			{
+				use: true,
 				useSwagger: true,
 				dryRun: true,
 				makeIndexFile: true,
