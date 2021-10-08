@@ -259,3 +259,22 @@ It is defined as an additional generator in the "prisma.schema" file and will op
 -   Support DTO
 -   Support using user's own format like .prettierrc.json
 -   Support custom path, case or name per each model
+
+---
+
+### **FAQ**
+
+**1. Is it CRUD Generator?**
+
+No. It will not provide functions such as "nestjs CRUD generate". I think it is outside the scope of this library.
+Instead, it will only serve as a bridge connecting the Prisma model and (entity)class.
+
+It will focus on **defining classes** and then give the developer responsibility on how to use them.
+
+This is because if too much is provided, the library becomes less adaptable accordingly.
+
+**2. Is only works with NestJS?**
+
+No, but of course, it goes well with NestJS. I'm also planning to support the library related to NestJS.
+
+But even if you don't use NestJS, this library will be useful for you if you use class decorator based on reflect-metadata to develop web services.
