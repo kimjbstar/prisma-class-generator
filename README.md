@@ -60,7 +60,7 @@ generator prismaClassGenerator {
 
 if this models were defined in your prisma.schema file,
 
-```typescript
+```prisma
 model Product {
   id            Int         @id
   title         String      @db.VarChar(255)
@@ -97,7 +97,7 @@ model Company {
 
 then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class.
 
-( The output path can be customized through option. )
+( The generating path can be customized through _output_ option. )
 
 ```typescript
 // category.ts
@@ -223,13 +223,19 @@ const document = SwaggerModule.createDocument(app, options, {
 })
 ```
 
-You can also disable it through the 'makeIndexFile' option.
+You can also disable it through the _makeIndexFile_ option.
 
 3. **supported options**
 
--   dryRun
--   output
--   useSwagger
+    - _dryRun_
+        - Decide whether to write file or just print result. default value is **true**
+            - if you finished check result via terminal, then you should this options to **false**
+    - _output_
+        - sets output path. default is **'../src/\_gen/prisma-class'**
+    - _useSwagger_
+        - generates swggger decorator. default value is **true**
+    - _makeIndexFile_
+        - makes index file, default value is **true**
 
 ### **Hot it works?**
 
@@ -247,8 +253,9 @@ It is defined as an additional generator in the "prisma.schema" file and will op
 
 ### **Future Plan**
 
--   considers all class-based things that are not limited to Nest.JS
--   support all types in prisma.schema
--   support TypeGraphQL
--   support DTO
--   custom path, case or name per each model
+-   Considers all class-based things that are not limited to Nest.JS
+-   Support all types in prisma.schema
+-   Support TypeGraphQL
+-   Support DTO
+-   Support using user's own format like .prettierrc.json
+-   Support custom path, case or name per each model
