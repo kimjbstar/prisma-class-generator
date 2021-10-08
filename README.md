@@ -102,7 +102,7 @@ then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class.
 ```typescript
 // category.ts
 import { Product } from './product'
-import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
+import { ApiExtraModels } from '@nestjs/swagger'
 
 export class Category {
 	@ApiProperty({ type: Number })
@@ -116,7 +116,7 @@ export class Category {
 ```typescript
 // product.ts
 import { Product } from './product'
-import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
+import { ApiExtraModels } from '@nestjs/swagger'
 
 export class Company {
 	@ApiProperty({ type: Number })
@@ -147,7 +147,7 @@ export class Company {
 import { Category } from './category'
 import { Company } from './company'
 import { ProductType } from '@prisma/client'
-import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
+import { ApiExtraModels } from '@nestjs/swagger'
 
 export class Product {
 	@ApiProperty({ type: Number })
