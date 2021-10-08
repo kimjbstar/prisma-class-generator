@@ -104,7 +104,6 @@ then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class.
 import { Product } from './product'
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
 
-@ApiExtraModels(Category)
 export class Category {
 	@ApiProperty({ type: Number })
 	id: number
@@ -119,7 +118,6 @@ export class Category {
 import { Product } from './product'
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
 
-@ApiExtraModels(Company)
 export class Company {
 	@ApiProperty({ type: Number })
 	id: number
@@ -151,7 +149,6 @@ import { Company } from './company'
 import { ProductType } from '@prisma/client'
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger'
 
-@ApiExtraModels(Product)
 export class Product {
 	@ApiProperty({ type: Number })
 	id: number
