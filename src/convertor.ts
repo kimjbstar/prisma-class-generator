@@ -131,6 +131,11 @@ export class PrismaConvertor {
 
 		if (type) {
 			field.type = type
+
+			if (dmmfField.isList) {
+				field.type = arrayify(type)
+			}
+
 			return field
 		}
 		field.type = dmmfField.type

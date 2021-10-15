@@ -16,7 +16,7 @@ export class PrismaImport implements Echoable {
 		if (alias) {
 			content = content.map((item) => `${item} as ${alias}${item}`)
 		}
-		return `import { ${content.join(',')} } from '${this.from}'`
+		return `import { ${content.join(', ')} } from "${this.from?.toString().replace(/\\/g, "/")}";`
 	}
 
 	add(item: any) {
