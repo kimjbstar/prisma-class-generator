@@ -13,7 +13,7 @@
 	"homepage": "https://github.com/shalabh1801/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/shalabh1801/prisma-class-generator"
+		"url": "git://github.com/shalabh1801/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
