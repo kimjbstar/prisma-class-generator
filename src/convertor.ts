@@ -11,13 +11,13 @@ import {
 	wrapQuote,
 } from './util'
 
-const primitiveMapType: Record<string, string> = {
+const primitiveMapType: Record<any, string> = {
 	Int: 'number',
 	String: 'string',
 	DateTime: 'Date',
 	Boolean: 'boolean',
 	Json: 'any',
-	BigInt: 'bigint',
+	BigInt: 'BigInt',
 	Float: 'number',
 	Decimal: 'number',
 	Bytes: 'Buffer',
@@ -52,6 +52,13 @@ export class PrismaConvertor {
 		return PrismaConvertor.instance
 	}
 
+	getPrimitiveMapTypeFromDMMF = (dmmfField: DMMF.Field): string => {
+		if (typeof dmmfField.type !== 'string') {
+			return 'unknown'
+		}
+		return primitiveMapType[dmmfField.type]
+	}
+
 	extractSwaggerDecoratorFromField = (
 		dmmfField: DMMF.Field,
 	): PrismaDecorator => {
@@ -61,27 +68,27 @@ export class PrismaConvertor {
 			importFrom: '@nestjs/swagger',
 		})
 
-		let type = primitiveMapType[dmmfField.type]
+		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
 			decorator.params.push(options)
 			return decorator
 		}
-		type = dmmfField.type
+		type = dmmfField.type.toString()
 
 		if (dmmfField.isList) {
 			options['isArray'] = true
 		}
 
 		if (dmmfField.relationName) {
-			options.type = wrapArrowFunction(dmmfField.type)
+			options.type = wrapArrowFunction(dmmfField)
 			decorator.params.push(options)
 			return decorator
 		}
 
 		if (dmmfField.kind === 'enum') {
 			options.enum = dmmfField.type
-			options.enumName = wrapQuote(dmmfField.type)
+			options.enumName = wrapQuote(dmmfField)
 		}
 
 		decorator.params.push(options)
@@ -112,7 +119,7 @@ export class PrismaConvertor {
 
 		pClass.fields = fields
 		pClass.relationTypes = uniquify(relationTypes)
-		pClass.enumTypes = enums.map((field) => field.type)
+		pClass.enumTypes = enums.map((field) => field.type.toString())
 
 		return pClass
 	}
@@ -127,7 +134,7 @@ export class PrismaConvertor {
 		const field = new PrismaField({
 			name: dmmfField.name,
 		})
-		let type = primitiveMapType[dmmfField.type]
+		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
 		if (dmmfField.isRequired === false) {
 			field.nullable = true
@@ -136,6 +143,11 @@ export class PrismaConvertor {
 		if (dmmfField.default) {
 			if (typeof dmmfField.default !== 'object') {
 				field.default = dmmfField.default?.toString()
+				if (dmmfField.kind === 'enum') {
+					field.default = `${dmmfField.type}.${dmmfField.default}`
+				} else if (dmmfField.type === 'String') {
+					field.default = `'${field.default}'`
+				}
 			}
 		}
 

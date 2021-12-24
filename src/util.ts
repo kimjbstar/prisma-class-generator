@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { GENERATOR_NAME } from './generator'
 import { GeneratorFormatNotValidError } from './error-handler'
+import { DMMF } from '@prisma/generator-helper'
 
 export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)
@@ -26,12 +27,18 @@ export const arrayify = (src: string): string => {
 	return src + '[]'
 }
 
-export const wrapArrowFunction = (src: string): string => {
-	return `() => ${src}`
+export const wrapArrowFunction = (field: DMMF.Field): string => {
+	if (typeof field.type !== 'string') {
+		return `() => unknown`
+	}
+	return `() => ${field.type}`
 }
 
-export const wrapQuote = (src: string): string => {
-	return `'${src}'`
+export const wrapQuote = (field: DMMF.Field): string => {
+	if (typeof field.type !== 'string') {
+		return `'unknown'`
+	}
+	return `'${field.type}'`
 }
 
 export const log = (src: string) => {

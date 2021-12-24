@@ -10,7 +10,7 @@ export class PrismaClass extends Decoratable implements Echoable {
 	name: string
 	fields?: PrismaField[]
 	relationTypes?: string[]
-	enumTypes?: string[]
+	enumTypes?: string[] = []
 
 	echo = () => {
 		const fieldContent = this.fields.map((_field) => _field.echo())

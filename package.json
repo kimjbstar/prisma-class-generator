@@ -30,15 +30,15 @@
 		"email": "kimjbstar@gmail.com"
 	},
 	"dependencies": {
-		"@prisma/client": "^3.2.1",
-		"@prisma/generator-helper": "^3.2.1",
-		"@prisma/sdk": "^3.2.1",
+		"@prisma/client": "^3.7.0",
+		"@prisma/generator-helper": "^3.7.0",
+		"@prisma/sdk": "^3.7.0",
 		"change-case": "^4.1.2"
 	},
 	"devDependencies": {
 		"@types/node": "^16.6.2",
 		"prettier": "^2.4.1",
-		"prisma": "^3.2.1",
+		"prisma": "^3.7.0",
 		"swagger-ui-express": "^4.1.6",
 		"ts-node": "^10.2.1",
 		"typescript": "^4.3.5"
