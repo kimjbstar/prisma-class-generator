@@ -4,12 +4,19 @@ import { Decoratable } from '../components/decorator'
 
 export class PrismaField extends Decoratable implements Echoable {
 	name: string
+	nullable: boolean
+	default?: string
 	type?: any
 
 	echo = () => {
-		return FIELD_TEMPLATE.replace('#!{NAME}', this.name)
+		let name = this.name
+		if (this.nullable === true) {
+			name += '?'
+		}
+		return FIELD_TEMPLATE.replace('#!{NAME}', name)
 			.replace('#!{TYPE}', this.type)
 			.replace('#!{DECORATORS}', this.echoDecorators())
+			.replace('#!{DEFAULT}', this.default ?? 'undefined')
 	}
 
 	constructor(obj) {

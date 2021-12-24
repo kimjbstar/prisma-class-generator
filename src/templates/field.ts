@@ -1,3 +1,3 @@
 export const FIELD_TEMPLATE = `	#!{DECORATORS}
-	#!{NAME}: #!{TYPE}
+	#!{NAME}: #!{TYPE} = #!{DEFAULT}
 	`

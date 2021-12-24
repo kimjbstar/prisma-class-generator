@@ -129,6 +129,16 @@ export class PrismaConvertor {
 		})
 		let type = primitiveMapType[dmmfField.type]
 
+		if (dmmfField.isRequired === false) {
+			field.nullable = true
+		}
+
+		if (dmmfField.default) {
+			if (typeof dmmfField.default !== 'object') {
+				field.default = dmmfField.default?.toString()
+			}
+		}
+
 		if (type) {
 			field.type = type
 			return field
