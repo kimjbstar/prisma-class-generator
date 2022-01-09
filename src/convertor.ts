@@ -63,8 +63,9 @@ export class PrismaConvertor {
 		dmmfField: DMMF.Field,
 	): PrismaDecorator => {
 		const options: Record<string, any> = {}
+		const name = dmmfField.isRequired === true ? 'ApiProperty' : 'ApiPropertyOptional'
 		const decorator = new PrismaDecorator({
-			name: 'ApiProperty',
+			name,
 			importFrom: '@nestjs/swagger',
 		})
 
