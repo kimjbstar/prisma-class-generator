@@ -96,23 +96,38 @@ export class PrismaConvertor {
 		return decorator
 	}
 
-	convertModel = (model: DMMF.Model): PrismaClass => {
-		const { useSwagger } = this.config
+	convertModel = (model: DMMF.Model): PrismaClass[] => {
+		const { useSwagger, seperateRelationFields } = this.config
 
 		const pClass = new PrismaClass({
 			name: model.name,
 		})
-
-		const fields = model.fields.map((field) => {
-			const converted = this.convertField(field)
-			if (useSwagger) {
-				const decorator = this.extractSwaggerDecoratorFromField(field)
-				converted.decorators.push(decorator)
-			}
-			// console.dir(converted, { depth: null })
-			return converted
+		const rClass = new PrismaClass({
+			name: model.name + 'Relations',
 		})
 
+		const rFields = model.fields.filter((field) => field.relationName)
+			.map((field) => {
+				const converted = this.convertField(field)
+				if (useSwagger) {
+					const decorator = this.extractSwaggerDecoratorFromField(field)
+					converted.decorators.push(decorator)
+				}
+				// console.dir(converted, { depth: null })
+				return converted
+			})
+
+		const fields = model.fields.filter((field) => !seperateRelationFields || !field.relationName)
+			.map((field) => {
+				const converted = this.convertField(field)
+				if (useSwagger) {
+					const decorator = this.extractSwaggerDecoratorFromField(field)
+					converted.decorators.push(decorator)
+				}
+				// console.dir(converted, { depth: null })
+				return converted
+			})
+		
 		const relationTypes = model.fields
 			.filter((field) => field.relationName && model.name !== field.type)
 			.map((v) => v.type)
@@ -122,10 +137,14 @@ export class PrismaConvertor {
 		pClass.relationTypes = uniquify(relationTypes)
 		pClass.enumTypes = enums.map((field) => field.type.toString())
 
-		return pClass
+		rClass.fields = rFields
+		rClass.relationTypes = uniquify(relationTypes)
+		rClass.enumTypes = []
+
+		return [pClass, rClass]
 	}
 
-	convertModels = (): PrismaClass[] => {
+	convertModels = (): PrismaClass[][] => {
 		return this.dmmf.datamodel.models.map((model) =>
 			this.convertModel(model),
 		)
