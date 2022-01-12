@@ -240,6 +240,8 @@ export class Company {
     -   generates swggger decorator. default value is **true**
 -   _makeIndexFile_
     -   makes index file, default value is **true**
+-   _seperateRelationFields_
+    -   Puts relational fields into different file for each model. This way the class will match the object returned by a Prisma query, default value is **false**
 
 ### **How it works?**
 
