@@ -12,6 +12,7 @@ export interface PrismaClassGeneratorConfig {
 	useSwagger: boolean
 	dryRun: boolean
 	makeIndexFile: boolean
+	seperateRelationFields: boolean
 	use: boolean
 }
 
@@ -77,7 +78,11 @@ export class PrismaClassGenerator {
 		convertor.dmmf = dmmf
 		convertor.config = config
 
-		const prismaClasses = convertor.convertModels()
+		const prismaClassesPairs = convertor.convertModels()
+		let prismaClasses = prismaClassesPairs.map((pair) => pair[0])
+		
+		if (config.seperateRelationFields) prismaClasses = prismaClassesPairs.flat()
+
 		const files = prismaClasses.map((c) => c.toFileClass(output))
 
 		const classToPath = files.reduce((result, fileRow) => {
@@ -136,6 +141,7 @@ export class PrismaClassGenerator {
 				useSwagger: true,
 				dryRun: true,
 				makeIndexFile: true,
+				seperateRelationFields: false,
 			},
 			config,
 		)
