@@ -3,7 +3,7 @@ import { PrismaClass } from './class'
 import { PrismaImport } from './import'
 import * as fs from 'fs'
 import * as path from 'path'
-import { getRelativeTSPath, log, writeTSFile } from '../util'
+import { getRelativeTSPath, log, prettierFormat, writeTSFile } from '../util'
 import { PrismaClassGenerator } from '../generator'
 import { Echoable } from '../interfaces/echoable'
 
@@ -101,8 +101,10 @@ export class PrismaClassFile implements Echoable {
 	}
 
 	write(dryRun: boolean) {
+		const generator = PrismaClassGenerator.getInstance()
 		const filePath = path.resolve(this.dir, this.filename)
-		writeTSFile(filePath, this.echo(), dryRun)
+		const content = prettierFormat(this.echo(), generator.prettierOptions)
+		writeTSFile(filePath, content, dryRun)
 	}
 
 	getRelativePath(to: string): string {

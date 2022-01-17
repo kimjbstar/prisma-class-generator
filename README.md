@@ -12,8 +12,10 @@ This is Prisma's basic way of doing things, and I love this approach.
 However, there are limitations because of these characteristics.
 A typical example is NestJS. In order to use `@nestjs/swagger`, the entity must be defined as class.
 
-So I created a simple tool that generates a typescript file based on `schema.prisma`.
+So I created a simple tool that generates a typescript file based on `schema.prisma`. The generated Classes are formatted with prettier, using the user's prettier config file if present.
 This will reduce the effort to define classes directly while using the same single source of truth (`schema.prisma`)
+
+The Prisma JS Client returns objects that does not contain the model's relational fields. The Generator can create two seperate files per model, one that matches the Prisma Js Client's interfaces, and one that contains only the relational fields. You can set the _seperateRelationFields_ option to **true** if you want to generate two seperate classes for each model. The default value is **false**.
 
 ## **NestJS**
 
@@ -39,6 +41,18 @@ export class Company {
 	@ApiProperty({ type: Boolean }) // swagger
 	isUse: boolean
 }
+```
+
+If you set the _seperateRelationFields_ option to **true** and generate seperate relational classes, you can compose a class from the two, only contanining the included relations.
+This example below is using methods from the `@nestjs/swagger` package. This example creates a class with all of the properties of the Product class and the category relational property from the generated relational class.
+
+```typescript
+import { IntersectionType, PickType } from '@nestjs/swagger';
+import { Product } from './product'
+import { ProductRelations } from './product_relations'
+
+export class ProductDto extends IntersectionType(Product, PickType(ProductRelations, ['category'] as const)) {}
+
 ```
 
 ### **Usage**
@@ -256,6 +270,7 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 -   generate Classes from prisma model definition
 -   Support Basic Type and Relation
 -   Support option to generate Swagger Decorator
+-   Format generated Classes with prettier, using the user's prettier config file if present
 
 ### **Future Plan**
 
@@ -263,7 +278,6 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 -   Support all types in prisma.schema
 -   Support TypeGraphQL
 -   Support DTO
--   Support using user's own format like .prettierrc.json
 -   Support custom path, case or name per each model
 
 ---

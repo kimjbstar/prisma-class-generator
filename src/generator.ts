@@ -3,9 +3,10 @@ import { parseEnvValue } from '@prisma/sdk'
 import * as path from 'path'
 import { GeneratorPathNotExists } from './error-handler'
 import { PrismaConvertor } from './convertor'
-import { getRelativeTSPath, parseBoolean, writeTSFile } from './util'
+import { getRelativeTSPath, parseBoolean, prettierFormat, writeTSFile } from './util'
 import { INDEX_TEMPLATE } from './templates'
 import { PrismaImport } from './components/import'
+import * as prettier from 'prettier'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorConfig {
@@ -19,6 +20,7 @@ export interface PrismaClassGeneratorConfig {
 export class PrismaClassGenerator {
 	static instance: PrismaClassGenerator
 	_options: GeneratorOptions
+	_prettierOptions: prettier.Options
 	rootPath: string
 	clientPath: string
 
@@ -26,6 +28,9 @@ export class PrismaClassGenerator {
 		if (options) {
 			this.options = options
 		}
+		const output = parseEnvValue(options.generator.output!)
+		this.prettierOptions = prettier.resolveConfig.sync(output, {useCache: false})
+			|| prettier.resolveConfig.sync(path.dirname(require.main.filename), {useCache: false})
 	}
 
 	public get options() {
@@ -34,6 +39,14 @@ export class PrismaClassGenerator {
 
 	public set options(value) {
 		this._options = value
+	}
+
+	public get prettierOptions() {
+		return this._prettierOptions
+	}
+
+	public set prettierOptions(value) {
+		this._prettierOptions = value
 	}
 
 	static getInstance(options?: GeneratorOptions) {
@@ -128,7 +141,8 @@ export class PrismaClassGenerator {
 					'#!{CLASSES}',
 					files.map((f) => f.prismaClass.name).join(', '),
 				)
-			writeTSFile(indexFilePath, content, config.dryRun)
+			const formattedContent = prettierFormat(content, this.prettierOptions)
+			writeTSFile(indexFilePath, formattedContent, config.dryRun)
 		}
 		return
 	}
