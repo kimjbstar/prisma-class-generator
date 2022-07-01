@@ -1,9 +1,14 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
-import { parseEnvValue } from '@prisma/sdk'
+import { parseEnvValue } from '@prisma/internals'
 import * as path from 'path'
 import { GeneratorPathNotExists } from './error-handler'
 import { PrismaConvertor } from './convertor'
-import { getRelativeTSPath, parseBoolean, prettierFormat, writeTSFile } from './util'
+import {
+	getRelativeTSPath,
+	parseBoolean,
+	prettierFormat,
+	writeTSFile,
+} from './util'
 import { INDEX_TEMPLATE } from './templates'
 import { PrismaImport } from './components/import'
 import * as prettier from 'prettier'
@@ -29,8 +34,11 @@ export class PrismaClassGenerator {
 			this.options = options
 		}
 		const output = parseEnvValue(options.generator.output!)
-		this.prettierOptions = prettier.resolveConfig.sync(output, {useCache: false})
-			|| prettier.resolveConfig.sync(path.dirname(require.main.filename), {useCache: false})
+		this.prettierOptions =
+			prettier.resolveConfig.sync(output, { useCache: false }) ||
+			prettier.resolveConfig.sync(path.dirname(require.main.filename), {
+				useCache: false,
+			})
 	}
 
 	public get options() {
@@ -93,8 +101,9 @@ export class PrismaClassGenerator {
 
 		const prismaClassesPairs = convertor.convertModels()
 		let prismaClasses = prismaClassesPairs.map((pair) => pair[0])
-		
-		if (config.seperateRelationFields) prismaClasses = prismaClassesPairs.flat()
+
+		if (config.seperateRelationFields)
+			prismaClasses = prismaClassesPairs.flat()
 
 		const files = prismaClasses.map((c) => c.toFileClass(output))
 
@@ -141,7 +150,10 @@ export class PrismaClassGenerator {
 					'#!{CLASSES}',
 					files.map((f) => f.prismaClass.name).join(', '),
 				)
-			const formattedContent = prettierFormat(content, this.prettierOptions)
+			const formattedContent = prettierFormat(
+				content,
+				this.prettierOptions,
+			)
 			writeTSFile(indexFilePath, formattedContent, config.dryRun)
 		}
 		return
@@ -162,7 +174,9 @@ export class PrismaClassGenerator {
 		result.useSwagger = parseBoolean(result.useSwagger)
 		result.dryRun = parseBoolean(result.dryRun)
 		result.makeIndexFile = parseBoolean(result.makeIndexFile)
-		result.seperateRelationFields = parseBoolean(result.seperateRelationFields)
+		result.seperateRelationFields = parseBoolean(
+			result.seperateRelationFields,
+		)
 
 		return result
 	}

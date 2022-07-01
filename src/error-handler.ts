@@ -1,4 +1,4 @@
-import { Dictionary } from '@prisma/sdk'
+import { Dictionary } from '@prisma/internals'
 import { log } from './util'
 
 export class GeneratorFormatNotValidError extends Error {

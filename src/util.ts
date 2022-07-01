@@ -1,4 +1,4 @@
-import { logger } from '@prisma/sdk'
+import { logger } from '@prisma/internals'
 import * as path from 'path'
 import * as fs from 'fs'
 import { GENERATOR_NAME } from './generator'
@@ -75,5 +75,5 @@ export const writeTSFile = (
 }
 
 export const prettierFormat = (content: string, options: Options = {}) => {
-	return format(content, {...options, parser: 'typescript'})
+	return format(content, { ...options, parser: 'typescript' })
 }
