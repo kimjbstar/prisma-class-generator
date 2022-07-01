@@ -161,6 +161,8 @@ export class PrismaClassGenerator {
 		)
 		result.useSwagger = parseBoolean(result.useSwagger)
 		result.dryRun = parseBoolean(result.dryRun)
+		result.makeIndexFile = parseBoolean(result.makeIndexFile)
+		result.seperateRelationFields = parseBoolean(result.seperateRelationFields)
 
 		return result
 	}
