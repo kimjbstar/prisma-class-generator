@@ -72,24 +72,23 @@ export class PrismaConvertor {
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
-			decorator.params.push(options)
-			return decorator
-		}
-		type = dmmfField.type.toString()
+		} else {
+			type = dmmfField.type.toString()
 
-		if (dmmfField.isList) {
-			options['isArray'] = true
+			if (dmmfField.isList) {
+				options['isArray'] = true
+			}
+	
+			if (dmmfField.relationName) {
+				options.type = wrapArrowFunction(dmmfField)
+			} else if (dmmfField.kind === 'enum') {
+				options.enum = dmmfField.type
+				options.enumName = wrapQuote(dmmfField)
+			}
 		}
 
-		if (dmmfField.relationName) {
-			options.type = wrapArrowFunction(dmmfField)
-			decorator.params.push(options)
-			return decorator
-		}
-
-		if (dmmfField.kind === 'enum') {
-			options.enum = dmmfField.type
-			options.enumName = wrapQuote(dmmfField)
+		if (dmmfField.documentation) {
+			options.description = `'${dmmfField.documentation}'`;
 		}
 
 		decorator.params.push(options)
