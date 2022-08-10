@@ -1,7 +1,6 @@
 dist/
 node_modules/
 src/practice.ts
-**/_gen
-**/_gen/*
-prisma/
 yarn-error.log
+.env
+src/_gen/prisma-class/*.ts
