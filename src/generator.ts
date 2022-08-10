@@ -99,13 +99,8 @@ export class PrismaClassGenerator {
 		convertor.dmmf = dmmf
 		convertor.config = config
 
-		const prismaClassesPairs = convertor.convertModels()
-		let prismaClasses = prismaClassesPairs.map((pair) => pair[0])
-
-		if (config.seperateRelationFields)
-			prismaClasses = prismaClassesPairs.flat()
-
-		const files = prismaClasses.map((c) => c.toFileClass(output))
+		const classes = convertor.getClasses()
+		const files = classes.map((c) => c.toFileClass(output))
 
 		const classToPath = files.reduce((result, fileRow) => {
 			const fullPath = path.resolve(fileRow.dir, fileRow.filename)

@@ -9,9 +9,10 @@ generator clent {
 }
 
 generator prismaClassGenerator {
-  provider = "node -r ts-node/register/transpile-only src/index.ts"
-  output   = "../src/_gen/prisma-class"
-  dryRun   = "false"
+  provider               = "node -r ts-node/register/transpile-only src/index.ts"
+  output                 = "../src/_gen/prisma-class"
+  dryRun                 = "false"
+  seperateRelationFields = "true"
 }
 
 enum ProductType {
