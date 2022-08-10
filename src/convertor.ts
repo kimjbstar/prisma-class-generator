@@ -26,6 +26,7 @@ const primitiveMapType: Record<any, string> = {
 export interface ConvertModelInput {
 	model: DMMF.Model
 	extractRelationFields?: boolean
+	postfix?: string
 }
 
 export class PrismaConvertor {
@@ -105,6 +106,7 @@ export class PrismaConvertor {
 	}
 
 	convertModel = (input: ConvertModelInput): PrismaClass => {
+		/** options */
 		const { useSwagger } = this.config
 		const options = Object.assign(
 			{
@@ -112,17 +114,23 @@ export class PrismaConvertor {
 			},
 			input,
 		)
-		const { model, extractRelationFields = null } = options
+		const { model, extractRelationFields = null, postfix } = options
 
-		let modelName = model.name
-		if (extractRelationFields === true) {
-			modelName += 'Relations'
+		/** set class name */
+		let className = model.name
+		if (postfix) {
+			className += postfix
 		}
-		const pClass = new PrismaClass({ name: modelName })
+		const pClass = new PrismaClass({ name: className })
 
-		const relationTypes = model.fields
-			.filter((field) => field.relationName && model.name !== field.type)
-			.map((v) => v.type)
+		/** relation & enums */
+		const relationTypes = uniquify(
+			model.fields
+				.filter(
+					(field) => field.relationName && model.name !== field.type,
+				)
+				.map((v) => v.type),
+		)
 		const enums = model.fields.filter((field) => field.kind === 'enum')
 
 		pClass.fields = model.fields
@@ -135,17 +143,9 @@ export class PrismaConvertor {
 				}
 				return true
 			})
-			.map((field) => {
-				const converted = this.convertField(field)
-				if (useSwagger) {
-					converted.decorators.push(
-						this.extractSwaggerDecoratorFromField(field),
-					)
-				}
-				return converted
-			})
+			.map((field) => this.convertField(field))
 		pClass.relationTypes =
-			extractRelationFields === false ? [] : uniquify(relationTypes)
+			extractRelationFields === false ? [] : relationTypes
 
 		pClass.enumTypes =
 			extractRelationFields === true
@@ -161,16 +161,19 @@ export class PrismaConvertor {
 	 * CASE 1: if you want separate model to normal class and relation class
 	 */
 	getClasses = (): PrismaClass[] => {
+		const models = this.dmmf.datamodel.models
+
 		/** seperateRelationFields */
 		if (this.config.seperateRelationFields === true) {
 			return [
-				...this.dmmf.datamodel.models.map((model) =>
+				...models.map((model) =>
 					this.convertModel({
 						model,
 						extractRelationFields: true,
+						postfix: 'Relations',
 					}),
 				),
-				...this.dmmf.datamodel.models.map((model) =>
+				...models.map((model) =>
 					this.convertModel({
 						model,
 						extractRelationFields: false,
@@ -179,9 +182,7 @@ export class PrismaConvertor {
 			]
 		}
 
-		return this.dmmf.datamodel.models.map((model) =>
-			this.convertModel({ model }),
-		)
+		return models.map((model) => this.convertModel({ model }))
 	}
 
 	convertField = (dmmfField: DMMF.Field): PrismaField => {
@@ -189,6 +190,12 @@ export class PrismaConvertor {
 			name: dmmfField.name,
 		})
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
+
+		if (this.config.useSwagger) {
+			field.decorators.push(
+				this.extractSwaggerDecoratorFromField(dmmfField),
+			)
+		}
 
 		if (dmmfField.isRequired === false) {
 			field.nullable = true
