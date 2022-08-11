@@ -9,8 +9,8 @@ import {
 	prettierFormat,
 	writeTSFile,
 } from './util'
-import { INDEX_TEMPLATE } from './templates'
-import { PrismaImport } from './components/import'
+import { INDEX_TEMPLATE } from './templates/index.template'
+import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
@@ -125,7 +125,7 @@ export class PrismaClassGenerator {
 			const indexFilePath = path.resolve(output, 'index.ts')
 			const imports = files.map(
 				(fileRow) =>
-					new PrismaImport(
+					new ImportComponent(
 						getRelativeTSPath(indexFilePath, fileRow.getPath()),
 						fileRow.prismaClass.name,
 					),

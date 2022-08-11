@@ -1,6 +1,6 @@
 import { Echoable } from '../interfaces/echoable'
 
-export class PrismaDecorator implements Echoable {
+export class DecoratorComponent implements Echoable {
 	name: string
 	params: any[] = []
 	importFrom: string
