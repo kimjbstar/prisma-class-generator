@@ -18,7 +18,7 @@ export interface PrismaClassGeneratorConfig {
 	useSwagger: boolean
 	dryRun: boolean
 	makeIndexFile: boolean
-	seperateRelationFields: boolean
+	separateRelationFields: boolean
 	use: boolean
 }
 
@@ -162,15 +162,15 @@ export class PrismaClassGenerator {
 				useSwagger: true,
 				dryRun: true,
 				makeIndexFile: true,
-				seperateRelationFields: false,
+				separateRelationFields: false,
 			},
 			config,
 		)
 		result.useSwagger = parseBoolean(result.useSwagger)
 		result.dryRun = parseBoolean(result.dryRun)
 		result.makeIndexFile = parseBoolean(result.makeIndexFile)
-		result.seperateRelationFields = parseBoolean(
-			result.seperateRelationFields,
+		result.separateRelationFields = parseBoolean(
+			result.separateRelationFields,
 		)
 
 		return result

@@ -187,8 +187,8 @@ export class PrismaConvertor {
 	getClasses = (): ClassComponent[] => {
 		const models = this.dmmf.datamodel.models
 
-		/** seperateRelationFields */
-		if (this.config.seperateRelationFields === true) {
+		/** separateRelationFields */
+		if (this.config.separateRelationFields === true) {
 			return [
 				...models.map((model) =>
 					this.getClass({

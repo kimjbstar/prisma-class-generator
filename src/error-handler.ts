@@ -20,7 +20,7 @@ generator prismaClassGenerator {
 	output		= (string)
 	dryRun   	= (boolean)
 	useSwagger	= (boolean)
-	seperateRelationFields = (boolean),
+	separateRelationFields = (boolean),
 }`)
 		log(`Your Input : ${JSON.stringify(e.config)}`)
 		return
