@@ -22,14 +22,4 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	reExportPrefixed = (prefix: string) => {
 		return `export class ${this.name} extends ${prefix}${this.name} {}`
 	}
-
-	toFileClass(output: string): FileComponent {
-		const prismaClassFile = new FileComponent(this)
-
-		prismaClassFile.dir = path.resolve(output)
-		prismaClassFile.filename = `${snakeCase(this.name)}.ts`
-		prismaClassFile.resolveImports()
-
-		return prismaClassFile
-	}
 }

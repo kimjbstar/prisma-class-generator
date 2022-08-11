@@ -12,6 +12,7 @@ import {
 import { INDEX_TEMPLATE } from './templates/index.template'
 import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
+import { FileComponent } from './components/file.component'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorConfig {
@@ -100,7 +101,9 @@ export class PrismaClassGenerator {
 		convertor.config = config
 
 		const classes = convertor.getClasses()
-		const files = classes.map((c) => c.toFileClass(output))
+		const files = classes.map(
+			(classComponent) => new FileComponent({ classComponent, output }),
+		)
 
 		const classToPath = files.reduce((result, fileRow) => {
 			const fullPath = path.resolve(fileRow.dir, fileRow.filename)

@@ -1,4 +1,4 @@
-import { pascalCase } from 'change-case'
+import { pascalCase, snakeCase } from 'change-case'
 import { ClassComponent } from './class.component'
 import * as path from 'path'
 import { getRelativeTSPath, prettierFormat, writeTSFile } from '../util'
@@ -45,8 +45,12 @@ export class FileComponent implements Echoable {
 		this._prismaClass = value
 	}
 
-	constructor(prismaClass: ClassComponent) {
-		this.prismaClass = prismaClass
+	constructor(input: { classComponent: ClassComponent; output: string }) {
+		const { classComponent, output } = input
+		this._prismaClass = classComponent
+		this.dir = path.resolve(output)
+		this.filename = `${snakeCase(classComponent.name)}.ts`
+		this.resolveImports()
 	}
 
 	echoImports = () => {
