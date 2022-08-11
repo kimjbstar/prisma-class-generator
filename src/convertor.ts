@@ -11,7 +11,19 @@ import {
 	wrapQuote,
 } from './util'
 
-const primitiveMapType: Record<any, string> = {
+/** BigInt, Boolean, Bytes, DateTime, Decimal, Float, Int, JSON, String, $ModelName */
+type DefaultPrismaFieldType =
+	| 'BigInt'
+	| 'Boolean'
+	| 'Bytes'
+	| 'DateTime'
+	| 'Decimal'
+	| 'Float'
+	| 'Int'
+	| 'Json'
+	| 'String'
+
+const primitiveMapType: Record<DefaultPrismaFieldType, string> = {
 	Int: 'number',
 	String: 'string',
 	DateTime: 'Date',
@@ -21,6 +33,17 @@ const primitiveMapType: Record<any, string> = {
 	Float: 'number',
 	Decimal: 'number',
 	Bytes: 'Buffer',
+} as const
+
+export type PrimitiveMapTypeKeys = keyof typeof primitiveMapType
+export type PrimitiveMapTypeValues =
+	typeof primitiveMapType[PrimitiveMapTypeKeys]
+
+export interface SwaggerDecoratorParams {
+	isArray?: boolean
+	type?: string
+	enum?: string
+	enumName?: string
 }
 
 export interface ConvertModelInput {
@@ -58,7 +81,9 @@ export class PrismaConvertor {
 		return PrismaConvertor.instance
 	}
 
-	getPrimitiveMapTypeFromDMMF = (dmmfField: DMMF.Field): string => {
+	getPrimitiveMapTypeFromDMMF = (
+		dmmfField: DMMF.Field,
+	): PrimitiveMapTypeValues => {
 		if (typeof dmmfField.type !== 'string') {
 			return 'unknown'
 		}
@@ -68,7 +93,7 @@ export class PrismaConvertor {
 	extractSwaggerDecoratorFromField = (
 		dmmfField: DMMF.Field,
 	): PrismaDecorator => {
-		const options: Record<string, any> = {}
+		const options: SwaggerDecoratorParams = {}
 		const name =
 			dmmfField.isRequired === true
 				? 'ApiProperty'
@@ -87,7 +112,7 @@ export class PrismaConvertor {
 		type = dmmfField.type.toString()
 
 		if (dmmfField.isList) {
-			options['isArray'] = true
+			options.isArray = true
 		}
 
 		if (dmmfField.relationName) {
@@ -107,7 +132,6 @@ export class PrismaConvertor {
 
 	convertModel = (input: ConvertModelInput): PrismaClass => {
 		/** options */
-		const { useSwagger } = this.config
 		const options = Object.assign(
 			{
 				extractRelationFields: null,
