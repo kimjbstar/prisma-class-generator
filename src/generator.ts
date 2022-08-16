@@ -9,16 +9,17 @@ import {
 	prettierFormat,
 	writeTSFile,
 } from './util'
-import { INDEX_TEMPLATE } from './templates'
-import { PrismaImport } from './components/import'
+import { INDEX_TEMPLATE } from './templates/index.template'
+import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
+import { FileComponent } from './components/file.component'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 export interface PrismaClassGeneratorConfig {
 	useSwagger: boolean
 	dryRun: boolean
 	makeIndexFile: boolean
-	seperateRelationFields: boolean
+	separateRelationFields: boolean
 	use: boolean
 }
 
@@ -99,13 +100,10 @@ export class PrismaClassGenerator {
 		convertor.dmmf = dmmf
 		convertor.config = config
 
-		const prismaClassesPairs = convertor.convertModels()
-		let prismaClasses = prismaClassesPairs.map((pair) => pair[0])
-
-		if (config.seperateRelationFields)
-			prismaClasses = prismaClassesPairs.flat()
-
-		const files = prismaClasses.map((c) => c.toFileClass(output))
+		const classes = convertor.getClasses()
+		const files = classes.map(
+			(classComponent) => new FileComponent({ classComponent, output }),
+		)
 
 		const classToPath = files.reduce((result, fileRow) => {
 			const fullPath = path.resolve(fileRow.dir, fileRow.filename)
@@ -130,7 +128,7 @@ export class PrismaClassGenerator {
 			const indexFilePath = path.resolve(output, 'index.ts')
 			const imports = files.map(
 				(fileRow) =>
-					new PrismaImport(
+					new ImportComponent(
 						getRelativeTSPath(indexFilePath, fileRow.getPath()),
 						fileRow.prismaClass.name,
 					),
@@ -167,15 +165,15 @@ export class PrismaClassGenerator {
 				useSwagger: true,
 				dryRun: true,
 				makeIndexFile: true,
-				seperateRelationFields: false,
+				separateRelationFields: false,
 			},
 			config,
 		)
 		result.useSwagger = parseBoolean(result.useSwagger)
 		result.dryRun = parseBoolean(result.dryRun)
 		result.makeIndexFile = parseBoolean(result.makeIndexFile)
-		result.seperateRelationFields = parseBoolean(
-			result.seperateRelationFields,
+		result.separateRelationFields = parseBoolean(
+			result.separateRelationFields,
 		)
 
 		return result

@@ -1,0 +1,61 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator clent {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "darwin"]
+}
+
+generator prismaClassGenerator {
+  provider               = "node -r ts-node/register/transpile-only src/index.ts"
+  output                 = "../src/_gen/prisma-class"
+  dryRun                 = "false"
+  separateRelationFields = "false"
+}
+
+enum ProductType {
+  A
+  B
+  C
+}
+
+enum ProductAnotherType {
+  AA
+  BB
+  CC
+}
+
+model Product {
+  id            Int                @id
+  title         String             @db.VarChar(255)
+  desc          String             @default("abc") @db.VarChar(1024)
+  images        Json               @db.Json
+  isShown       Boolean?           @default(false)
+  stock         Int?               @default(0)
+  type          ProductType
+  anotherType   ProductAnotherType @default(AA)
+  averageRating Float?
+  categoryId    Int
+  companyId     Int
+  category      Category           @relation(fields: [categoryId], references: [id])
+  company       Company            @relation(fields: [companyId], references: [id])
+  createdAt     DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime           @updatedAt @db.Timestamp(6)
+}
+
+model Category {
+  id       Int       @id
+  products Product[]
+}
+
+model Company {
+  id          Int       @id
+  name        String
+  totalIncome BigInt
+  lat         Decimal
+  lng         Decimal
+  by          Bytes
+  products    Product[]
+}

@@ -1,14 +1,14 @@
 import { snakeCase } from 'change-case'
 import * as path from 'path'
 import { Echoable } from '../interfaces/echoable'
-import { PrismaClassFile } from './file'
-import { Decoratable } from './decorator'
-import { PrismaField } from './field'
-import { CLASS_TEMPLATE } from '../templates/class'
+import { FileComponent } from './file.component'
+import { FieldComponent } from './field.component'
+import { CLASS_TEMPLATE } from '../templates/class.template'
+import { BaseComponent } from './base.component'
 
-export class PrismaClass extends Decoratable implements Echoable {
+export class ClassComponent extends BaseComponent implements Echoable {
 	name: string
-	fields?: PrismaField[]
+	fields?: FieldComponent[]
 	relationTypes?: string[]
 	enumTypes?: string[] = []
 
@@ -21,15 +21,5 @@ export class PrismaClass extends Decoratable implements Echoable {
 
 	reExportPrefixed = (prefix: string) => {
 		return `export class ${this.name} extends ${prefix}${this.name} {}`
-	}
-
-	toFileClass(output: string): PrismaClassFile {
-		const prismaClassFile = new PrismaClassFile(this)
-
-		prismaClassFile.dir = path.resolve(output)
-		prismaClassFile.filename = `${snakeCase(this.name)}.ts`
-		prismaClassFile.resolveImports()
-
-		return prismaClassFile
 	}
 }

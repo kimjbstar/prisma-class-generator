@@ -1,18 +1,16 @@
-import { pascalCase } from 'change-case'
-import { PrismaClass } from './class'
-import { PrismaImport } from './import'
-import * as fs from 'fs'
+import { pascalCase, snakeCase } from 'change-case'
+import { ClassComponent } from './class.component'
 import * as path from 'path'
-import { getRelativeTSPath, log, prettierFormat, writeTSFile } from '../util'
+import { getRelativeTSPath, prettierFormat, writeTSFile } from '../util'
 import { PrismaClassGenerator } from '../generator'
 import { Echoable } from '../interfaces/echoable'
+import { ImportComponent } from './import.component'
 
-export class PrismaClassFile implements Echoable {
-	// TODO : merge dir, filename field
+export class FileComponent implements Echoable {
 	private _dir?: string
 	private _filename?: string
-	private _imports?: PrismaImport[] = []
-	private _prismaClass: PrismaClass
+	private _imports?: ImportComponent[] = []
+	private _prismaClass: ClassComponent
 	static TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__'
 
 	public get dir() {
@@ -47,8 +45,12 @@ export class PrismaClassFile implements Echoable {
 		this._prismaClass = value
 	}
 
-	constructor(prismaClass: PrismaClass) {
-		this.prismaClass = prismaClass
+	constructor(input: { classComponent: ClassComponent; output: string }) {
+		const { classComponent, output } = input
+		this._prismaClass = classComponent
+		this.dir = path.resolve(output)
+		this.filename = `${snakeCase(classComponent.name)}.ts`
+		this.resolveImports()
 	}
 
 	echoImports = () => {
@@ -74,7 +76,7 @@ export class PrismaClassFile implements Echoable {
 			this.imports[oldIndex].add(item)
 			return
 		}
-		this.imports.push(new PrismaImport(from, item))
+		this.imports.push(new ImportComponent(from, item))
 	}
 
 	resolveImports() {
@@ -82,7 +84,7 @@ export class PrismaClassFile implements Echoable {
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
 			this.registerImport(
 				`${pascalCase(relationClassName)}`,
-				PrismaClassFile.TEMP_PREFIX + relationClassName,
+				FileComponent.TEMP_PREFIX + relationClassName,
 			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {

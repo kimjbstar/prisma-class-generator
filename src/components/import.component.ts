@@ -1,8 +1,8 @@
 import { toArray } from '../util'
 import { Echoable } from '../interfaces/echoable'
-import { PrismaClassFile } from './file'
+import { FileComponent } from './file.component'
 
-export class PrismaImport implements Echoable {
+export class ImportComponent implements Echoable {
 	from: string
 	items: string[]
 
@@ -27,10 +27,10 @@ export class PrismaImport implements Echoable {
 	}
 
 	getReplacePath(classToPath: Record<string, string>): string {
-		if (this.from.includes(PrismaClassFile.TEMP_PREFIX) === false) {
+		if (this.from.includes(FileComponent.TEMP_PREFIX) === false) {
 			return null
 		}
-		const key = this.from.replace(PrismaClassFile.TEMP_PREFIX, '')
+		const key = this.from.replace(FileComponent.TEMP_PREFIX, '')
 		return classToPath[key] ?? null
 	}
 }

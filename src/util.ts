@@ -20,7 +20,7 @@ export const getRelativeTSPath = (from: string, to: string): string => {
 	return rel
 }
 
-export const uniquify = (src: any[]): any[] => {
+export const uniquify = <T>(src: T[]): T[] => {
 	return [...new Set(src)]
 }
 

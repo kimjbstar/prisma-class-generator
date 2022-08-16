@@ -1,7 +1,7 @@
 import { DMMF } from '@prisma/generator-helper'
-import { PrismaClass } from './components/class'
-import { PrismaDecorator } from './components/decorator'
-import { PrismaField } from './components/field'
+import { ClassComponent } from './components/class.component'
+import { DecoratorComponent } from './components/decorator.component'
+import { FieldComponent } from './components/field.component'
 import { PrismaClassGeneratorConfig } from './generator'
 import {
 	arrayify,
@@ -11,7 +11,19 @@ import {
 	wrapQuote,
 } from './util'
 
-const primitiveMapType: Record<any, string> = {
+/** BigInt, Boolean, Bytes, DateTime, Decimal, Float, Int, JSON, String, $ModelName */
+type DefaultPrismaFieldType =
+	| 'BigInt'
+	| 'Boolean'
+	| 'Bytes'
+	| 'DateTime'
+	| 'Decimal'
+	| 'Float'
+	| 'Int'
+	| 'Json'
+	| 'String'
+
+const primitiveMapType: Record<DefaultPrismaFieldType, string> = {
 	Int: 'number',
 	String: 'string',
 	DateTime: 'Date',
@@ -21,6 +33,23 @@ const primitiveMapType: Record<any, string> = {
 	Float: 'number',
 	Decimal: 'number',
 	Bytes: 'Buffer',
+} as const
+
+export type PrimitiveMapTypeKeys = keyof typeof primitiveMapType
+export type PrimitiveMapTypeValues =
+	typeof primitiveMapType[PrimitiveMapTypeKeys]
+
+export interface SwaggerDecoratorParams {
+	isArray?: boolean
+	type?: string
+	enum?: string
+	enumName?: string
+}
+
+export interface ConvertModelInput {
+	model: DMMF.Model
+	extractRelationFields?: boolean
+	postfix?: string
 }
 
 export class PrismaConvertor {
@@ -52,7 +81,9 @@ export class PrismaConvertor {
 		return PrismaConvertor.instance
 	}
 
-	getPrimitiveMapTypeFromDMMF = (dmmfField: DMMF.Field): string => {
+	getPrimitiveMapTypeFromDMMF = (
+		dmmfField: DMMF.Field,
+	): PrimitiveMapTypeValues => {
 		if (typeof dmmfField.type !== 'string') {
 			return 'unknown'
 		}
@@ -61,10 +92,13 @@ export class PrismaConvertor {
 
 	extractSwaggerDecoratorFromField = (
 		dmmfField: DMMF.Field,
-	): PrismaDecorator => {
-		const options: Record<string, any> = {}
-		const name = dmmfField.isRequired === true ? 'ApiProperty' : 'ApiPropertyOptional'
-		const decorator = new PrismaDecorator({
+	): DecoratorComponent => {
+		const options: SwaggerDecoratorParams = {}
+		const name =
+			dmmfField.isRequired === true
+				? 'ApiProperty'
+				: 'ApiPropertyOptional'
+		const decorator = new DecoratorComponent({
 			name,
 			importFrom: '@nestjs/swagger',
 		})
@@ -78,7 +112,7 @@ export class PrismaConvertor {
 		type = dmmfField.type.toString()
 
 		if (dmmfField.isList) {
-			options['isArray'] = true
+			options.isArray = true
 		}
 
 		if (dmmfField.relationName) {
@@ -96,65 +130,95 @@ export class PrismaConvertor {
 		return decorator
 	}
 
-	convertModel = (model: DMMF.Model): PrismaClass[] => {
-		const { useSwagger, seperateRelationFields } = this.config
+	getClass = (input: ConvertModelInput): ClassComponent => {
+		/** options */
+		const options = Object.assign(
+			{
+				extractRelationFields: null,
+			},
+			input,
+		)
+		const { model, extractRelationFields = null, postfix } = options
 
-		const pClass = new PrismaClass({
-			name: model.name,
-		})
-		const rClass = new PrismaClass({
-			name: model.name + 'Relations',
-		})
+		/** set class name */
+		let className = model.name
+		if (postfix) {
+			className += postfix
+		}
+		const pClass = new ClassComponent({ name: className })
 
-		const rFields = model.fields.filter((field) => field.relationName)
-			.map((field) => {
-				const converted = this.convertField(field)
-				if (useSwagger) {
-					const decorator = this.extractSwaggerDecoratorFromField(field)
-					converted.decorators.push(decorator)
-				}
-				// console.dir(converted, { depth: null })
-				return converted
-			})
-
-		const fields = model.fields.filter((field) => !seperateRelationFields || !field.relationName)
-			.map((field) => {
-				const converted = this.convertField(field)
-				if (useSwagger) {
-					const decorator = this.extractSwaggerDecoratorFromField(field)
-					converted.decorators.push(decorator)
-				}
-				// console.dir(converted, { depth: null })
-				return converted
-			})
-		
-		const relationTypes = model.fields
-			.filter((field) => field.relationName && (seperateRelationFields || model.name !== field.type))
-			.map((v) => v.type)
+		/** relation & enums */
+		const relationTypes = uniquify(
+			model.fields
+				.filter(
+					(field) => field.relationName && model.name !== field.type,
+				)
+				.map((v) => v.type),
+		)
 		const enums = model.fields.filter((field) => field.kind === 'enum')
 
-		pClass.fields = fields
-		pClass.relationTypes = seperateRelationFields ? [] : uniquify(relationTypes)
-		pClass.enumTypes = enums.map((field) => field.type.toString())
+		pClass.fields = model.fields
+			.filter((field) => {
+				if (extractRelationFields === true) {
+					return field.relationName
+				}
+				if (extractRelationFields === false) {
+					return !field.relationName
+				}
+				return true
+			})
+			.map((field) => this.convertField(field))
+		pClass.relationTypes =
+			extractRelationFields === false ? [] : relationTypes
 
-		rClass.fields = rFields
-		rClass.relationTypes = uniquify(relationTypes)
-		rClass.enumTypes = []
+		pClass.enumTypes =
+			extractRelationFields === true
+				? []
+				: enums.map((field) => field.type.toString())
 
-		return [pClass, rClass]
+		return pClass
 	}
 
-	convertModels = (): PrismaClass[][] => {
-		return this.dmmf.datamodel.models.map((model) =>
-			this.convertModel(model),
-		)
+	/**
+	 * one prisma model could generate multiple classes!
+	 *
+	 * CASE 1: if you want separate model to normal class and relation class
+	 */
+	getClasses = (): ClassComponent[] => {
+		const models = this.dmmf.datamodel.models
+
+		/** separateRelationFields */
+		if (this.config.separateRelationFields === true) {
+			return [
+				...models.map((model) =>
+					this.getClass({
+						model,
+						extractRelationFields: true,
+						postfix: 'Relations',
+					}),
+				),
+				...models.map((model) =>
+					this.getClass({
+						model,
+						extractRelationFields: false,
+					}),
+				),
+			]
+		}
+
+		return models.map((model) => this.getClass({ model }))
 	}
 
-	convertField = (dmmfField: DMMF.Field): PrismaField => {
-		const field = new PrismaField({
+	convertField = (dmmfField: DMMF.Field): FieldComponent => {
+		const field = new FieldComponent({
 			name: dmmfField.name,
 		})
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
+
+		if (this.config.useSwagger) {
+			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
+			field.decorators.push(decorator)
+		}
 
 		if (dmmfField.isRequired === false) {
 			field.nullable = true

@@ -1,20 +1,20 @@
-import { FIELD_TEMPLATE, FIELD_TEMPLATE_DEFAULT } from '../templates/field'
+import { FIELD_TEMPLATE } from '../templates/field.template'
 import { Echoable } from '../interfaces/echoable'
-import { Decoratable } from '../components/decorator'
+import { BaseComponent } from './base.component'
 
-export class PrismaField extends Decoratable implements Echoable {
+export class FieldComponent extends BaseComponent implements Echoable {
 	name: string
 	nullable: boolean
 	default?: string
-	type?: any
+	type?: string
 
 	echo = () => {
 		let name = this.name
 		if (this.nullable === true) {
 			name += '?'
 		}
-		const template = this.default ? FIELD_TEMPLATE_DEFAULT : FIELD_TEMPLATE
-		return template.replace('#!{NAME}', name)
+		return FIELD_TEMPLATE.replace('#!{NAME}', name)
+			.replace('#!{NAME}', name)
 			.replace('#!{TYPE}', this.type)
 			.replace('#!{DECORATORS}', this.echoDecorators())
 			.replace('#!{DEFAULT}', this.default ?? 'undefined')
