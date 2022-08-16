@@ -1,4 +1,5 @@
 import { Dictionary } from '@prisma/internals'
+import { PrismaClassGeneratorOptions } from './generator'
 import { log } from './util'
 
 export class GeneratorFormatNotValidError extends Error {
@@ -13,15 +14,20 @@ export class GeneratorPathNotExists extends Error {}
 
 export const handleGenerateError = (e: Error) => {
 	if (e instanceof GeneratorFormatNotValidError) {
-		log('Usage Example')
-		log(`
-generator prismaClassGenerator {
-	provider	= "prisma-class-generator"
-	output		= (string)
-	dryRun   	= (boolean)
-	useSwagger	= (boolean)
-	separateRelationFields = (boolean),
-}`)
+		const options = Object.keys(PrismaClassGeneratorOptions).map((key) => {
+			const value = PrismaClassGeneratorOptions[key]
+			return `\t${key} = (${value.defaultValue}) <- [${value.desc}]`
+		})
+		log(
+			[
+				'\nUsage : ',
+				'generator prismaClassGenerator {',
+				'\tprovider = "prisma-class-generator"',
+				'\toutput = (string)',
+				...options,
+				'}',
+			].join('\n'),
+		)
 		log(`Your Input : ${JSON.stringify(e.config)}`)
 		return
 	}

@@ -48,9 +48,21 @@ export const log = (src: string) => {
 
 export const parseBoolean = (value: unknown): boolean => {
 	if (['true', 'false'].includes(value.toString()) === false) {
-		throw new GeneratorFormatNotValidError('parseBoolean failed')
+		throw new GeneratorFormatNotValidError(
+			`parseBoolean failed : "${value}" is not boolean type`,
+		)
 	}
 	return value.toString() === 'true'
+}
+
+export const parseNumber = (value: unknown): number => {
+	const numbered = Number(value)
+	if (Number.isNaN(numbered)) {
+		throw new GeneratorFormatNotValidError(
+			`parseNumber failed : "${value}" is not number type`,
+		)
+	}
+	return numbered
 }
 
 export const toArray = <T>(value: T | T[]): T[] => {
