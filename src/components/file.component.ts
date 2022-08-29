@@ -100,6 +100,13 @@ export class FileComponent implements Echoable {
 				this.registerImport(decorator.name, decorator.importFrom)
 			})
 		})
+
+		if (generator.getConfig().useGraphQL) {
+			this.registerImport('ID', '@nestjs/graphql')
+			this.registerImport('Int', '@nestjs/graphql')
+			this.registerImport('registerEnumType', '@nestjs/graphql')
+			this.registerImport('GraphQLJSONObject', 'graphql-type-json')
+		}
 	}
 
 	write(dryRun: boolean) {

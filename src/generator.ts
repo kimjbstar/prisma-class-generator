@@ -6,6 +6,7 @@ import { PrismaConvertor } from './convertor'
 import {
 	getRelativeTSPath,
 	parseBoolean,
+	parseNumber,
 	prettierFormat,
 	writeTSFile,
 } from './util'
@@ -15,13 +16,35 @@ import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
-export interface PrismaClassGeneratorConfig {
-	useSwagger: boolean
-	dryRun: boolean
-	makeIndexFile: boolean
-	separateRelationFields: boolean
-	use: boolean
-}
+
+export const PrismaClassGeneratorOptions = {
+	makeIndexFile: {
+		desc: 'make index file',
+		defaultValue: true,
+	},
+	dryRun: {
+		desc: 'dry run',
+		defaultValue: true,
+	},
+	separateRelationFields: {
+		desc: 'separate relation fields',
+		defaultValue: false,
+	},
+	useSwagger: {
+		desc: 'use swagger decorstor',
+		defaultValue: true,
+	},
+	useGraphQL: {
+		desc: 'use graphql',
+		defaultValue: false,
+	},
+} as const
+
+export type PrismaClassGeneratorOptionsKeys =
+	keyof typeof PrismaClassGeneratorOptions
+export type PrismaClassGeneratorConfig = Partial<
+	Record<PrismaClassGeneratorOptionsKeys, any>
+>
 
 export class PrismaClassGenerator {
 	static instance: PrismaClassGenerator
@@ -159,22 +182,23 @@ export class PrismaClassGenerator {
 
 	getConfig = (): PrismaClassGeneratorConfig => {
 		const config = this.options.generator.config
-		const result = Object.assign(
-			{
-				use: true,
-				useSwagger: true,
-				dryRun: true,
-				makeIndexFile: true,
-				separateRelationFields: false,
-			},
-			config,
-		)
-		result.useSwagger = parseBoolean(result.useSwagger)
-		result.dryRun = parseBoolean(result.dryRun)
-		result.makeIndexFile = parseBoolean(result.makeIndexFile)
-		result.separateRelationFields = parseBoolean(
-			result.separateRelationFields,
-		)
+
+		const result: PrismaClassGeneratorConfig = {}
+		for (const optionName in PrismaClassGeneratorOptions) {
+			const { defaultValue } = PrismaClassGeneratorOptions[optionName]
+			result[optionName] = defaultValue
+
+			const value = config[optionName]
+			if (value) {
+				if (typeof defaultValue === 'boolean') {
+					result[optionName] = parseBoolean(value)
+				} else if (typeof defaultValue === 'number') {
+					result[optionName] = parseNumber(value)
+				} else {
+					result[optionName] = value
+				}
+			}
+		}
 
 		return result
 	}

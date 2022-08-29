@@ -13,10 +13,25 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	enumTypes?: string[] = []
 
 	echo = () => {
+		// console.log(this.enumTypes)
 		const fieldContent = this.fields.map((_field) => _field.echo())
-		return CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())
+		let str = CLASS_TEMPLATE.replace(
+			'#!{DECORATORS}',
+			this.echoDecorators(),
+		)
 			.replace('#!{NAME}', `${this.name}`)
 			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
+
+		if (this.enumTypes.length > 0) {
+			for (const enumType of this.enumTypes) {
+				str += `registerEnumType(${enumType}, {
+	name: "${enumType}",
+});
+`
+			}
+		}
+
+		return str
 	}
 
 	reExportPrefixed = (prefix: string) => {
