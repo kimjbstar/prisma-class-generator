@@ -54,7 +54,7 @@ model Category {
 model Company {
   id          Int       @id
   name        String
-  totalIncome BigInt
+  totalIncome BigInt    @default(100)
   lat         Decimal
   lng         Decimal
   by          Bytes

@@ -316,6 +316,8 @@ export class PrismaConvertor {
 				field.default = dmmfField.default?.toString()
 				if (dmmfField.kind === 'enum') {
 					field.default = `${dmmfField.type}.${dmmfField.default}`
+				} else if (dmmfField.type === 'BigInt') {
+					field.default = `BigInt(${field.default})`
 				} else if (dmmfField.type === 'String') {
 					field.default = `'${field.default}'`
 				}
