@@ -117,7 +117,7 @@ export class PrismaConvertor {
 				grahQLType = 'Int'
 			}
 			if (dmmfField.isList) {
-				grahQLType = arrayify(grahQLType)
+				grahQLType = `[${grahQLType}]`
 			}
 			decorator.params.push(`(type) => ${grahQLType}`)
 		}
@@ -158,6 +158,10 @@ export class PrismaConvertor {
 			importFrom: '@nestjs/swagger',
 		})
 
+		if (dmmfField.isList) {
+			options.isArray = true
+		}
+
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
@@ -165,10 +169,6 @@ export class PrismaConvertor {
 			return decorator
 		}
 		type = dmmfField.type.toString()
-
-		if (dmmfField.isList) {
-			options.isArray = true
-		}
 
 		if (dmmfField.relationName) {
 			options.type = wrapArrowFunction(dmmfField)
@@ -338,9 +338,9 @@ export class PrismaConvertor {
 
 		if (type) {
 			field.type = type
-			return field
+		} else {
+			field.type = dmmfField.type
 		}
-		field.type = dmmfField.type
 
 		if (dmmfField.isList) {
 			field.type = arrayify(field.type)

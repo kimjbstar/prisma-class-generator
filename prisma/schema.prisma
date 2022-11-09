@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -59,4 +59,5 @@ model Company {
   lng         Decimal
   by          Bytes
   products    Product[]
+  tags        String[]
 }

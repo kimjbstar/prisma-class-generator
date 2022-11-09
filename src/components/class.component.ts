@@ -14,7 +14,6 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	extra?: string = ''
 
 	echo = () => {
-		// console.log(this.enumTypes)
 		const fieldContent = this.fields.map((_field) => _field.echo())
 		let str = CLASS_TEMPLATE.replace(
 			'#!{DECORATORS}',
