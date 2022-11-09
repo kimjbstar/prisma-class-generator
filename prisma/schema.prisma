@@ -52,12 +52,15 @@ model Category {
 }
 
 model Company {
-  id          Int       @id
-  name        String
-  totalIncome BigInt    @default(100)
-  lat         Decimal
-  lng         Decimal
-  by          Bytes
-  products    Product[]
-  tags        String[]
+  id                 Int       @id
+  name               String
+  totalIncome        BigInt    @default(100)
+  lat                Decimal
+  lng                Decimal
+  by                 Bytes
+  products           Product[]
+  tags               String[]
+  tagsWithDefault    String[]  @default(["a", "b"])
+  numTags            Int[]
+  numTagsWithDefault Int[]     @default([1, 2])
 }
