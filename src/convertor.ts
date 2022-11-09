@@ -249,6 +249,18 @@ export class PrismaConvertor {
 				}),
 			)
 			classComponent.decorators.push(deco)
+
+			if (classComponent.enumTypes.length > 0) {
+				const extra = classComponent.enumTypes
+					.map(
+						(enumType) => `registerEnumType(${enumType}, {
+	name: "${enumType}"
+})`,
+					)
+					.join('\r\n\r\n')
+
+				classComponent.extra = extra
+			}
 		}
 
 		return classComponent

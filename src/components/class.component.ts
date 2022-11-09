@@ -11,6 +11,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	fields?: FieldComponent[]
 	relationTypes?: string[]
 	enumTypes?: string[] = []
+	extra?: string = ''
 
 	echo = () => {
 		// console.log(this.enumTypes)
@@ -21,15 +22,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 		)
 			.replace('#!{NAME}', `${this.name}`)
 			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
-
-		if (this.enumTypes.length > 0) {
-			for (const enumType of this.enumTypes) {
-				str += `registerEnumType(${enumType}, {
-	name: "${enumType}",
-});
-`
-			}
-		}
+			.replace('#!{EXTRA}', this.extra)
 
 		return str
 	}
