@@ -333,6 +333,14 @@ export class PrismaConvertor {
 				} else if (dmmfField.type === 'String') {
 					field.default = `'${field.default}'`
 				}
+			} else if (Array.isArray(dmmfField.default)) {
+				if (dmmfField.type === 'String') {
+					field.default = `[${dmmfField.default
+						.map((d) => `'${d}'`)
+						.toString()}]`
+				} else {
+					field.default = `[${dmmfField.default.toString()}]`
+				}
 			}
 		}
 
