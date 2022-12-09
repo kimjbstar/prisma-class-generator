@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,7 +13,6 @@ generator prismaClassGenerator {
   output                 = "../src/_gen/prisma-class"
   dryRun                 = "false"
   separateRelationFields = "false"
-  useGraphQL             = "true"
 }
 
 enum ProductType {
@@ -52,17 +51,11 @@ model Category {
 }
 
 model Company {
-  id                      Int       @id
-  name                    String
-  totalIncome             BigInt    @default(100)
-  lat                     Decimal
-  lng                     Decimal
-  by                      Bytes
-  products                Product[]
-  tags                    String[]
-  tagsWithEmptyDefault    String[]  @default([])
-  tagsWithDefault         String[]  @default(["a", "b"])
-  numTags                 Int[]
-  numTagsWithEmptyDefault Int[]     @default([])
-  numTagsWithDefault      Int[]     @default([1, 2])
+  id          Int       @id
+  name        String
+  totalIncome BigInt    @default(100)
+  lat         Decimal
+  lng         Decimal
+  by          Bytes
+  products    Product[]
 }
