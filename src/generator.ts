@@ -38,6 +38,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'use graphql',
 		defaultValue: false,
 	},
+	useUndefinedDefault: {
+		desc: 'use undefined default',
+		defaultValue: false,
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

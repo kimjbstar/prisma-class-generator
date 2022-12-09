@@ -303,6 +303,7 @@ export class PrismaConvertor {
 	convertField = (dmmfField: DMMF.Field): FieldComponent => {
 		const field = new FieldComponent({
 			name: dmmfField.name,
+			useUndefinedDefault: this._config.useUndefinedDefault,
 		})
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
