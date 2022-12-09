@@ -13,6 +13,7 @@ generator prismaClassGenerator {
   output                 = "../src/_gen/prisma-class"
   dryRun                 = "false"
   separateRelationFields = "false"
+  useUndefinedDefault    = "true"
 }
 
 enum ProductType {
