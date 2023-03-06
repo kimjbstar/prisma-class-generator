@@ -12,14 +12,20 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	relationTypes?: string[]
 	enumTypes?: string[] = []
 	extra?: string = ''
+	classPrefix?: string
+	classPostfix?: string
 
 	echo = () => {
 		const fieldContent = this.fields.map((_field) => _field.echo())
+
+		const classPrefix = this.classPrefix ?? ''
+		const classPostfix = this.classPostfix ?? ''
+
 		let str = CLASS_TEMPLATE.replace(
 			'#!{DECORATORS}',
 			this.echoDecorators(),
 		)
-			.replace('#!{NAME}', `${this.name}`)
+			.replace('#!{NAME}', `${classPrefix}${this.name}${classPostfix}`)
 			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
 			.replace('#!{EXTRA}', this.extra)
 

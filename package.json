@@ -10,10 +10,10 @@
 		"typescript",
 		"generator"
 	],
-	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
+	"homepage": "https://github.com/xencodes/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git://github.com/xencodes/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
