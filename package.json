@@ -1,6 +1,6 @@
 {
 	"name": "@xencodes/prisma-class-generator",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
@@ -23,7 +23,7 @@
 		"generate:mongodb": "prisma generate --schema prisma/mongodb.prisma"
 	},
 	"bin": {
-		"@xencodes/prisma-class-generator": "dist/bin.js"
+		"prisma-class-generator": "dist/bin.js"
 	},
 	"engines": {
 		"node": ">=14"
