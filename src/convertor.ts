@@ -206,8 +206,15 @@ export class PrismaConvertor {
 		if (postfix) {
 			className += postfix
 		}
-		const classComponent = new ClassComponent({ name: className })
+		const classPrefix = this._config.classPrefix
+		const classPostfix = this._config.classPostfix
 
+		const classComponent = new ClassComponent({
+			name: className,
+			classPrefix,
+			classPostfix,
+		})
+		
 		/** relation & enums */
 		const relationTypes = uniquify(
 			model.fields
@@ -229,6 +236,7 @@ export class PrismaConvertor {
 				return true
 			})
 			.map((field) => this.convertField(field))
+			
 		classComponent.relationTypes =
 			extractRelationFields === false ? [] : relationTypes
 

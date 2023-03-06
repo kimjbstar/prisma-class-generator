@@ -42,6 +42,14 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'use undefined default',
 		defaultValue: false,
 	},
+	classPrefix: {
+		desc: 'set class prefix',
+		defaultValue: '',
+	},
+	classPostfix: {
+		desc: 'set class postfix',
+		defaultValue: '',
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =
@@ -152,12 +160,15 @@ export class PrismaClassGenerator {
 			fileRow.write(config.dryRun)
 		})
 		if (config.makeIndexFile) {
+			const classPrefix = config.classPrefix ?? ''
+			const classPostfix = config.classPostfix ?? ''
+
 			const indexFilePath = path.resolve(output, 'index.ts')
 			const imports = files.map(
 				(fileRow) =>
 					new ImportComponent(
 						getRelativeTSPath(indexFilePath, fileRow.getPath()),
-						fileRow.prismaClass.name,
+						`${classPrefix}${fileRow.prismaClass.name}${classPostfix}`,
 					),
 			)
 

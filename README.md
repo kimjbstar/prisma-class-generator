@@ -258,6 +258,10 @@ export class ProductDto extends IntersectionType(
     -   makes index file, default value is **true**
 -   _separateRelationFields_
     -   Puts relational fields into different file for each model. This way the class will match the object returned by a Prisma query, default value is **false**
+-   _classPrefix_
+    -   Prefix for generated classes, default value is **''**
+-   _classPostfix_
+    -   Postfix for generated classes, default value is **''**
 
 ### **How it works?**
 
