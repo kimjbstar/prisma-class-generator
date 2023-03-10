@@ -15,7 +15,7 @@ import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
 
-export const GENERATOR_NAME = 'Prisma Class Generator'
+export const GENERATOR_NAME = 'prisma-class-generator'
 
 export const PrismaClassGeneratorOptions = {
 	makeIndexFile: {
