@@ -42,6 +42,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'use undefined default',
 		defaultValue: false,
 	},
+	clientImportPath: {
+		desc: 'custom client import path',
+		defaultValue: undefined,
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

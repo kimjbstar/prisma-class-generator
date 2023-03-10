@@ -81,6 +81,7 @@ export class FileComponent implements Echoable {
 
 	resolveImports() {
 		const generator = PrismaClassGenerator.getInstance()
+		const customClientImportPath = generator.getConfig().clientImportPath
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
 			this.registerImport(
 				`${pascalCase(relationClassName)}`,
@@ -88,7 +89,10 @@ export class FileComponent implements Echoable {
 			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
-			this.registerImport(enumName, generator.getClientImportPath())
+			this.registerImport(
+				enumName,
+				customClientImportPath ?? generator.getClientImportPath(),
+			)
 		})
 
 		this.prismaClass.decorators.forEach((decorator) => {
