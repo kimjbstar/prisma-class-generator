@@ -27,6 +27,14 @@ type DealerProfile {
   bio      String
 }
 
+model Deals {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount    Int
+  dealer    Dealer   @relation(fields: [dealerId], references: [id])
+  dealerId  String   @db.ObjectId
+  createdAt DateTime @default(now())
+}
+
 model Dealer {
   id         String          @id @default(auto()) @map("_id") @db.ObjectId
   createdAt  DateTime?       @default(now())
@@ -36,6 +44,7 @@ model Dealer {
   address    Address
   dealerType DealerType      @default(Basic)
   profiles   DealerProfile[]
+  deals      Deals[]
 
   @@map("dealers")
 }
