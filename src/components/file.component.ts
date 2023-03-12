@@ -95,6 +95,13 @@ export class FileComponent implements Echoable {
 			)
 		})
 
+		this.prismaClass.objectTypes.forEach((objectName) => {
+			this.registerImport(
+				objectName,
+				customClientImportPath ?? generator.getClientImportPath(),
+			)
+		})
+
 		this.prismaClass.decorators.forEach((decorator) => {
 			this.registerImport(decorator.name, decorator.importFrom)
 		})

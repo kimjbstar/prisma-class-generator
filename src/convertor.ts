@@ -217,6 +217,7 @@ export class PrismaConvertor {
 				.map((v) => v.type),
 		)
 		const enums = model.fields.filter((field) => field.kind === 'enum')
+		const objects = model.fields.filter((field) => field.kind === 'object')
 
 		classComponent.fields = model.fields
 			.filter((field) => {
@@ -236,6 +237,11 @@ export class PrismaConvertor {
 			extractRelationFields === true
 				? []
 				: enums.map((field) => field.type.toString())
+
+		classComponent.objectTypes =
+			extractRelationFields === true
+				? []
+				: objects.map((field) => field.type.toString())
 
 		if (useGraphQL) {
 			const deco = new DecoratorComponent({

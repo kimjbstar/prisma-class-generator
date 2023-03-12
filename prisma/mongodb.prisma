@@ -22,14 +22,20 @@ enum DealerType {
   Basic
 }
 
+type DealerProfile {
+  nickname String
+  bio      String
+}
+
 model Dealer {
-  id         String     @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt  DateTime?  @default(now())
-  modifiedAt DateTime   @updatedAt
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt  DateTime?       @default(now())
+  modifiedAt DateTime        @updatedAt
   name       String
-  slug       String     @unique
+  slug       String          @unique
   address    Address
-  dealerType DealerType @default(Basic)
+  dealerType DealerType      @default(Basic)
+  profiles   DealerProfile[]
 
   @@map("dealers")
 }
