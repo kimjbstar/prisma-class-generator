@@ -11,6 +11,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	fields?: FieldComponent[]
 	relationTypes?: string[]
 	enumTypes?: string[] = []
+	typeTypes?: string[] = []
 	extra?: string = ''
 
 	echo = () => {

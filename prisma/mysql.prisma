@@ -14,6 +14,7 @@ generator prismaClassGenerator {
   dryRun                 = "false"
   separateRelationFields = "false"
   useUndefinedDefault    = "true"
+  clientImportPath       = "@prisma/client"
 }
 
 enum ProductType {
