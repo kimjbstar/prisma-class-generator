@@ -1,6 +1,6 @@
 {
-	"name": "prisma-class-generator",
-	"version": "0.2.5",
+	"name": "@tuvshinb4y4r/prisma-class-generator",
+	"version": "0.2.8",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
@@ -10,14 +10,16 @@
 		"typescript",
 		"generator"
 	],
-	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
+	"homepage": "https://github.com/tuvshinbay4r/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git://github.com/tuvshinbay4r/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
 		"dev": "node -r ts-node/register src/index.ts",
+		"build": "npx tsc",
+		"prepack": "yarn build",
 		"generate:postgresql": "prisma generate --schema prisma/postgresql.prisma",
 		"generate:mysql": "prisma generate --schema prisma/mysql.prisma",
 		"generate:mongodb": "prisma generate --schema prisma/mongodb.prisma"
@@ -29,8 +31,8 @@
 		"node": ">=14"
 	},
 	"author": {
-		"name": "kimjbstar",
-		"email": "kimjbstar@gmail.com"
+		"name": "tuvshinbayar",
+		"email": "givadesu@gmail.com"
 	},
 	"dependencies": {
 		"@prisma/client": "^4.7.1",
