@@ -24,8 +24,8 @@ export declare class PrismaConvertor {
     private _dmmf;
     get dmmf(): DMMF.Document;
     set dmmf(value: DMMF.Document);
-    get config(): Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault", any>>;
-    set config(value: Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault", any>>);
+    get config(): Partial<Record<"dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault", any>>;
+    set config(value: Partial<Record<"dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault", any>>);
     static getInstance(): PrismaConvertor;
     getPrimitiveMapTypeFromDMMF: (dmmfField: DMMF.Field) => PrimitiveMapTypeValues;
     extractTypeGraphQLDecoratorFromField: (dmmfField: DMMF.Field) => DecoratorComponent;

@@ -29,17 +29,11 @@ const path = __importStar(require("path"));
 const error_handler_1 = require("./error-handler");
 const convertor_1 = require("./convertor");
 const util_1 = require("./util");
-const index_template_1 = require("./templates/index.template");
-const import_component_1 = require("./components/import.component");
 const prettier = __importStar(require("prettier"));
 const file_component_1 = require("./components/file.component");
 const prismamodel_component_1 = require("./components/prismamodel.component");
 exports.GENERATOR_NAME = 'Prisma Class Generator';
 exports.PrismaClassGeneratorOptions = {
-    makeIndexFile: {
-        desc: 'make index file',
-        defaultValue: true,
-    },
     dryRun: {
         desc: 'dry run',
         defaultValue: true,
@@ -91,17 +85,6 @@ class PrismaClassGenerator {
             files.forEach((fileRow) => {
                 fileRow.write(config.dryRun);
             });
-            if (config.makeIndexFile) {
-                const indexFilePath = path.resolve(output, 'index.ts');
-                const imports = files.map((fileRow) => new import_component_1.ImportComponent((0, util_1.getRelativeTSPath)(indexFilePath, fileRow.getPath()), fileRow.prismaClass.name));
-                const content = index_template_1.INDEX_TEMPLATE.replace('#!{IMPORTS}', imports.map((i) => i.echo('_')).join('\r\n'))
-                    .replace('#!{RE_EXPORT_CLASSES}', files
-                    .map((f) => `	${f.prismaClass.reExportPrefixed('_')}`)
-                    .join('\r\n'))
-                    .replace('#!{CLASSES}', files.map((f) => f.prismaClass.name).join(', '));
-                const formattedContent = (0, util_1.prettierFormat)(content, this.prettierOptions);
-                (0, util_1.writeTSFile)(indexFilePath, formattedContent, config.dryRun);
-            }
             return;
         };
         this.getConfig = () => {

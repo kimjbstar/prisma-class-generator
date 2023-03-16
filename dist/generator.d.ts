@@ -2,10 +2,6 @@ import { GeneratorOptions } from '@prisma/generator-helper';
 import * as prettier from 'prettier';
 export declare const GENERATOR_NAME = "Prisma Class Generator";
 export declare const PrismaClassGeneratorOptions: {
-    readonly makeIndexFile: {
-        readonly desc: "make index file";
-        readonly defaultValue: true;
-    };
     readonly dryRun: {
         readonly desc: "dry run";
         readonly defaultValue: true;

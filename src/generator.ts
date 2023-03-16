@@ -19,10 +19,6 @@ import { PrismaModelComponent } from './components/prismamodel.component'
 export const GENERATOR_NAME = 'Prisma Class Generator'
 
 export const PrismaClassGeneratorOptions = {
-	makeIndexFile: {
-		desc: 'make index file',
-		defaultValue: true,
-	},
 	dryRun: {
 		desc: 'dry run',
 		defaultValue: true,
@@ -155,37 +151,6 @@ export class PrismaClassGenerator {
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
 		})
-
-		if (config.makeIndexFile) {
-			const indexFilePath = path.resolve(output, 'index.ts')
-			const imports = files.map(
-				(fileRow) =>
-					new ImportComponent(
-						getRelativeTSPath(indexFilePath, fileRow.getPath()),
-						fileRow.prismaClass.name,
-					),
-			)
-
-			const content = INDEX_TEMPLATE.replace(
-				'#!{IMPORTS}',
-				imports.map((i) => i.echo('_')).join('\r\n'),
-			)
-				.replace(
-					'#!{RE_EXPORT_CLASSES}',
-					files
-						.map((f) => `	${f.prismaClass.reExportPrefixed('_')}`)
-						.join('\r\n'),
-				)
-				.replace(
-					'#!{CLASSES}',
-					files.map((f) => f.prismaClass.name).join(', '),
-				)
-			const formattedContent = prettierFormat(
-				content,
-				this.prettierOptions,
-			)
-			writeTSFile(indexFilePath, formattedContent, config.dryRun)
-		}
 		return
 	}
 
