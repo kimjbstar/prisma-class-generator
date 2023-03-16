@@ -1,0 +1,14 @@
+import { DMMF } from '@prisma/generator-helper';
+import { Options } from 'prettier';
+export declare const capitalizeFirst: (src: string) => string;
+export declare const getRelativeTSPath: (from: string, to: string) => string;
+export declare const uniquify: <T>(src: T[]) => T[];
+export declare const arrayify: (src: string) => string;
+export declare const wrapArrowFunction: (field: DMMF.Field) => string;
+export declare const wrapQuote: (field: DMMF.Field) => string;
+export declare const log: (src: string) => void;
+export declare const parseBoolean: (value: unknown) => boolean;
+export declare const parseNumber: (value: unknown) => number;
+export declare const toArray: <T>(value: T | T[]) => T[];
+export declare const writeTSFile: (fullPath: string, content: string, dryRun?: boolean) => void;
+export declare const prettierFormat: (content: string, options?: Options) => string;
