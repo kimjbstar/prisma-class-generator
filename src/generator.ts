@@ -4,14 +4,9 @@ import * as path from 'path'
 import { GeneratorPathNotExists } from './error-handler'
 import { PrismaConvertor } from './convertor'
 import {
-	getRelativeTSPath,
 	parseBoolean,
-	parseNumber,
-	prettierFormat,
-	writeTSFile,
+	parseNumber
 } from './util'
-import { INDEX_TEMPLATE } from './templates/index.template'
-import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
 import { PrismaModelComponent } from './components/prismamodel.component'
