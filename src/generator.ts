@@ -14,6 +14,7 @@ import { INDEX_TEMPLATE } from './templates/index.template'
 import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
+import { PrismaModelComponent } from './components/prismamodel.component'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 
@@ -97,9 +98,10 @@ export class PrismaClassGenerator {
 		if (!this.rootPath || !this.clientPath) {
 			throw new GeneratorPathNotExists()
 		}
-		return path
-			.relative(this.rootPath, this.clientPath)
-			.replace('node_modules/', '')
+		let finalPath = path.relative(this.rootPath, this.clientPath)
+		if(finalPath.includes('@prisma'))
+			finalPath = finalPath.substring(finalPath.indexOf('@prisma'))
+		return finalPath.replace('node_modules/', '')
 	}
 
 	setPrismaClientPath(): void {
@@ -148,9 +150,12 @@ export class PrismaClassGenerator {
 			})
 		})
 
+		files.push(new PrismaModelComponent(output));
+
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
 		})
+
 		if (config.makeIndexFile) {
 			const indexFilePath = path.resolve(output, 'index.ts')
 			const imports = files.map(

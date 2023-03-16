@@ -1,4 +1,3 @@
-dist/
 node_modules/
 src/practice.ts
 yarn-error.log
