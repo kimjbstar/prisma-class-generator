@@ -1,5 +1,7 @@
 import { FileComponent } from './file.component';
+import { ClassComponent } from './class.component';
 export declare class PrismaModelComponent extends FileComponent {
-    constructor(output: string);
+    classes: ClassComponent[];
+    constructor(output: string, classes: ClassComponent[]);
     echo: () => string;
 }

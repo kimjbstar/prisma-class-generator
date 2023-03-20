@@ -6,6 +6,7 @@ import { BaseComponent } from './base.component'
 
 export class ClassComponent extends BaseComponent implements Echoable {
 	name: string
+
 	fields?: FieldComponent[]
 	relationTypes?: string[]
 	enumTypes?: string[] = []
@@ -35,7 +36,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 
 		// Generate the 'static model' field
 		const prismamodel_type = `Prisma.${this.name}Delegate<undefined>`;
-		const prismamodel_value = `PrismaModel.prisma.${this.name.toLowerCase()}`;
+		// const prismamodel_value = `PrismaModel.prisma.${this.name.toLowerCase().substring(0,1)}${this.name.substring(1)}`;
 
 		// Generate the 'model' getter
 		const model_getter = `get model(): ${prismamodel_type} {
@@ -62,7 +63,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 			.replaceAll('#!{EXTRA}', this.extra)
 			.replaceAll('#!{CONSTRUCTOR}', constructor)
 			.replaceAll('#!{PRISMAMODEL_TYPE}', prismamodel_type)
-			.replaceAll('#!{PRISMAMODEL_VALUE}', prismamodel_value)
+			// .replaceAll('#!{PRISMAMODEL_VALUE}', prismamodel_value)
 			.replaceAll('#!{MODEL_GETTER}', model_getter)
 		return str
 	}

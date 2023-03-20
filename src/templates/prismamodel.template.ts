@@ -1,4 +1,5 @@
-export const PRISMAMODEL_TEMPLATE = `import { Prisma, PrismaClient } from "@prisma/client";
+export const PRISMAMODEL_TEMPLATE = `import { PrismaClient } from "@prisma/client";
+!#{CLASSES_IMPORTS}
 
 export abstract class PrismaModel {
   static prisma: PrismaClient
@@ -9,6 +10,8 @@ export abstract class PrismaModel {
     if(PrismaModel.prisma === undefined){
       PrismaModel.prisma = new PrismaClient();
       await PrismaModel.prisma.$connect();
+
+      !#{CLASSES_INIT}
     }
   }
 

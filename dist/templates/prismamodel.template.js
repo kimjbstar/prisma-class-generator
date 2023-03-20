@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PRISMAMODEL_TEMPLATE = void 0;
-exports.PRISMAMODEL_TEMPLATE = `import { Prisma, PrismaClient } from "@prisma/client";
+exports.PRISMAMODEL_TEMPLATE = `import { PrismaClient } from "@prisma/client";
+!#{CLASSES_IMPORTS}
 
 export abstract class PrismaModel {
   static prisma: PrismaClient
@@ -12,6 +13,8 @@ export abstract class PrismaModel {
     if(PrismaModel.prisma === undefined){
       PrismaModel.prisma = new PrismaClient();
       await PrismaModel.prisma.$connect();
+
+      !#{CLASSES_INIT}
     }
   }
 

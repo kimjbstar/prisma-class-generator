@@ -7,7 +7,7 @@ import { PrismaModel } from './PrismaModel'
 
 #!{DECORATORS}
 export class #!{NAME} {
-  static model: #!{PRISMAMODEL_TYPE} = #!{PRISMAMODEL_VALUE}
+  static model: #!{PRISMAMODEL_TYPE}
 #!{FIELDS}
 #!{CONSTRUCTOR}
 #!{MODEL_GETTER}

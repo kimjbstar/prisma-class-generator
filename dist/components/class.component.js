@@ -32,7 +32,6 @@ class ClassComponent extends base_component_1.BaseComponent {
 			`;
             }
             const prismamodel_type = `Prisma.${this.name}Delegate<undefined>`;
-            const prismamodel_value = `PrismaModel.prisma.${this.name.toLowerCase()}`;
             const model_getter = `get model(): ${prismamodel_type} {
 			return ${this.name}.model
 		}`;
@@ -49,7 +48,6 @@ class ClassComponent extends base_component_1.BaseComponent {
                 .replaceAll('#!{EXTRA}', this.extra)
                 .replaceAll('#!{CONSTRUCTOR}', constructor)
                 .replaceAll('#!{PRISMAMODEL_TYPE}', prismamodel_type)
-                .replaceAll('#!{PRISMAMODEL_VALUE}', prismamodel_value)
                 .replaceAll('#!{MODEL_GETTER}', model_getter);
             return str;
         };

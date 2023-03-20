@@ -81,7 +81,7 @@ class PrismaClassGenerator {
                     return importRow;
                 });
             });
-            files.push(new prismamodel_component_1.PrismaModelComponent(output));
+            files.push(new prismamodel_component_1.PrismaModelComponent(output, classes));
             files.forEach((fileRow) => {
                 fileRow.write(config.dryRun);
             });

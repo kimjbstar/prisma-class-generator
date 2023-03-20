@@ -141,7 +141,7 @@ export class PrismaClassGenerator {
 			})
 		})
 
-		files.push(new PrismaModelComponent(output));
+		files.push(new PrismaModelComponent(output, classes));
 
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
