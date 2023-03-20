@@ -180,14 +180,20 @@ class PrismaConvertor {
             });
             if (dmmfField.relationName !== undefined) {
                 if (!Object.keys(this._classesRelations).includes(dmmfField.relationName)) {
-                    this._classesRelations[dmmfField.relationName] = {};
+                    this._classesRelations[dmmfField.relationName] = { name: '' };
                 }
                 const relation = this._classesRelations[dmmfField.relationName];
                 if (dmmfField.relationFromFields.length > 0) {
+                    relation.relationFromFields = dmmfField.relationFromFields;
+                    relation.relationToFields = dmmfField.relationToFields;
+                    relation.name = field.name;
                     relation.hasFieldForOne = field;
-                    relation.relationFromFields = dmmfField.relationFromFields,
-                        relation.relationToFields = dmmfField.relationToFields,
-                        relation.name = field.name;
+                }
+                else if (!dmmfField.isList) {
+                    relation.relationFromFields = dmmfField.relationFromFields;
+                    relation.relationToFields = dmmfField.relationToFields;
+                    relation.name += `_${field.name}_`;
+                    relation.alsoHasFieldForOne = field;
                 }
                 else {
                     relation.justLinkedToMany = field;

@@ -65,6 +65,7 @@ export class PrismaConvertor {
 			relationToFields?: string[],
 			hasFieldForOne?: FieldComponent,
 			justLinkedToMany?: FieldComponent,
+			alsoHasFieldForOne?: FieldComponent,
 			name?: string
 		}
 	}
@@ -323,15 +324,22 @@ export class PrismaConvertor {
 
 		if(dmmfField.relationName !== undefined){
 			if(!Object.keys(this._classesRelations).includes(dmmfField.relationName)){
-				this._classesRelations[dmmfField.relationName] = {}
+				this._classesRelations[dmmfField.relationName] = {name:''}
 			}
 			const relation = this._classesRelations[dmmfField.relationName]
 			// hasFieldForOne
 			if(dmmfField.relationFromFields.length > 0){
-				relation.hasFieldForOne = field
-				relation.relationFromFields = dmmfField.relationFromFields,
-				relation.relationToFields = dmmfField.relationToFields,
+				relation.relationFromFields = dmmfField.relationFromFields
+				relation.relationToFields = dmmfField.relationToFields
 				relation.name = field.name
+				relation.hasFieldForOne = field
+			}
+			// OneToOne
+			else if(!dmmfField.isList){
+				relation.relationFromFields = dmmfField.relationFromFields
+				relation.relationToFields = dmmfField.relationToFields
+				relation.name += `_${field.name}_`
+				relation.alsoHasFieldForOne = field
 			}
 			// OneToMany
 			else {

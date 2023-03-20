@@ -8,6 +8,7 @@ export declare class FieldComponent extends BaseComponent implements Echoable {
     relation?: {
         hasFieldForOne?: FieldComponent;
         justLinkedToMany?: FieldComponent;
+        alsoHasFieldForOne?: FieldComponent;
         relationFromFields?: string[];
         relationToFields?: string[];
         name?: string;

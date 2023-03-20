@@ -36,6 +36,12 @@ class FieldComponent extends base_component_1.BaseComponent {
                         .replaceAll('#!{RELATION_FROM}', this.relation.relationFromFields[0])
                         .replaceAll('#!{RELATION_TO}', this.relation.relationToFields[0]);
                 }
+                else if (this.relation.alsoHasFieldForOne === this) {
+                    return field_template_1.FIELD_GETTER_ONE_TEMPLATE.replaceAll('#!{NAME}', name)
+                        .replaceAll('#!{TYPE}', this.type)
+                        .replaceAll('#!{RELATION_TO}', this.relation.relationFromFields[0])
+                        .replaceAll('#!{RELATION_FROM}', this.relation.relationToFields[0]);
+                }
                 else {
                     return field_template_1.FIELD_GETTER_MANY_TEMPLATE.replaceAll('#!{NAME}', name)
                         .replaceAll('#!{TYPE}', this.type)

@@ -28,6 +28,7 @@ export declare class PrismaConvertor {
             relationToFields?: string[];
             hasFieldForOne?: FieldComponent;
             justLinkedToMany?: FieldComponent;
+            alsoHasFieldForOne?: FieldComponent;
             name?: string;
         };
     };

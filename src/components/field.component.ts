@@ -10,6 +10,7 @@ export class FieldComponent extends BaseComponent implements Echoable {
 	relation?: {
 		hasFieldForOne?: FieldComponent,
 		justLinkedToMany?: FieldComponent,
+		alsoHasFieldForOne?: FieldComponent,
 		relationFromFields?: string[],
 		relationToFields?: string[],
 		name?: string
@@ -48,6 +49,12 @@ export class FieldComponent extends BaseComponent implements Echoable {
 				.replaceAll('#!{TYPE}', this.type)
 				.replaceAll('#!{RELATION_FROM}', this.relation.relationFromFields[0])
 				.replaceAll('#!{RELATION_TO}', this.relation.relationToFields[0])
+			}
+			else if(this.relation.alsoHasFieldForOne === this){
+				return FIELD_GETTER_ONE_TEMPLATE.replaceAll('#!{NAME}', name)
+				.replaceAll('#!{TYPE}', this.type)
+				.replaceAll('#!{RELATION_TO}', this.relation.relationFromFields[0])
+				.replaceAll('#!{RELATION_FROM}', this.relation.relationToFields[0])
 			}
 			else {
 					return FIELD_GETTER_MANY_TEMPLATE.replaceAll('#!{NAME}', name)

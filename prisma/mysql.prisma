@@ -17,47 +17,199 @@ generator prismaClassGenerator {
   makeIndexFile          = "false"
 }
 
-enum ProductType {
-  A
-  B
-  C
+model Access_token {
+  id         Int    @id @default(autoincrement())
+  user_id    Int
+  token      String @db.VarChar(64)
+  created_at Int?
+  expires_at Int?
+  user       User   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_token_user")
+
+  @@index([user_id], map: "fk_token_user")
 }
 
-enum ProductAnotherType {
-  AA
-  BB
-  CC
+model User {
+  id              Int             @id @default(autoincrement())
+  user_login      String          @db.VarChar(64)
+  user_pass       String          @db.VarChar(64)
+  user_email      String          @unique @db.VarChar(64)
+  user_registered Boolean         @default(false)
+  firstname       String          @db.VarChar(64)
+  lastname        String          @db.VarChar(64)
+  birthdate       Int
+  token           String          @db.VarChar(32)
+  access_token    Access_token[]
+  media           Media[]
+  product         Product[]
+  sub_order       Sub_order[]
+  user_billing    User_billing[]
+  user_delivery   User_delivery[]
+  user_role       User_role?
+}
+
+model User_billing {
+  id                 Int     @id @default(autoincrement())
+  user_id            Int
+  address            String  @db.VarChar(256)
+  additional_address String? @db.VarChar(256)
+  zipcode            String  @db.VarChar(256)
+  city               String  @db.VarChar(256)
+  country            String  @db.VarChar(256)
+  region             String  @db.VarChar(256)
+  phone_number       String  @db.VarChar(32)
+  company_name       String? @db.VarChar(128)
+  user               User    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id")
+
+  @@index([user_id], map: "fk_user_id_billing")
+}
+
+model User_delivery {
+  id                 Int     @id @default(autoincrement())
+  user_id            Int
+  address            String  @db.VarChar(256)
+  additional_address String? @db.VarChar(256)
+  zipcode            String  @db.VarChar(256)
+  city               String  @db.VarChar(256)
+  country            String  @db.VarChar(256)
+  region             String  @db.VarChar(256)
+  phone_number       String  @db.VarChar(32)
+  company_name       String? @db.VarChar(128)
+  user               User    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id_delivery")
+
+  @@index([user_id], map: "fk_user_id_delivery")
+}
+
+model User_role {
+  user_id             Int     @id
+  vendor_professional Boolean @default(false)
+  vendor_private      Boolean @default(false)
+  buyer               Boolean @default(false)
+  searcher            Boolean @default(false)
+  admin               Boolean @default(false)
+  user                User    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id_role")
+}
+
+model Expedition {
+  id         Int         @id @default(autoincrement())
+  name       Int
+  slug       Int
+  max_weight Int
+  price      Int
+  sub_order  Sub_order[]
+}
+
+model Media {
+  id                Int       @id @default(autoincrement())
+  slug              String    @db.VarChar(256)
+  url               String    @db.VarChar(256)
+  creation_date     Int
+  modification_date Int
+  user_id           Int
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id_")
+  product           Product[]
+
+  @@index([user_id], map: "fk_user_id_")
+}
+
+model Orders {
+  id                Int         @id @default(autoincrement())
+  order_client_id   Int
+  creation_date     Int
+  modification_date Int
+  order_state       Int
+  type              Int
+  buyer_id          Int
+  buyer_billing_id  Int
+  buyer_delivery_id Int
+  expedition_id     Int
+  order_total       Float
+  sub_order         Sub_order[]
 }
 
 model Product {
-  id            Int                @id
-  title         String             @db.VarChar(255)
-  desc          String             @default("abc") @db.VarChar(1024)
-  images        Json               @db.Json
-  isShown       Boolean?           @default(false)
-  stock         Int?               @default(0)
-  type          ProductType
-  anotherType   ProductAnotherType @default(AA)
-  averageRating Float?
-  categoryId    Int
-  companyId     Int
-  category      Category           @relation(fields: [categoryId], references: [id])
-  company       Company            @relation(fields: [companyId], references: [id])
-  createdAt     DateTime           @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime           @updatedAt @db.Timestamp(6)
+  id                     Int                @id @default(autoincrement())
+  vendor_id              Int
+  state                  Int
+  tva                    Int
+  product_name           String             @db.VarChar(256)
+  vendor_sku             String             @db.VarChar(256)
+  product_sku            String             @db.VarChar(256)
+  price                  Float
+  price_promo            Float
+  description            String             @db.VarChar(1024)
+  additional_description String?            @db.VarChar(1024)
+  backorder              Boolean
+  unique_product         Boolean
+  linked_products        String             @db.LongText
+  product_image          Int
+  product_image_gallery  String?            @db.LongText
+  product_state          Int
+  product_keywords       String             @db.VarChar(1024)
+  creation_date          Int
+  modification_date      Int
+  has_tva                Boolean
+  media                  Media              @relation(fields: [product_image], references: [id], onDelete: Cascade, map: "fk_image")
+  product_visibilty      Product_visibilty  @relation(fields: [state], references: [id], onDelete: Cascade, map: "fk_state")
+  tva_type               TVA_type           @relation(fields: [tva], references: [id], onDelete: Cascade, map: "fk_tva_id")
+  user                   User               @relation(fields: [vendor_id], references: [id], onDelete: Cascade, map: "fk_vendor_id")
+  product_category       Product_category[]
+  sub_order              Sub_order[]
+
+  @@index([product_image], map: "fk_image")
+  @@index([product_state], map: "fk_product_state")
+  @@index([state], map: "fk_state")
+  @@index([tva], map: "fk_tva_id")
+  @@index([vendor_id], map: "fk_vendor_id")
 }
 
-model Category {
-  id       Int       @id
-  products Product[]
+model Product_categories {
+  id               Int                @id @default(autoincrement())
+  category_name    String             @db.VarChar(64)
+  category_slug    String             @db.VarChar(64)
+  product_category Product_category[]
 }
 
-model Company {
-  id          Int       @id
-  name        String
-  totalIncome BigInt    @default(100)
-  lat         Float
-  lng         Float
-  by          Bytes
-  products    Product[]
+model Product_category {
+  product_id         Int
+  category_id        Int
+  product_categories Product_categories @relation(fields: [category_id], references: [id], onDelete: Cascade, map: "fk_category_id")
+  product            Product            @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_product_id")
+
+  @@id([product_id, category_id])
+  @@index([category_id], map: "fk_category_id")
+}
+
+model Product_visibilty {
+  id      Int       @id @default(autoincrement())
+  state   String    @db.VarChar(128)
+  product Product[]
+}
+
+model Sub_order {
+  id            Int        @id @default(autoincrement())
+  order_id      Int
+  vendor_id     Int
+  expedition_id Int
+  product_id    Int
+  product_price Float
+  quantity      Int
+  taxe_id       Int
+  expedition    Expedition @relation(fields: [expedition_id], references: [id], onDelete: Cascade, map: "fk_expedition_id")
+  orders        Orders     @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "fk_order_id")
+  product       Product    @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_product_id_")
+  user          User       @relation(fields: [vendor_id], references: [id], onDelete: Cascade, map: "fk_vendor_id_")
+  tva_type      TVA_type   @relation(fields: [taxe_id], references: [id], onDelete: Cascade, map: "taxe_id")
+
+  @@index([expedition_id], map: "fk_expedition_id")
+  @@index([order_id], map: "fk_order_id")
+  @@index([product_id], map: "fk_product_id_")
+  @@index([vendor_id], map: "fk_vendor_id_")
+  @@index([taxe_id], map: "taxe_id")
+}
+
+model TVA_type {
+  id        Int         @id @default(autoincrement())
+  slug      String      @db.VarChar(256)
+  product   Product[]
+  sub_order Sub_order[]
 }

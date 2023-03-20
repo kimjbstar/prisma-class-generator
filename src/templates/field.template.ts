@@ -3,8 +3,8 @@ export const FIELD_TEMPLATE = `	#!{DECORATORS}
 `
 export const FIELD_GETTER_ONE_TEMPLATE = `
   protected _#!{NAME}: #!{TYPE} | null = null
-  async #!{NAME}(): Promise<#!{TYPE} | null> {
-    if(this._#!{NAME} === null){
+	async #!{NAME}(): Promise<#!{TYPE} | null> {
+	if(this._#!{NAME} === null){
       const dbModel = await #!{TYPE}.model.findUnique({
 				where: {
 					#!{RELATION_TO}: this.#!{RELATION_FROM}
