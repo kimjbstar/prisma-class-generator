@@ -8,7 +8,7 @@ class FieldComponent extends base_component_1.BaseComponent {
         super(obj);
         this.echo = () => {
             let name = this.name;
-            if (this.nullable === true) {
+            if (this.nullable === true && !this.relation) {
                 name += '?';
             }
             if (this.isId) {
