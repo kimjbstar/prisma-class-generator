@@ -1,9 +1,9 @@
 export const CLASS_TEMPLATE = `#!{IMPORTS}
 import { Prisma } from "@prisma/client";
-import { PrismaModel } from './PrismaModel'
+import { required } from './PrismaModel'
 
 #!{DECORATORS}
-export class #!{NAME} {
+export class _#!{NAME} {
   static model: #!{PRISMAMODEL_TYPE}
 #!{FIELDS}
 #!{CONSTRUCTOR}

@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaModel } from './PrismaModel'
 
 #!{DECORATORS}
-export class #!{NAME} {
+export class _#!{NAME} {
   static model: #!{PRISMAMODEL_TYPE}
 #!{FIELDS}
 #!{CONSTRUCTOR}

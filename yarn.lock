@@ -1921,6 +1921,11 @@ readdir-glob@^1.0.0:
   dependencies:
     minimatch "^5.1.0"
 
+reflect-metadata@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.npmjs.org/reflect-metadata/-/reflect-metadata-0.1.13.tgz"
+  integrity sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==
+
 replace-string@3.1.0:
   version "3.1.0"
   resolved "https://registry.npmjs.org/replace-string/-/replace-string-3.1.0.tgz"

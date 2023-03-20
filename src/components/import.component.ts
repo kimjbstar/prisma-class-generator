@@ -16,7 +16,7 @@ export class ImportComponent implements Echoable {
 		if (alias) {
 			content = content.map((item) => `${item} as ${alias}${item}`)
 		}
-		return `import { ${content.join(',')} } from '${this.from}'`
+		return `import { _${content.join(',')} } from '${this.from}'`
 	}
 
 	add(item: any) {

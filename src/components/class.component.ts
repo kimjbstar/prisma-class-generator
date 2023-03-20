@@ -15,21 +15,24 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	echo = () => {
 		// Generate the constructor foe non-noullable fields
 		const fieldsNonNullable = this.fields.reduce((acc, _field) => {
-			if(_field.nullable || _field.relation) return acc
+			if(_field.nullable || _field.relation || _field.default !== undefined) return acc
 			acc.push(_field)
 			return acc;
 		}, [] as FieldComponent[]);
 		let constructor = ''
 		if(fieldsNonNullable.length > 0){
 			let declaration = '';
+			let initialization = '';
 			for (const _field of fieldsNonNullable) {
 				if(_field.isId) continue
-				declaration += `${_field.name}: ${_field.type}, `;
+				declaration += `${_field.name}?: ${_field.type}, `;
+				initialization += `this.${_field.name} = obj.${_field.name}
+				`;
 			}
 			constructor = 
 			`
 			constructor(obj: {${declaration}}){
-				Object.assign(this, obj)
+				${initialization}
 			}
 			`
 		}
@@ -40,7 +43,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 
 		// Generate the 'model' getter
 		const model_getter = `get model(): ${prismamodel_type} {
-			return ${this.name}.model
+			return _${this.name}.model
 		}`;
 
 		// Generate the fromId method
@@ -49,7 +52,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 		if(fieldId.length === 1){
 			fromId = IDMODEL_TEMPLATE.replace(
 				'#!{FIELD_NAME}',
-				fieldId[0].name
+				`${fieldId[0].name}`
 			)
 		}
 		const fieldContent = this.fields.map((_field) => _field.echo())
@@ -69,6 +72,6 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	}
 
 	reExportPrefixed = (prefix: string) => {
-		return `export class ${this.name} extends ${prefix}${this.name} {}`
+		return `export class _${this.name} extends ${prefix}${this.name} {}`
 	}
 }
