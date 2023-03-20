@@ -175,6 +175,7 @@ class PrismaConvertor {
             const field = new field_component_1.FieldComponent({
                 name: dmmfField.name,
                 useUndefinedDefault: this._config.useUndefinedDefault,
+                isId: dmmfField.isId
             });
             let type = this.getPrimitiveMapTypeFromDMMF(dmmfField);
             if (this.config.useSwagger) {

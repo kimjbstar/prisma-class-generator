@@ -28,6 +28,10 @@ class ClassComponent extends base_component_1.BaseComponent {
 			constructor(${declaration}){
 				${initialization}
 			}
+
+			constructor(obj: {${declaration}}){
+				Object.assign(obj)
+			}
 			`;
             }
             const prismamodel_type = `Prisma.${this.name}Delegate<undefined>`;

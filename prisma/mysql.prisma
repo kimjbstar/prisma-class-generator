@@ -56,8 +56,8 @@ model Company {
   id          Int       @id
   name        String
   totalIncome BigInt    @default(100)
-  lat         Decimal
-  lng         Decimal
+  lat         Float
+  lng         Float
   by          Bytes
   products    Product[]
 }

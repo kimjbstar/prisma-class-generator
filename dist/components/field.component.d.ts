@@ -4,11 +4,13 @@ export declare class FieldComponent extends BaseComponent implements Echoable {
     name: string;
     nullable: boolean;
     useUndefinedDefault: boolean;
+    isId: boolean;
     default?: string;
     type?: string;
     echo: () => string;
     constructor(obj: {
         name: string;
         useUndefinedDefault: boolean;
+        isId: boolean;
     });
 }

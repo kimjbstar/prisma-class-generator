@@ -1,6 +1,7 @@
 import { Echoable } from '../interfaces/echoable'
 import { FieldComponent } from './field.component'
 import { CLASS_TEMPLATE } from '../templates/class.template'
+import { IDMODEL_TEMPLATE } from '../templates/idmodel.template'
 import { BaseComponent } from './base.component'
 
 export class ClassComponent extends BaseComponent implements Echoable {
@@ -13,22 +14,21 @@ export class ClassComponent extends BaseComponent implements Echoable {
 	echo = () => {
 		// Generate the constructor foe non-noullable fields
 		const fieldsNonNullable = this.fields.reduce((acc, _field) => {
-			if(_field.nullable) return acc
+			if(_field.nullable || _field.relation) return acc
 			acc.push(_field)
 			return acc;
 		}, [] as FieldComponent[]);
 		let constructor = ''
 		if(fieldsNonNullable.length > 0){
 			let declaration = '';
-			let initialization = '';
 			for (const _field of fieldsNonNullable) {
+				if(_field.isId) continue
 				declaration += `${_field.name}: ${_field.type}, `;
-				initialization += `this.${_field.name} = ${_field.name};`;
 			}
 			constructor = 
 			`
-			constructor(${declaration}){
-				${initialization}
+			constructor(obj: {${declaration}}){
+				Object.assign(this, obj)
 			}
 			`
 		}
@@ -42,18 +42,29 @@ export class ClassComponent extends BaseComponent implements Echoable {
 			return ${this.name}.model
 		}`;
 
+		// Generate the fromId method
+		let fromId = '';
+		const fieldId = this.fields.filter((_field) => _field.isId)
+		if(fieldId.length === 1){
+			fromId = IDMODEL_TEMPLATE.replace(
+				'#!{FIELD_NAME}',
+				fieldId[0].name
+			)
+		}
+		
 		const fieldContent = this.fields.map((_field) => _field.echo())
 		let str = CLASS_TEMPLATE.replace(
 			'#!{DECORATORS}',
 			this.echoDecorators(),
 		)
-			.replace('#!{NAME}', `${this.name}`)
-			.replace('#!{FIELDS}', fieldContent.join('\r\n'))
-			.replace('#!{EXTRA}', this.extra)
-			.replace('#!{CONSTRUCTOR}', constructor)
-			.replace('#!{PRISMAMODEL_TYPE}', prismamodel_type)
-			.replace('#!{PRISMAMODEL_VALUE}', prismamodel_value)
-			.replace('#!{MODEL_GETTER}', model_getter)
+			.replaceAll('#!{FROMID}', `${fromId}`)
+			.replaceAll('#!{NAME}', `${this.name}`)
+			.replaceAll('#!{FIELDS}', fieldContent.join('\r\n'))
+			.replaceAll('#!{EXTRA}', this.extra)
+			.replaceAll('#!{CONSTRUCTOR}', constructor)
+			.replaceAll('#!{PRISMAMODEL_TYPE}', prismamodel_type)
+			.replaceAll('#!{PRISMAMODEL_VALUE}', prismamodel_value)
+			.replaceAll('#!{MODEL_GETTER}', model_getter)
 		return str
 	}
 
