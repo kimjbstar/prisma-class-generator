@@ -19,7 +19,7 @@ export class FieldComponent extends BaseComponent implements Echoable {
 
 	echo = () => {
 		let name = this.name
-		if (this.nullable === true) {
+		if (this.nullable === true && !this.relation) {
 			name += '?'
 		}
 
