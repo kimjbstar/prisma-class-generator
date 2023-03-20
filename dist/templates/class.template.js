@@ -11,6 +11,7 @@ export class #!{NAME} {
 #!{FIELDS}
 #!{CONSTRUCTOR}
 #!{MODEL_GETTER}
+#!{FROMID}
 }
 #!{EXTRA}
 `;

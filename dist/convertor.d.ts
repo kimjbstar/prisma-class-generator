@@ -22,6 +22,15 @@ export declare class PrismaConvertor {
     static instance: PrismaConvertor;
     private _config;
     private _dmmf;
+    _classesRelations: {
+        [key: string]: {
+            relationFromFields?: string[];
+            relationToFields?: string[];
+            hasFieldForOne?: FieldComponent;
+            justLinkedToMany?: FieldComponent;
+            name?: string;
+        };
+    };
     get dmmf(): DMMF.Document;
     set dmmf(value: DMMF.Document);
     get config(): Partial<Record<"dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault", any>>;

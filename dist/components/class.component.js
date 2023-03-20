@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClassComponent = void 0;
 const class_template_1 = require("../templates/class.template");
+const idmodel_template_1 = require("../templates/idmodel.template");
 const base_component_1 = require("./base.component");
 class ClassComponent extends base_component_1.BaseComponent {
     constructor() {
@@ -10,7 +11,7 @@ class ClassComponent extends base_component_1.BaseComponent {
         this.extra = '';
         this.echo = () => {
             const fieldsNonNullable = this.fields.reduce((acc, _field) => {
-                if (_field.nullable)
+                if (_field.nullable || _field.relation)
                     return acc;
                 acc.push(_field);
                 return acc;
@@ -18,19 +19,15 @@ class ClassComponent extends base_component_1.BaseComponent {
             let constructor = '';
             if (fieldsNonNullable.length > 0) {
                 let declaration = '';
-                let initialization = '';
                 for (const _field of fieldsNonNullable) {
+                    if (_field.isId)
+                        continue;
                     declaration += `${_field.name}: ${_field.type}, `;
-                    initialization += `this.${_field.name} = ${_field.name};`;
                 }
                 constructor =
                     `
-			constructor(${declaration}){
-				${initialization}
-			}
-
 			constructor(obj: {${declaration}}){
-				Object.assign(obj)
+				Object.assign(this, obj)
 			}
 			`;
             }
@@ -39,15 +36,21 @@ class ClassComponent extends base_component_1.BaseComponent {
             const model_getter = `get model(): ${prismamodel_type} {
 			return ${this.name}.model
 		}`;
+            let fromId = '';
+            const fieldId = this.fields.filter((_field) => _field.isId);
+            if (fieldId.length === 1) {
+                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replace('#!{FIELD_NAME}', fieldId[0].name);
+            }
             const fieldContent = this.fields.map((_field) => _field.echo());
             let str = class_template_1.CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())
-                .replace('#!{NAME}', `${this.name}`)
-                .replace('#!{FIELDS}', fieldContent.join('\r\n'))
-                .replace('#!{EXTRA}', this.extra)
-                .replace('#!{CONSTRUCTOR}', constructor)
-                .replace('#!{PRISMAMODEL_TYPE}', prismamodel_type)
-                .replace('#!{PRISMAMODEL_VALUE}', prismamodel_value)
-                .replace('#!{MODEL_GETTER}', model_getter);
+                .replaceAll('#!{FROMID}', `${fromId}`)
+                .replaceAll('#!{NAME}', `${this.name}`)
+                .replaceAll('#!{FIELDS}', fieldContent.join('\r\n'))
+                .replaceAll('#!{EXTRA}', this.extra)
+                .replaceAll('#!{CONSTRUCTOR}', constructor)
+                .replaceAll('#!{PRISMAMODEL_TYPE}', prismamodel_type)
+                .replaceAll('#!{PRISMAMODEL_VALUE}', prismamodel_value)
+                .replaceAll('#!{MODEL_GETTER}', model_getter);
             return str;
         };
         this.reExportPrefixed = (prefix) => {
