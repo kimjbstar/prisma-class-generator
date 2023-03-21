@@ -103,7 +103,7 @@ const writeTSFile = (fullPath, content, dryRun = true) => {
 };
 exports.writeTSFile = writeTSFile;
 const prettierFormat = (content, options = {}) => {
-    return (0, prettier_1.format)(content, Object.assign(Object.assign({}, options), { parser: 'typescript' }));
+    return (0, prettier_1.format)(content, { ...options, parser: 'typescript' });
 };
 exports.prettierFormat = prettierFormat;
 //# sourceMappingURL=util.js.map

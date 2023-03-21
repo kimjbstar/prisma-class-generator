@@ -10,7 +10,7 @@ class ImportComponent {
             if (alias) {
                 content = content.map((item) => `${item} as ${alias}${item}`);
             }
-            return `import { ${content.join(',')} } from '${this.from}'`;
+            return `import { _${content.join(',')} } from '${this.from}'`;
         };
         this.from = from;
         this.items = (0, util_1.toArray)(items);

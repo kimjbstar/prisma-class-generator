@@ -11,7 +11,7 @@ class ClassComponent extends base_component_1.BaseComponent {
         this.extra = '';
         this.echo = () => {
             const fieldsNonNullable = this.fields.reduce((acc, _field) => {
-                if (_field.nullable || _field.relation)
+                if (_field.nullable || _field.relation || _field.default !== undefined)
                     return acc;
                 acc.push(_field);
                 return acc;
@@ -19,26 +19,29 @@ class ClassComponent extends base_component_1.BaseComponent {
             let constructor = '';
             if (fieldsNonNullable.length > 0) {
                 let declaration = '';
+                let initialization = '';
                 for (const _field of fieldsNonNullable) {
                     if (_field.isId)
                         continue;
-                    declaration += `${_field.name}: ${_field.type}, `;
+                    declaration += `${_field.name}?: ${_field.type}, `;
+                    initialization += `this.${_field.name} = obj.${_field.name}
+				`;
                 }
                 constructor =
                     `
 			constructor(obj: {${declaration}}){
-				Object.assign(this, obj)
+				${initialization}
 			}
 			`;
             }
             const prismamodel_type = `Prisma.${this.name}Delegate<undefined>`;
             const model_getter = `get model(): ${prismamodel_type} {
-			return ${this.name}.model
+			return _${this.name}.model
 		}`;
             let fromId = '';
             const fieldId = this.fields.filter((_field) => _field.isId);
             if (fieldId.length === 1) {
-                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replace('#!{FIELD_NAME}', fieldId[0].name);
+                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replace('#!{FIELD_NAME}', `${fieldId[0].name}`);
             }
             const fieldContent = this.fields.map((_field) => _field.echo());
             let str = class_template_1.CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())
@@ -52,7 +55,7 @@ class ClassComponent extends base_component_1.BaseComponent {
             return str;
         };
         this.reExportPrefixed = (prefix) => {
-            return `export class ${this.name} extends ${prefix}${this.name} {}`;
+            return `export class _${this.name} extends ${prefix}${this.name} {}`;
         };
     }
 }

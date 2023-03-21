@@ -8,7 +8,7 @@ class FieldComponent extends base_component_1.BaseComponent {
         super(obj);
         this.echo = () => {
             let name = this.name;
-            if (this.nullable === true && !this.relation) {
+            if (!this.relation) {
                 name += '?';
             }
             if (this.isId) {
@@ -23,29 +23,33 @@ class FieldComponent extends base_component_1.BaseComponent {
                     defaultValue = `= undefined`;
                 }
             }
+            let decorators = '';
+            if (!this.nullable) {
+                decorators = '@required';
+            }
             if (!this.relation) {
                 return field_template_1.FIELD_TEMPLATE.replaceAll('#!{NAME}', name)
                     .replaceAll('#!{TYPE}', this.type)
-                    .replaceAll('#!{DECORATORS}', this.echoDecorators())
+                    .replaceAll('#!{DECORATORS}', decorators)
                     .replaceAll('#!{DEFAULT}', defaultValue);
             }
             else {
                 if (this.relation.hasFieldForOne === this) {
                     return field_template_1.FIELD_GETTER_ONE_TEMPLATE.replaceAll('#!{NAME}', name)
-                        .replaceAll('#!{TYPE}', this.type)
+                        .replaceAll('#!{TYPE}', `_${this.type}`)
                         .replaceAll('#!{RELATION_FROM}', this.relation.relationFromFields[0])
                         .replaceAll('#!{RELATION_TO}', this.relation.relationToFields[0]);
                 }
                 else if (this.relation.alsoHasFieldForOne === this) {
                     return field_template_1.FIELD_GETTER_ONE_TEMPLATE.replaceAll('#!{NAME}', name)
-                        .replaceAll('#!{TYPE}', this.type)
+                        .replaceAll('#!{TYPE}', `_${this.type}`)
                         .replaceAll('#!{RELATION_TO}', this.relation.relationFromFields[0])
                         .replaceAll('#!{RELATION_FROM}', this.relation.relationToFields[0]);
                 }
                 else {
                     return field_template_1.FIELD_GETTER_MANY_TEMPLATE.replaceAll('#!{NAME}', name)
-                        .replaceAll('#!{TYPE}', this.type)
-                        .replaceAll('#!{TYPE_BASE}', this.type.substring(0, this.type.length - 2))
+                        .replaceAll('#!{TYPE}', `_${this.type}`)
+                        .replaceAll('#!{TYPE_BASE}', `_${this.type.substring(0, this.type.length - 2)}`)
                         .replaceAll('#!{RELATION_TO}', this.relation.relationFromFields[0])
                         .replaceAll('#!{RELATION_FROM}', this.relation.relationToFields[0]);
                 }
