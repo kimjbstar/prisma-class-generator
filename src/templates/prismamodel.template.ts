@@ -1,10 +1,6 @@
 export const PRISMAMODEL_TEMPLATE = `import { PrismaClient } from "@prisma/client";
 !#{CLASSES_IMPORTS}
 
-export function required(target: any, propertyKey: string): any {
-	console.log(propertyKey)
-}
-
 export abstract class PrismaModel {
   static prisma: PrismaClient
   

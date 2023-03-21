@@ -1,6 +1,6 @@
 export const CLASS_TEMPLATE = `#!{IMPORTS}
 import { Prisma } from "@prisma/client";
-import { required } from './PrismaModel'
+import { PrismaDecorators } from './PrismaDecorators'
 
 #!{DECORATORS}
 export class _#!{NAME} {

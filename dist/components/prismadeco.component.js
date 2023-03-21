@@ -23,29 +23,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PrismaModelComponent = void 0;
-const prismamodel_template_1 = require("../templates/prismamodel.template");
+exports.PrismaDecoComponent = void 0;
+const prismadeco_template_1 = require("../templates/prismadeco.template");
 const path = __importStar(require("path"));
 const file_component_1 = require("./file.component");
-class PrismaModelComponent extends file_component_1.FileComponent {
-    constructor(output, classes) {
+class PrismaDecoComponent extends file_component_1.FileComponent {
+    constructor(output) {
         super();
         this.echo = () => {
-            let classesImports = '';
-            let classesInit = '';
-            for (const classComp of this.classes) {
-                classesImports += `import { _${classComp.name} } from './${classComp.name.toLowerCase()}'
-			export { _${classComp.name} } from './${classComp.name.toLowerCase()}'
-			`;
-                classesInit += `_${classComp.name}.model = PrismaModel.prisma.${classComp.name.toLowerCase().substring(0, 1)}${classComp.name.substring(1)};
-			`;
-            }
-            return prismamodel_template_1.PRISMAMODEL_TEMPLATE.replaceAll('!#{CLASSES_IMPORTS}', classesImports).replaceAll('!#{CLASSES_INIT}', classesInit);
+            return prismadeco_template_1.PRISMADECO_TEMPLATE.toString();
         };
         this.dir = path.resolve(output);
-        this.filename = "PrismaModel.ts";
-        this.classes = classes;
+        this.filename = "PrismaDecorators.ts";
     }
 }
-exports.PrismaModelComponent = PrismaModelComponent;
-//# sourceMappingURL=prismamodel.component.js.map
+exports.PrismaDecoComponent = PrismaDecoComponent;
+//# sourceMappingURL=prismadeco.component.js.map

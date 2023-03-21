@@ -32,6 +32,7 @@ const util_1 = require("./util");
 const prettier = __importStar(require("prettier"));
 const file_component_1 = require("./components/file.component");
 const prismamodel_component_1 = require("./components/prismamodel.component");
+const prismadeco_component_1 = require("./components/prismadeco.component");
 exports.GENERATOR_NAME = 'Prisma Class Generator';
 exports.PrismaClassGeneratorOptions = {
     dryRun: {
@@ -82,6 +83,7 @@ class PrismaClassGenerator {
                 });
             });
             files.push(new prismamodel_component_1.PrismaModelComponent(output, classes));
+            files.push(new prismadeco_component_1.PrismaDecoComponent(output));
             files.forEach((fileRow) => {
                 fileRow.write(config.dryRun);
             });

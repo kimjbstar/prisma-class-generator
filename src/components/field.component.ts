@@ -23,9 +23,13 @@ export class FieldComponent extends BaseComponent implements Echoable {
 		if (!this.relation) {
 			name += '?'
 		}
-
+		
+		let decorators = ''
 		if(this.isId){
 			this.default = '-1'
+			decorators = '@PrismaDecorators.id'
+		} else if(!this.nullable) {
+			decorators = '@PrismaDecorators.required'
 		}
 
 		let defaultValue = ''
@@ -35,11 +39,6 @@ export class FieldComponent extends BaseComponent implements Echoable {
 			if (this.useUndefinedDefault === true) {
 				defaultValue = `= undefined`
 			}
-		}
-
-		let decorators = ''
-		if(!this.nullable){
-			decorators = '@required'
 		}
 
 		if(!this.relation){

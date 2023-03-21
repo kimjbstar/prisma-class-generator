@@ -10,6 +10,7 @@ import {
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
 import { PrismaModelComponent } from './components/prismamodel.component'
+import { PrismaDecoComponent } from './components/prismadeco.component'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 
@@ -142,6 +143,7 @@ export class PrismaClassGenerator {
 		})
 
 		files.push(new PrismaModelComponent(output, classes));
+		files.push(new PrismaDecoComponent(output));
 
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
