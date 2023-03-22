@@ -30,30 +30,6 @@ const util_1 = require("../util");
 const generator_1 = require("../generator");
 const import_component_1 = require("./import.component");
 class FileComponent {
-    constructor(input) {
-        this._imports = [];
-        this.echoImports = () => {
-            return this.imports
-                .reduce((result, importRow) => {
-                result.push(importRow.echo());
-                return result;
-            }, [])
-                .join('\r\n');
-        };
-        this.echo = () => {
-            return this.prismaClass
-                .echo()
-                .replace('#!{IMPORTS}', this.echoImports());
-        };
-        if (input === undefined) {
-            return;
-        }
-        const { classComponent, output } = input;
-        this._prismaClass = classComponent;
-        this.dir = path.resolve(output);
-        this.filename = `${(0, change_case_1.snakeCase)(classComponent.name)}.ts`;
-        this.resolveImports();
-    }
     get dir() {
         return this._dir;
     }
@@ -77,6 +53,30 @@ class FileComponent {
     }
     set prismaClass(value) {
         this._prismaClass = value;
+    }
+    constructor(input) {
+        this._imports = [];
+        this.echoImports = () => {
+            return this.imports
+                .reduce((result, importRow) => {
+                result.push(importRow.echo());
+                return result;
+            }, [])
+                .join('\r\n');
+        };
+        this.echo = () => {
+            return this.prismaClass
+                .echo()
+                .replace('#!{IMPORTS}', this.echoImports());
+        };
+        if (input === undefined) {
+            return;
+        }
+        const { classComponent, output } = input;
+        this._prismaClass = classComponent;
+        this.dir = path.resolve(output);
+        this.filename = `${(0, change_case_1.snakeCase)(classComponent.name)}.ts`;
+        this.resolveImports();
     }
     registerImport(item, from) {
         const oldIndex = this.imports.findIndex((_import) => _import.from === from);
@@ -102,12 +102,6 @@ class FileComponent {
                 this.registerImport(decorator.name, decorator.importFrom);
             });
         });
-        if (generator.getConfig().useGraphQL) {
-            this.registerImport('ID', '@nestjs/graphql');
-            this.registerImport('Int', '@nestjs/graphql');
-            this.registerImport('registerEnumType', '@nestjs/graphql');
-            this.registerImport('GraphQLJSONObject', 'graphql-type-json');
-        }
     }
     write(dryRun) {
         const generator = generator_1.PrismaClassGenerator.getInstance();
@@ -122,6 +116,6 @@ class FileComponent {
         return path.resolve(this.dir, this.filename);
     }
 }
-exports.FileComponent = FileComponent;
 FileComponent.TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__';
+exports.FileComponent = FileComponent;
 //# sourceMappingURL=file.component.js.map

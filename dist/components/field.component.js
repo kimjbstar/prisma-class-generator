@@ -8,16 +8,12 @@ class FieldComponent extends base_component_1.BaseComponent {
         super(obj);
         this.echo = () => {
             let name = this.name;
-            if (!this.relation) {
+            if (!this.relation && !this.isId) {
                 name += '?';
             }
             let decorators = '';
             if (this.isId) {
                 this.default = '-1';
-                decorators = '@PrismaDecorators.id';
-            }
-            else if (!this.nullable) {
-                decorators = '@PrismaDecorators.required';
             }
             let defaultValue = '';
             if (this.default) {

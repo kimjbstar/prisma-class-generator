@@ -7,9 +7,9 @@ export class PrismaDecoComponent extends FileComponent {
 	classes: ClassComponent[]
 
 	constructor(output: string) {
-		super();
+		super()
 		this.dir = path.resolve(output)
-		this.filename = "PrismaDecorators.ts"
+		this.filename = 'PrismaDecorators.ts'
 	}
 
 	echo = () => {

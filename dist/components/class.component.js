@@ -11,8 +11,11 @@ class ClassComponent extends base_component_1.BaseComponent {
         this.extra = '';
         this.echo = () => {
             const fieldsNonNullable = this.fields.reduce((acc, _field) => {
-                if (_field.nullable || _field.relation || _field.default !== undefined)
+                if (_field.nullable ||
+                    _field.relation ||
+                    _field.default !== undefined) {
                     return acc;
+                }
                 acc.push(_field);
                 return acc;
             }, []);
@@ -27,8 +30,7 @@ class ClassComponent extends base_component_1.BaseComponent {
                     initialization += `this.${_field.name} = obj.${_field.name}
 				`;
                 }
-                constructor =
-                    `
+                constructor = `
 			constructor(obj: {${declaration}}){
 				${initialization}
 			}
@@ -41,7 +43,7 @@ class ClassComponent extends base_component_1.BaseComponent {
             let fromId = '';
             const fieldId = this.fields.filter((_field) => _field.isId);
             if (fieldId.length === 1) {
-                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replace('#!{FIELD_NAME}', `${fieldId[0].name}`);
+                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replaceAll('#!{FIELD_NAME}', `${fieldId[0].name}`);
             }
             const fieldContent = this.fields.map((_field) => _field.echo());
             let str = class_template_1.CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())

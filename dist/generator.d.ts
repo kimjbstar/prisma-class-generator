@@ -10,21 +10,13 @@ export declare const PrismaClassGeneratorOptions: {
         readonly desc: "separate relation fields";
         readonly defaultValue: false;
     };
-    readonly useSwagger: {
-        readonly desc: "use swagger decorstor";
-        readonly defaultValue: true;
-    };
-    readonly useGraphQL: {
-        readonly desc: "use graphql";
-        readonly defaultValue: false;
-    };
     readonly useUndefinedDefault: {
         readonly desc: "use undefined default";
         readonly defaultValue: false;
     };
 };
-export declare type PrismaClassGeneratorOptionsKeys = keyof typeof PrismaClassGeneratorOptions;
-export declare type PrismaClassGeneratorConfig = Partial<Record<PrismaClassGeneratorOptionsKeys, any>>;
+export type PrismaClassGeneratorOptionsKeys = keyof typeof PrismaClassGeneratorOptions;
+export type PrismaClassGeneratorConfig = Partial<Record<PrismaClassGeneratorOptionsKeys, any>>;
 export declare class PrismaClassGenerator {
     static instance: PrismaClassGenerator;
     _options: GeneratorOptions;

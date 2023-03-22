@@ -8,6 +8,7 @@ export class _#!{NAME} {
 #!{FIELDS}
 #!{CONSTRUCTOR}
 #!{MODEL_GETTER}
+
 #!{FROMID}
 }
 #!{EXTRA}

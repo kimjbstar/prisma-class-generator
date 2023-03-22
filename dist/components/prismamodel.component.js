@@ -37,13 +37,15 @@ class PrismaModelComponent extends file_component_1.FileComponent {
                 classesImports += `import { _${classComp.name} } from './${classComp.name.toLowerCase()}'
 			export { _${classComp.name} } from './${classComp.name.toLowerCase()}'
 			`;
-                classesInit += `_${classComp.name}.model = PrismaModel.prisma.${classComp.name.toLowerCase().substring(0, 1)}${classComp.name.substring(1)};
+                classesInit += `_${classComp.name}.model = PrismaModel.prisma.${classComp.name
+                    .toLowerCase()
+                    .substring(0, 1)}${classComp.name.substring(1)};
 			`;
             }
             return prismamodel_template_1.PRISMAMODEL_TEMPLATE.replaceAll('!#{CLASSES_IMPORTS}', classesImports).replaceAll('!#{CLASSES_INIT}', classesInit);
         };
         this.dir = path.resolve(output);
-        this.filename = "PrismaModel.ts";
+        this.filename = 'PrismaModel.ts';
         this.classes = classes;
     }
 }

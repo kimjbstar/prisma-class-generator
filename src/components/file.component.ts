@@ -46,9 +46,10 @@ export class FileComponent implements Echoable {
 	}
 
 	constructor(input?: { classComponent: ClassComponent; output: string }) {
-		if(input === undefined){
-			return;
+		if (input === undefined) {
+			return
 		}
+
 		const { classComponent, output } = input
 		this._prismaClass = classComponent
 		this.dir = path.resolve(output)
@@ -103,13 +104,6 @@ export class FileComponent implements Echoable {
 				this.registerImport(decorator.name, decorator.importFrom)
 			})
 		})
-
-		if (generator.getConfig().useGraphQL) {
-			this.registerImport('ID', '@nestjs/graphql')
-			this.registerImport('Int', '@nestjs/graphql')
-			this.registerImport('registerEnumType', '@nestjs/graphql')
-			this.registerImport('GraphQLJSONObject', 'graphql-type-json')
-		}
 	}
 
 	write(dryRun: boolean) {

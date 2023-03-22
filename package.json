@@ -17,10 +17,11 @@
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
-		"dev": "node -r ts-node/register src/index.ts",
+		"deva": "node -r ts-node/register src/index.ts",
 		"build": "tsc -w",
 		"generate:postgresql": "prisma generate --schema prisma/postgresql.prisma",
 		"generate:mysql": "prisma generate --schema prisma/mysql.prisma",
+		"dev": "npm run generate:mysql",
 		"generate:mongodb": "prisma generate --schema prisma/mongodb.prisma"
 	},
 	"bin": {
@@ -34,9 +35,9 @@
 		"email": "marechae02@gmail.com"
 	},
 	"dependencies": {
-		"@prisma/client": "^4.7.1",
-		"@prisma/generator-helper": "^4.7.1",
-		"@prisma/internals": "^4.7.1",
+		"@prisma/client": "^4.11.0",
+		"@prisma/generator-helper": "^4.11.0",
+		"@prisma/internals": "^4.11.0",
 		"change-case": "^4.1.2",
 		"prettier": "2.5.1",
 		"reflect-metadata": "^0.1.13"
@@ -45,11 +46,11 @@
 		"@types/jest": "^28.1.4",
 		"@types/node": "^18.0.0",
 		"@types/prettier": "^2.6.3",
-		"prisma": "^4.7.1",
+		"prisma": "^4.11.0",
 		"swagger-ui-express": "^4.4.0",
 		"ts-node": "^10.8.1",
 		"ts-toolbelt": "^9.6.0",
-		"typescript": "^4.7.4"
+		"typescript": "^5.0.2"
 	},
 	"_moduleAliases": {
 		"@src": "dist"

@@ -19,4 +19,4 @@ export abstract class PrismaModel {
     await PrismaModel.prisma.$disconnect();
   }
 }
-`;
+`

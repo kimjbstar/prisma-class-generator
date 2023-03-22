@@ -43,14 +43,6 @@ exports.PrismaClassGeneratorOptions = {
         desc: 'separate relation fields',
         defaultValue: false,
     },
-    useSwagger: {
-        desc: 'use swagger decorstor',
-        defaultValue: true,
-    },
-    useGraphQL: {
-        desc: 'use graphql',
-        defaultValue: false,
-    },
     useUndefinedDefault: {
         desc: 'use undefined default',
         defaultValue: false,

@@ -39,13 +39,6 @@ export type PrimitiveMapTypeKeys = keyof typeof primitiveMapType
 export type PrimitiveMapTypeValues =
 	typeof primitiveMapType[PrimitiveMapTypeKeys]
 
-export interface SwaggerDecoratorParams {
-	isArray?: boolean
-	type?: string
-	enum?: string
-	enumName?: string
-}
-
 export interface ConvertModelInput {
 	model: DMMF.Model
 	extractRelationFields?: boolean
@@ -61,11 +54,11 @@ export class PrismaConvertor {
 
 	_classesRelations: {
 		[key: string]: {
-			relationFromFields?: string[],
-			relationToFields?: string[],
-			hasFieldForOne?: FieldComponent,
-			justLinkedToMany?: FieldComponent,
-			alsoHasFieldForOne?: FieldComponent,
+			relationFromFields?: string[]
+			relationToFields?: string[]
+			hasFieldForOne?: FieldComponent
+			justLinkedToMany?: FieldComponent
+			alsoHasFieldForOne?: FieldComponent
 			name?: string
 		}
 	}
@@ -103,100 +96,6 @@ export class PrismaConvertor {
 		return primitiveMapType[dmmfField.type]
 	}
 
-	extractTypeGraphQLDecoratorFromField = (
-		dmmfField: DMMF.Field,
-	): DecoratorComponent => {
-		const options: SwaggerDecoratorParams = {}
-		const decorator = new DecoratorComponent({
-			name: 'Field',
-			importFrom: '@nestjs/graphql',
-		})
-		if (dmmfField.isId) {
-			decorator.params.push(`(type) => ID`)
-			return decorator
-		}
-		const isJson = dmmfField.type === 'Json'
-
-		if (isJson) {
-			decorator.params.push(`(type) => GraphQLJSONObject`)
-		}
-
-		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
-
-		if (type && type !== 'any' && !isJson) {
-			let grahQLType = capitalizeFirst(type)
-			if (grahQLType === 'Number') {
-				grahQLType = 'Int'
-			}
-			if (dmmfField.isList) {
-				grahQLType = `[${grahQLType}]`
-			}
-			decorator.params.push(`(type) => ${grahQLType}`)
-		}
-
-		if (dmmfField.relationName) {
-			let type = dmmfField.type
-			if (dmmfField.isList) {
-				type = `[${type}]`
-			}
-			decorator.params.push(`(type) => ${type}`)
-		}
-
-		if (dmmfField.kind === 'enum') {
-			let type = dmmfField.type
-			if (dmmfField.isList) {
-				type = arrayify(type)
-			}
-			decorator.params.push(`(type) => ${type}`)
-		}
-
-		if (dmmfField.isRequired === false) {
-			decorator.params.push(`{nullable : true}`)
-		}
-
-		return decorator
-	}
-
-	extractSwaggerDecoratorFromField = (
-		dmmfField: DMMF.Field,
-	): DecoratorComponent => {
-		const options: SwaggerDecoratorParams = {}
-		const name =
-			dmmfField.isRequired === true
-				? 'ApiProperty'
-				: 'ApiPropertyOptional'
-		const decorator = new DecoratorComponent({
-			name: name,
-			importFrom: '@nestjs/swagger',
-		})
-
-		if (dmmfField.isList) {
-			options.isArray = true
-		}
-
-		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
-		if (type && type !== 'any') {
-			options.type = capitalizeFirst(type)
-			decorator.params.push(options)
-			return decorator
-		}
-		type = dmmfField.type.toString()
-
-		if (dmmfField.relationName) {
-			options.type = wrapArrowFunction(dmmfField)
-			decorator.params.push(options)
-			return decorator
-		}
-
-		if (dmmfField.kind === 'enum') {
-			options.enum = dmmfField.type
-			options.enumName = wrapQuote(dmmfField)
-		}
-
-		decorator.params.push(options)
-		return decorator
-	}
-
 	getClass = (input: ConvertModelInput): ClassComponent => {
 		/** options */
 		const options = Object.assign(
@@ -228,7 +127,7 @@ export class PrismaConvertor {
 				)
 				.map((v) => v.type),
 		)
-		
+
 		const enums = model.fields.filter((field) => field.kind === 'enum')
 
 		classComponent.fields = model.fields
@@ -297,45 +196,45 @@ export class PrismaConvertor {
 						model,
 						extractRelationFields: true,
 						postfix: 'Relations',
-						useGraphQL: this.config.useGraphQL,
 					}),
 				),
 				...models.map((model) =>
 					this.getClass({
 						model,
 						extractRelationFields: false,
-						useGraphQL: this.config.useGraphQL,
 					}),
 				),
 			]
 		}
 
-		return models.map((model) =>
-			this.getClass({ model, useGraphQL: this.config.useGraphQL }),
-		)
+		return models.map((model) => this.getClass({ model }))
 	}
 
 	convertField = (dmmfField: DMMF.Field): FieldComponent => {
 		const field = new FieldComponent({
 			name: dmmfField.name,
 			useUndefinedDefault: this._config.useUndefinedDefault,
-			isId: dmmfField.isId
+			isId: dmmfField.isId,
 		})
 
-		if(dmmfField.relationName !== undefined){
-			if(!Object.keys(this._classesRelations).includes(dmmfField.relationName)){
-				this._classesRelations[dmmfField.relationName] = {name:''}
+		if (dmmfField.relationName !== undefined) {
+			if (
+				!Object.keys(this._classesRelations).includes(
+					dmmfField.relationName,
+				)
+			) {
+				this._classesRelations[dmmfField.relationName] = { name: '' }
 			}
 			const relation = this._classesRelations[dmmfField.relationName]
 			// hasFieldForOne
-			if(dmmfField.relationFromFields.length > 0){
+			if (dmmfField.relationFromFields.length > 0) {
 				relation.relationFromFields = dmmfField.relationFromFields
 				relation.relationToFields = dmmfField.relationToFields
 				relation.name = field.name
 				relation.hasFieldForOne = field
 			}
 			// OneToOne
-			else if(!dmmfField.isList){
+			else if (!dmmfField.isList) {
 				relation.relationFromFields = dmmfField.relationFromFields
 				relation.relationToFields = dmmfField.relationToFields
 				relation.name += `_${field.name}_`
@@ -350,18 +249,6 @@ export class PrismaConvertor {
 		}
 
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
-		if (this.config.useSwagger) {
-			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
-			field.decorators.push(decorator)
-		}
-
-		if (this.config.useGraphQL) {
-			const decorator =
-				this.extractTypeGraphQLDecoratorFromField(dmmfField)
-			if (decorator) {
-				field.decorators.push(decorator)
-			}
-		}
 
 		if (dmmfField.isRequired === false) {
 			field.nullable = true

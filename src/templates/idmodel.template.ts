@@ -5,7 +5,10 @@ export const IDMODEL_TEMPLATE = `static async fromId(id: number): Promise<_#!{NA
     }
   });
   if(dbModel === null) return null
-  return new _#!{NAME}(dbModel);
+  return new _#!{NAME}({
+    ...dbModel,
+    ...{#!{FIELD_NAME}: id}
+  });
 }
 
 `

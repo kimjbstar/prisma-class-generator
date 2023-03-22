@@ -24,81 +24,6 @@ class PrismaConvertor {
             }
             return primitiveMapType[dmmfField.type];
         };
-        this.extractTypeGraphQLDecoratorFromField = (dmmfField) => {
-            const options = {};
-            const decorator = new decorator_component_1.DecoratorComponent({
-                name: 'Field',
-                importFrom: '@nestjs/graphql',
-            });
-            if (dmmfField.isId) {
-                decorator.params.push(`(type) => ID`);
-                return decorator;
-            }
-            const isJson = dmmfField.type === 'Json';
-            if (isJson) {
-                decorator.params.push(`(type) => GraphQLJSONObject`);
-            }
-            let type = this.getPrimitiveMapTypeFromDMMF(dmmfField);
-            if (type && type !== 'any' && !isJson) {
-                let grahQLType = (0, util_1.capitalizeFirst)(type);
-                if (grahQLType === 'Number') {
-                    grahQLType = 'Int';
-                }
-                if (dmmfField.isList) {
-                    grahQLType = `[${grahQLType}]`;
-                }
-                decorator.params.push(`(type) => ${grahQLType}`);
-            }
-            if (dmmfField.relationName) {
-                let type = dmmfField.type;
-                if (dmmfField.isList) {
-                    type = `[${type}]`;
-                }
-                decorator.params.push(`(type) => ${type}`);
-            }
-            if (dmmfField.kind === 'enum') {
-                let type = dmmfField.type;
-                if (dmmfField.isList) {
-                    type = (0, util_1.arrayify)(type);
-                }
-                decorator.params.push(`(type) => ${type}`);
-            }
-            if (dmmfField.isRequired === false) {
-                decorator.params.push(`{nullable : true}`);
-            }
-            return decorator;
-        };
-        this.extractSwaggerDecoratorFromField = (dmmfField) => {
-            const options = {};
-            const name = dmmfField.isRequired === true
-                ? 'ApiProperty'
-                : 'ApiPropertyOptional';
-            const decorator = new decorator_component_1.DecoratorComponent({
-                name: name,
-                importFrom: '@nestjs/swagger',
-            });
-            if (dmmfField.isList) {
-                options.isArray = true;
-            }
-            let type = this.getPrimitiveMapTypeFromDMMF(dmmfField);
-            if (type && type !== 'any') {
-                options.type = (0, util_1.capitalizeFirst)(type);
-                decorator.params.push(options);
-                return decorator;
-            }
-            type = dmmfField.type.toString();
-            if (dmmfField.relationName) {
-                options.type = (0, util_1.wrapArrowFunction)(dmmfField);
-                decorator.params.push(options);
-                return decorator;
-            }
-            if (dmmfField.kind === 'enum') {
-                options.enum = dmmfField.type;
-                options.enumName = (0, util_1.wrapQuote)(dmmfField);
-            }
-            decorator.params.push(options);
-            return decorator;
-        };
         this.getClass = (input) => {
             const options = Object.assign({
                 extractRelationFields: null,
@@ -160,23 +85,21 @@ class PrismaConvertor {
                         model,
                         extractRelationFields: true,
                         postfix: 'Relations',
-                        useGraphQL: this.config.useGraphQL,
                     })),
                     ...models.map((model) => this.getClass({
                         model,
                         extractRelationFields: false,
-                        useGraphQL: this.config.useGraphQL,
                     })),
                 ];
             }
-            return models.map((model) => this.getClass({ model, useGraphQL: this.config.useGraphQL }));
+            return models.map((model) => this.getClass({ model }));
         };
         this.convertField = (dmmfField) => {
             var _a;
             const field = new field_component_1.FieldComponent({
                 name: dmmfField.name,
                 useUndefinedDefault: this._config.useUndefinedDefault,
-                isId: dmmfField.isId
+                isId: dmmfField.isId,
             });
             if (dmmfField.relationName !== undefined) {
                 if (!Object.keys(this._classesRelations).includes(dmmfField.relationName)) {
@@ -201,16 +124,6 @@ class PrismaConvertor {
                 field.relation = relation;
             }
             let type = this.getPrimitiveMapTypeFromDMMF(dmmfField);
-            if (this.config.useSwagger) {
-                const decorator = this.extractSwaggerDecoratorFromField(dmmfField);
-                field.decorators.push(decorator);
-            }
-            if (this.config.useGraphQL) {
-                const decorator = this.extractTypeGraphQLDecoratorFromField(dmmfField);
-                if (decorator) {
-                    field.decorators.push(decorator);
-                }
-            }
             if (dmmfField.isRequired === false) {
                 field.nullable = true;
             }

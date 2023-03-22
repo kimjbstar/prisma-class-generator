@@ -9,12 +9,9 @@ generator clent {
 }
 
 generator prismaClassGenerator {
-  provider               = "node -r ts-node/register/transpile-only src/index.ts"
-  output                 = "../src/_gen/prisma-class"
-  dryRun                 = "false"
-  separateRelationFields = "false"
-  useSwagger             = "false"
-  makeIndexFile          = "false"
+  provider = "dist/bin.js"
+  output   = "../src/_gen/prisma-class"
+  dryRun   = "false"
 }
 
 model Access_token {

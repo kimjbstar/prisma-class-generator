@@ -34,7 +34,7 @@ class PrismaDecoComponent extends file_component_1.FileComponent {
             return prismadeco_template_1.PRISMADECO_TEMPLATE.toString();
         };
         this.dir = path.resolve(output);
-        this.filename = "PrismaDecorators.ts";
+        this.filename = 'PrismaDecorators.ts';
     }
 }
 exports.PrismaDecoComponent = PrismaDecoComponent;
