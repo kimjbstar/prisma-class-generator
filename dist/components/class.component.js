@@ -33,6 +33,7 @@ class ClassComponent extends base_component_1.BaseComponent {
                 constructor = `
 			constructor(obj: {${declaration}}){
 				${initialization}
+				Object.assign(this, obj)
 			}
 			`;
             }
@@ -43,7 +44,29 @@ class ClassComponent extends base_component_1.BaseComponent {
             let fromId = '';
             const fieldId = this.fields.filter((_field) => _field.isId);
             if (fieldId.length === 1) {
-                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replaceAll('#!{FIELD_NAME}', `${fieldId[0].name}`);
+                let fieldsData = '';
+                for (const _field of this.fields) {
+                    if (_field.relation !== void 0)
+                        continue;
+                    fieldsData += `${_field.name}: this.${_field.name},`;
+                }
+                let checkRequired = '';
+                for (const _field of fieldsNonNullable) {
+                    if (_field.isId)
+                        continue;
+                    checkRequired += `this.${_field.name} === void 0
+				|| `;
+                }
+                if (checkRequired.length > 0) {
+                    checkRequired = checkRequired.substring(0, checkRequired.length - 3);
+                }
+                else {
+                    console.log(this.name);
+                    checkRequired = 'false';
+                }
+                fromId = idmodel_template_1.IDMODEL_TEMPLATE.replaceAll('#!{FIELD_NAME}', `${fieldId[0].name}`)
+                    .replaceAll('#!{REQUIRED_FIELDS}', fieldsData)
+                    .replaceAll('#!{CHECK_REQUIRED}', checkRequired);
             }
             const fieldContent = this.fields.map((_field) => _field.echo());
             let str = class_template_1.CLASS_TEMPLATE.replace('#!{DECORATORS}', this.echoDecorators())

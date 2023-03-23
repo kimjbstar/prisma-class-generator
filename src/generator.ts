@@ -132,7 +132,7 @@ export class PrismaClassGenerator {
 		})
 
 		files.push(new PrismaModelComponent(output, classes));
-		files.push(new PrismaDecoComponent(output));
+		// files.push(new PrismaDecoComponent(output));
 
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)

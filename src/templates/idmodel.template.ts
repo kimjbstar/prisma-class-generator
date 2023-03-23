@@ -5,10 +5,51 @@ export const IDMODEL_TEMPLATE = `static async fromId(id: number): Promise<_#!{NA
     }
   });
   if(dbModel === null) return null
-  return new _#!{NAME}({
-    ...dbModel,
-    ...{#!{FIELD_NAME}: id}
-  });
+  return new _#!{NAME}(dbModel);
 }
 
+async save(): Promise<{
+  status: true,
+  type: "updated" | "created"
+  id: number
+} | {
+  status: false
+}> {
+  if(this.#!{FIELD_NAME} < 0){
+    if(
+      #!{CHECK_REQUIRED}
+    ){
+      return {status: false}
+    }
+    
+    const data = {
+      #!{REQUIRED_FIELDS}
+    }
+
+    const user = await this.model.create({
+      data: data
+    })
+
+    return {status: true, id: user.#!{FIELD_NAME}, type: "created"}
+  }
+
+  try{
+    const data = {
+      #!{REQUIRED_FIELDS}
+    }
+    
+    const user = await this.model.update({
+      where:{
+        #!{FIELD_NAME}: this.#!{FIELD_NAME}
+      },
+      data: data
+    })
+
+    return {status: true, id: user.#!{FIELD_NAME}, type: "updated"}
+  } catch (_){
+    return {status: false}
+  }
+
+
+}
 `

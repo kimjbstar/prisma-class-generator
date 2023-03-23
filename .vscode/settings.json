@@ -6,5 +6,8 @@
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "prettier.trailingComma": "all",
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  }
 }

@@ -33,7 +33,7 @@ export class FieldComponent extends BaseComponent implements Echoable {
 			this.default = '-1'
 			// decorators = '@PrismaDecorators.id'
 		}
-		// else if(!this.nullable) {
+		// else if (!this.nullable) {
 		// 	decorators = '@PrismaDecorators.required'
 		// }
 

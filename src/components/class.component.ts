@@ -38,6 +38,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 			constructor = `
 			constructor(obj: {${declaration}}){
 				${initialization}
+				Object.assign(this, obj)
 			}
 			`
 		}
@@ -55,10 +56,30 @@ export class ClassComponent extends BaseComponent implements Echoable {
 		let fromId = ''
 		const fieldId = this.fields.filter((_field) => _field.isId)
 		if (fieldId.length === 1) {
+			let fieldsData = ''
+			for (const _field of this.fields) {
+				if (_field.relation !== void 0) continue;
+				fieldsData += `${_field.name}: this.${_field.name},`
+			}
+
+			let checkRequired = ''
+			for (const _field of fieldsNonNullable) {
+				if (_field.isId) continue
+				checkRequired += `this.${_field.name} === void 0
+				|| `
+			}
+			if (checkRequired.length > 0) {
+				checkRequired = checkRequired.substring(0, checkRequired.length - 3)
+			} else {
+				console.log(this.name)
+				checkRequired = 'false'
+			}
+
 			fromId = IDMODEL_TEMPLATE.replaceAll(
 				'#!{FIELD_NAME}',
-				`${fieldId[0].name}`,
-			)
+				`${fieldId[0].name}`,)
+				.replaceAll('#!{REQUIRED_FIELDS}', fieldsData)
+				.replaceAll('#!{CHECK_REQUIRED}', checkRequired)
 		}
 		const fieldContent = this.fields.map((_field) => _field.echo())
 		let str = CLASS_TEMPLATE.replace(

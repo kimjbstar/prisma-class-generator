@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLASS_TEMPLATE = void 0;
 exports.CLASS_TEMPLATE = `#!{IMPORTS}
 import { Prisma } from "@prisma/client";
-import { PrismaDecorators } from './PrismaDecorators'
+// import { PrismaDecorators } from './PrismaDecorators'
 
 #!{DECORATORS}
 export class _#!{NAME} {

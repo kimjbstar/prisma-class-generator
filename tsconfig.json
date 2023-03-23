@@ -27,8 +27,6 @@
 		"preserveConstEnums": true,
 		"lib": ["esnext", "dom"],
 		"downlevelIteration": false,
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
 		"stripInternal": false,
 		"sourceMap": true,
 		"forceConsistentCasingInFileNames": true,
@@ -41,8 +39,6 @@
 		"files",
 		"logs/**",
 		"test",
-		"**/*spec.ts",
-		"**/_gen/*.ts",
-		"src/_gen/**"
+		"**/*spec.ts"
 	]
 }
