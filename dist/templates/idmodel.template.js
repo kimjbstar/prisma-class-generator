@@ -26,21 +26,24 @@ async save(): Promise<{
     }
     
     const data = {
-      #!{REQUIRED_FIELDS}
+      #!{REQUIRED_FIELDS_CREATE}
     }
 
-    const user = await this.model.create({
-      data: data
-    })
-
-    return {status: true, id: user.#!{FIELD_NAME}, type: "created"}
+    try {
+      const user = await this.model.create({
+        data: data
+      })
+      return {status: true, id: user.#!{FIELD_NAME}, type: "created"}
+    } catch (_) {
+      return {status: false}
+    }
   }
 
   try{
     const data = {
-      #!{REQUIRED_FIELDS}
+      #!{REQUIRED_FIELDS_UPDATE}
     }
-    
+
     const user = await this.model.update({
       where:{
         #!{FIELD_NAME}: this.#!{FIELD_NAME}

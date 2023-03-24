@@ -56,10 +56,19 @@ export class ClassComponent extends BaseComponent implements Echoable {
 		let fromId = ''
 		const fieldId = this.fields.filter((_field) => _field.isId)
 		if (fieldId.length === 1) {
-			let fieldsData = ''
+			// To redo completely, just a quick temp fix
+			const relationFields = this.fields.reduce((acc, _field) => {
+				if (_field.relation) acc.push(_field.relation.relationFromFields[0])
+				return acc
+			}, [] as string[])
+
+			let fieldsDataCreate = ''
+			let fieldsDataUpdate = ''
 			for (const _field of this.fields) {
 				if (_field.relation !== void 0) continue;
-				fieldsData += `${_field.name}: this.${_field.name},`
+				fieldsDataUpdate += `${_field.name}: this.${_field.name},`
+				if (_field.isId && !relationFields.includes(_field.name)) continue
+				fieldsDataCreate += `${_field.name}: this.${_field.name},`
 			}
 
 			let checkRequired = ''
@@ -71,14 +80,14 @@ export class ClassComponent extends BaseComponent implements Echoable {
 			if (checkRequired.length > 0) {
 				checkRequired = checkRequired.substring(0, checkRequired.length - 3)
 			} else {
-				console.log(this.name)
 				checkRequired = 'false'
 			}
 
 			fromId = IDMODEL_TEMPLATE.replaceAll(
 				'#!{FIELD_NAME}',
 				`${fieldId[0].name}`,)
-				.replaceAll('#!{REQUIRED_FIELDS}', fieldsData)
+				.replaceAll('#!{REQUIRED_FIELDS_CREATE}', fieldsDataCreate)
+				.replaceAll('#!{REQUIRED_FIELDS_UPDATE}', fieldsDataUpdate)
 				.replaceAll('#!{CHECK_REQUIRED}', checkRequired)
 		}
 		const fieldContent = this.fields.map((_field) => _field.echo())
