@@ -42,6 +42,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'use undefined default',
 		defaultValue: false,
 	},
+	clientImportPath: {
+		desc: 'set prisma import path instead @prisma/client',
+		defaultValue: undefined,
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =
@@ -94,27 +98,21 @@ export class PrismaClassGenerator {
 	}
 
 	getClientImportPath() {
-		if (!this.rootPath || !this.clientPath) {
-			throw new GeneratorPathNotExists()
-		}
-		return path
-			.relative(this.rootPath, this.clientPath)
-			.replace('node_modules/', '')
+		return (
+			this.options.generator.config.clientImportPath ?? '@prisma/client'
+		)
 	}
 
+	/** set clientPath to absolute prisma client path */
 	setPrismaClientPath(): void {
 		const { otherGenerators, schemaPath } = this.options
 
-		this.rootPath = schemaPath.replace('/prisma/schema.prisma', '')
-		const defaultPath = path.resolve(
-			this.rootPath,
-			'node_modules/@prisma/client',
-		)
 		const clientGenerator = otherGenerators.find(
 			(g) => g.provider.value === 'prisma-client-js',
 		)
 
-		this.clientPath = clientGenerator?.output.value ?? defaultPath
+		this.rootPath = schemaPath.replace('/prisma/schema.prisma', '')
+		this.clientPath = clientGenerator.output.value
 	}
 
 	run = async (): Promise<void> => {
