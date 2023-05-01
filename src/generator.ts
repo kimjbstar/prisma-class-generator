@@ -46,6 +46,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'set prisma import path instead @prisma/client',
 		defaultValue: undefined,
 	},
+	useNonNullableAssertions: {
+		desc: 'applies non-nullable assertions (!) to class properties',
+		defaultValue: false
+	}
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

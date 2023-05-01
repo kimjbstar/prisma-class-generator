@@ -4,6 +4,7 @@ import { BaseComponent } from './base.component'
 
 export class FieldComponent extends BaseComponent implements Echoable {
 	name: string
+	nonNullableAssertion: boolean
 	nullable: boolean
 	useUndefinedDefault: boolean
 	default?: string
@@ -13,6 +14,8 @@ export class FieldComponent extends BaseComponent implements Echoable {
 		let name = this.name
 		if (this.nullable === true) {
 			name += '?'
+		} else if (this.nonNullableAssertion === true) {
+			name += '!'
 		}
 
 		let defaultValue = ''
