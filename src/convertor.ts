@@ -324,6 +324,10 @@ export class PrismaConvertor {
 			field.nullable = true
 		}
 
+		if (this.config.useNonNullableAssertions) {
+			field.nonNullableAssertion = true
+		}
+
 		if (dmmfField.default) {
 			if (typeof dmmfField.default !== 'object') {
 				field.default = dmmfField.default?.toString()
