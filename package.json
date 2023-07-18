@@ -1,5 +1,5 @@
 {
-	"name": "prisma-class-generator",
+	"name": "@rei/prisma-class-generator",
 	"version": "0.2.7",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
@@ -13,7 +13,7 @@
 	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git://github.com/reiprintmail/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
