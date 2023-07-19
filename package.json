@@ -1,6 +1,6 @@
 {
-	"name": "@memicmiralem/prisma-class-generator",
-	"version": "0.2.8",
+	"name": "@rei/prisma-class-generator",
+	"version": "0.2.7",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
