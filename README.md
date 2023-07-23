@@ -260,7 +260,7 @@ export class ProductDto extends IntersectionType(
     -   puts relational fields into different file for each model. This way the class will match the object returned by a Prisma query, default value is **false**
 -   _clientImportPath_
     -   set prisma client import path manually, default value is **@prisma/client**
--   _useNonNullAssertions_
+-   _useNonNullableAssertions_
     -   Apply a ! after non-optional class fields to avoid strict mode warnings (Property has no initializer and is not definitely assigned in the constructor.)
 
 ### **How it works?**
