@@ -213,7 +213,6 @@ export class PrismaConvertor {
 			})
 			decorators.push(decorator)
 		}
-		console.log('🚀 ~ file: convertor.ts:234 ~ type:', dmmfField)
 
 		const decoratorArgs: DecoratorArgs = {
 			name: undefined,
