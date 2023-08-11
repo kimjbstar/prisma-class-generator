@@ -99,6 +99,100 @@ class PrismaConvertor {
             decorator.params.push(options);
             return decorator;
         };
+        this.extractValidationDecoratorsFromField = (dmmfField) => {
+            const importFrom = 'class-validator';
+            const decorators = [];
+            if (dmmfField.isList) {
+                const decorator = new decorator_component_1.DecoratorComponent({
+                    name: 'IsArray',
+                    importFrom,
+                });
+                decorators.push(decorator);
+            }
+            if (!dmmfField.isRequired) {
+                const decorator = new decorator_component_1.DecoratorComponent({
+                    name: 'IsOptional',
+                    importFrom,
+                });
+                decorators.push(decorator);
+            }
+            const decoratorArgs = {
+                name: undefined,
+                importFrom,
+                params: dmmfField.isList ? { each: true } : undefined,
+            };
+            if (dmmfField.type &&
+                dmmfField.type !== 'any' &&
+                dmmfField.kind !== 'enum') {
+                switch (dmmfField.type) {
+                    case 'String':
+                        decoratorArgs.name = 'IsString';
+                        break;
+                    case 'Number':
+                        decoratorArgs.name = 'IsNumber';
+                        break;
+                    case 'Decimal':
+                        decoratorArgs.name = 'IsDecimal';
+                        break;
+                    case 'Float':
+                        decoratorArgs.name = 'IsDecimal';
+                        break;
+                    case 'Object':
+                        decoratorArgs.name = 'IsObject';
+                        break;
+                    case 'Json':
+                        decoratorArgs.name = 'IsJson';
+                        break;
+                    case 'Boolean':
+                        decoratorArgs.name = 'IsBoolean';
+                        break;
+                    case 'Date':
+                        decoratorArgs.name = 'IsDate';
+                        break;
+                    case 'DateTime':
+                        decoratorArgs.name = 'IsDate';
+                        break;
+                    case 'Int':
+                        decoratorArgs.name = 'IsInt';
+                        break;
+                    case 'BigInt':
+                        decoratorArgs.name = 'IsInt';
+                        break;
+                    case 'SmallInt':
+                        decoratorArgs.name = 'IsInt';
+                        break;
+                    case 'Bytes':
+                        decoratorArgs.name = 'Type';
+                        decoratorArgs.importFrom = 'class-transformer';
+                        decoratorArgs.params = () => Buffer;
+                }
+                if (decoratorArgs.name) {
+                    const decorator = new decorator_component_1.DecoratorComponent(decoratorArgs);
+                    decorators.push(decorator);
+                }
+            }
+            if (dmmfField.relationName) {
+                decorators.push(new decorator_component_1.DecoratorComponent({
+                    name: `ValidateNested`,
+                    params: dmmfField.isList ? { each: true } : undefined,
+                    importFrom,
+                }));
+                const relationType = (0, util_1.wrapArrowFunction)(dmmfField);
+                const decorator = new decorator_component_1.DecoratorComponent({
+                    name: 'Type',
+                    params: relationType,
+                    importFrom: 'class-transformer',
+                });
+                decorators.push(decorator);
+            }
+            if (dmmfField.kind === 'enum') {
+                decoratorArgs.name = 'IsEnum';
+                decoratorArgs.params = dmmfField.type;
+                const decorator = new decorator_component_1.DecoratorComponent(decoratorArgs);
+                decorators.push(decorator);
+            }
+            return decorators;
+        };
         this.getClass = (input) => {
             const options = Object.assign({
                 extractRelationFields: null,
@@ -182,6 +276,10 @@ class PrismaConvertor {
             if (this.config.useSwagger) {
                 const decorator = this.extractSwaggerDecoratorFromField(dmmfField);
                 field.decorators.push(decorator);
+            }
+            if (this.config.useValidation) {
+                const decorators = this.extractValidationDecoratorsFromField(dmmfField);
+                decorators.forEach((decorator) => field.decorators.push(decorator));
             }
             if (this.config.useGraphQL) {
                 const decorator = this.extractTypeGraphQLDecoratorFromField(dmmfField);

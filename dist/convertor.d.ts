@@ -12,6 +12,11 @@ export interface SwaggerDecoratorParams {
     enum?: string;
     enumName?: string;
 }
+export interface DecoratorArgs {
+    name: string;
+    params?: any | any[];
+    importFrom: string;
+}
 export interface ConvertModelInput {
     model: DMMF.Model;
     extractRelationFields?: boolean;
@@ -24,12 +29,13 @@ export declare class PrismaConvertor {
     private _dmmf;
     get dmmf(): DMMF.Document;
     set dmmf(value: DMMF.Document);
-    get config(): Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault" | "clientImportPath" | "useNonNullableAssertions", any>>;
-    set config(value: Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useGraphQL" | "useUndefinedDefault" | "clientImportPath" | "useNonNullableAssertions", any>>);
+    get config(): Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useValidation" | "useGraphQL" | "useUndefinedDefault" | "clientImportPath" | "useNonNullableAssertions", any>>;
+    set config(value: Partial<Record<"makeIndexFile" | "dryRun" | "separateRelationFields" | "useSwagger" | "useValidation" | "useGraphQL" | "useUndefinedDefault" | "clientImportPath" | "useNonNullableAssertions", any>>);
     static getInstance(): PrismaConvertor;
     getPrimitiveMapTypeFromDMMF: (dmmfField: DMMF.Field) => PrimitiveMapTypeValues;
     extractTypeGraphQLDecoratorFromField: (dmmfField: DMMF.Field) => DecoratorComponent;
     extractSwaggerDecoratorFromField: (dmmfField: DMMF.Field) => DecoratorComponent;
+    extractValidationDecoratorsFromField: (dmmfField: DMMF.Field) => DecoratorComponent[];
     getClass: (input: ConvertModelInput) => ClassComponent;
     getClasses: () => ClassComponent[];
     convertField: (dmmfField: DMMF.Field) => FieldComponent;

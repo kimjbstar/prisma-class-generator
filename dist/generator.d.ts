@@ -15,8 +15,12 @@ export declare const PrismaClassGeneratorOptions: {
         readonly defaultValue: false;
     };
     readonly useSwagger: {
-        readonly desc: "use swagger decorstor";
+        readonly desc: "use swagger decorator";
         readonly defaultValue: true;
+    };
+    readonly useValidation: {
+        readonly desc: "use validation decorators";
+        readonly defaultValue: false;
     };
     readonly useGraphQL: {
         readonly desc: "use graphql";

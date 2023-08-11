@@ -47,8 +47,12 @@ exports.PrismaClassGeneratorOptions = {
         defaultValue: false,
     },
     useSwagger: {
-        desc: 'use swagger decorstor',
+        desc: 'use swagger decorator',
         defaultValue: true,
+    },
+    useValidation: {
+        desc: 'use validation decorators',
+        defaultValue: false,
     },
     useGraphQL: {
         desc: 'use graphql',
@@ -64,8 +68,8 @@ exports.PrismaClassGeneratorOptions = {
     },
     useNonNullableAssertions: {
         desc: 'applies non-nullable assertions (!) to class properties',
-        defaultValue: false
-    }
+        defaultValue: false,
+    },
 };
 class PrismaClassGenerator {
     constructor(options) {
