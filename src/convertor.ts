@@ -216,6 +216,13 @@ export class PrismaConvertor {
 				)
 				.map((v) => v.type),
 		)
+
+		const typesTypes = uniquify(
+			model.fields
+				.filter(field => field.kind == "object" && model.name !== field.type)
+				.map(v => v.type)
+		)
+
 		const enums = model.fields.filter((field) => field.kind === 'enum')
 
 		classComponent.fields = model.fields
@@ -236,6 +243,8 @@ export class PrismaConvertor {
 			extractRelationFields === true
 				? []
 				: enums.map((field) => field.type.toString())
+
+		classComponent.types = typesTypes;
 
 		if (useGraphQL) {
 			const deco = new DecoratorComponent({
@@ -292,12 +301,29 @@ export class PrismaConvertor {
 						useGraphQL: this.config.useGraphQL,
 					}),
 				),
+				...this.dmmf.datamodel.types.map((model) =>
+					this.getClass({
+						model,
+						extractRelationFields: true,
+						postfix: 'Type',
+						useGraphQL: this.config.useGraphQL,
+					}),
+				),
 			]
 		}
 
-		return models.map((model) =>
-			this.getClass({ model, useGraphQL: this.config.useGraphQL }),
-		)
+		return [
+			...models.map((model) =>
+				this.getClass({ model, useGraphQL: this.config.useGraphQL }),
+			),
+			...this.dmmf.datamodel.types.map((model) =>
+				this.getClass({
+					model,
+					postfix: 'Type',
+					useGraphQL: this.config.useGraphQL,
+				}),
+			),
+		]
 	}
 
 	convertField = (dmmfField: DMMF.Field): FieldComponent => {
@@ -352,7 +378,7 @@ export class PrismaConvertor {
 		if (type) {
 			field.type = type
 		} else {
-			field.type = dmmfField.type
+			field.type = dmmfField.type + "Type"
 		}
 
 		if (dmmfField.isList) {
