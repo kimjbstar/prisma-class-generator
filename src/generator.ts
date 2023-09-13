@@ -49,6 +49,10 @@ export const PrismaClassGeneratorOptions = {
 	useNonNullableAssertions: {
 		desc: 'applies non-nullable assertions (!) to class properties',
 		defaultValue: false
+	},
+	preserveDefaultNullable: {
+		defaultValue: false,
+		desc: 'preserve default nullable behavior'
 	}
 } as const
 

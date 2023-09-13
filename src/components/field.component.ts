@@ -5,6 +5,7 @@ import { BaseComponent } from './base.component'
 export class FieldComponent extends BaseComponent implements Echoable {
 	name: string
 	nonNullableAssertion: boolean
+	preserveDefaultNullable: boolean
 	nullable: boolean
 	useUndefinedDefault: boolean
 	default?: string
@@ -12,8 +13,13 @@ export class FieldComponent extends BaseComponent implements Echoable {
 
 	echo = () => {
 		let name = this.name
+		let type = this.type
 		if (this.nullable === true) {
-			name += '?'
+			if (this.preserveDefaultNullable) {
+				type = this.type + ' | null'
+			} else {
+				name += '?'
+			}
 		} else if (this.nonNullableAssertion === true) {
 			name += '!'
 		}
@@ -29,7 +35,7 @@ export class FieldComponent extends BaseComponent implements Echoable {
 
 		return FIELD_TEMPLATE.replace('#!{NAME}', name)
 			.replace('#!{NAME}', name)
-			.replace('#!{TYPE}', this.type)
+			.replace('#!{TYPE}', type)
 			.replace('#!{DECORATORS}', this.echoDecorators())
 			.replace('#!{DEFAULT}', defaultValue)
 	}
