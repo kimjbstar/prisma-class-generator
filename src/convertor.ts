@@ -46,6 +46,12 @@ export interface SwaggerDecoratorParams {
 	enumName?: string
 }
 
+export interface DecoratorArgs {
+	name: string
+	params?: any | any[]
+	importFrom: string
+}
+
 export interface ConvertModelInput {
 	model: DMMF.Model
 	extractRelationFields?: boolean
@@ -163,6 +169,7 @@ export class PrismaConvertor {
 		}
 
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
+
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
 			decorator.params.push(options)
@@ -183,6 +190,116 @@ export class PrismaConvertor {
 
 		decorator.params.push(options)
 		return decorator
+	}
+
+	extractValidationDecoratorsFromField = (
+		dmmfField: DMMF.Field,
+	): DecoratorComponent[] => {
+		const importFrom = 'class-validator'
+		const decorators: DecoratorComponent[] = []
+
+		if (dmmfField.isList) {
+			const decorator = new DecoratorComponent({
+				name: 'IsArray',
+				importFrom,
+			})
+			decorators.push(decorator)
+		}
+
+		if (!dmmfField.isRequired) {
+			const decorator = new DecoratorComponent({
+				name: 'IsOptional',
+				importFrom,
+			})
+			decorators.push(decorator)
+		}
+
+		const decoratorArgs: DecoratorArgs = {
+			name: undefined,
+			importFrom,
+			params: dmmfField.isList ? { each: true } : undefined,
+		}
+
+		if (
+			dmmfField.type &&
+			dmmfField.type !== 'any' &&
+			dmmfField.kind !== 'enum'
+		) {
+			switch (dmmfField.type) {
+				case 'String':
+					decoratorArgs.name = 'IsString'
+					break
+				case 'Number':
+					decoratorArgs.name = 'IsNumber'
+					break
+				case 'Decimal':
+					decoratorArgs.name = 'IsDecimal'
+					break
+				case 'Float':
+					decoratorArgs.name = 'IsDecimal'
+					break
+				case 'Object':
+					decoratorArgs.name = 'IsObject'
+					break
+				case 'Json':
+					decoratorArgs.name = 'IsJSON'
+					break
+				case 'Boolean':
+					decoratorArgs.name = 'IsBoolean'
+					break
+				case 'Date':
+					decoratorArgs.name = 'IsDate'
+					break
+				case 'DateTime':
+					decoratorArgs.name = 'IsDate'
+					break
+				case 'Int':
+					decoratorArgs.name = 'IsInt'
+					break
+				case 'BigInt':
+					decoratorArgs.name = 'IsInt'
+					break
+				case 'SmallInt':
+					decoratorArgs.name = 'IsInt'
+					break
+				case 'Bytes':
+					decoratorArgs.name = 'Type'
+					decoratorArgs.importFrom = 'class-transformer'
+					decoratorArgs.params = () => Buffer
+			}
+
+			if (decoratorArgs.name) {
+				const decorator = new DecoratorComponent(decoratorArgs)
+				decorators.push(decorator)
+			}
+		}
+
+		if (dmmfField.relationName) {
+			decorators.push(
+				new DecoratorComponent({
+					name: `ValidateNested`,
+					params: dmmfField.isList ? { each: true } : undefined,
+					importFrom,
+				}),
+			)
+			const relationType = wrapArrowFunction(dmmfField)
+			const decorator = new DecoratorComponent({
+				name: 'Type',
+				params: relationType,
+				importFrom: 'class-transformer',
+			})
+
+			decorators.push(decorator)
+		}
+
+		if (dmmfField.kind === 'enum') {
+			decoratorArgs.name = 'IsEnum'
+			decoratorArgs.params = dmmfField.type
+			const decorator = new DecoratorComponent(decoratorArgs)
+			decorators.push(decorator)
+		}
+
+		return decorators
 	}
 
 	getClass = (input: ConvertModelInput): ClassComponent => {
@@ -211,8 +328,10 @@ export class PrismaConvertor {
 		/** relation & enums */
 		const relationTypes = uniquify(
 			model.fields
-				.filter(
-					(field) => field.relationName && model.name !== field.type,
+				.filter((field) =>
+					extractRelationFields
+						? field.relationName
+						: field.relationName && model.name !== field.type,
 				)
 				.map((v) => v.type),
 		)
@@ -336,6 +455,12 @@ export class PrismaConvertor {
 		if (this.config.useSwagger) {
 			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
 			field.decorators.push(decorator)
+		}
+
+		if (this.config.useValidation) {
+			const decorators =
+				this.extractValidationDecoratorsFromField(dmmfField)
+			decorators.forEach((decorator) => field.decorators.push(decorator))
 		}
 
 		if (this.config.useGraphQL) {
