@@ -26,7 +26,11 @@ export class FieldComponent extends BaseComponent implements Echoable {
 
 		let defaultValue = ''
 		if (this.default) {
-			defaultValue = `= ${this.default}`
+			if (!isNaN(Date.parse(this.default))) {
+				defaultValue = `= new Date('${this.default}')`
+			} else {
+				defaultValue = `= ${this.default}`
+			}
 		} else {
 			if (this.useUndefinedDefault === true) {
 				defaultValue = `= undefined`
