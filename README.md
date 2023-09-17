@@ -262,6 +262,8 @@ export class ProductDto extends IntersectionType(
     -   set prisma client import path manually, default value is **@prisma/client**
 -   _useNonNullableAssertions_
     -   Apply a ! after non-optional class fields to avoid strict mode warnings (Property has no initializer and is not definitely assigned in the constructor.)
+-   _preserveDefaultNullable_
+    -   Determines how null fields are handled. When set to **false** (default), it turns all null fields to undefined. Otherwise, it follows Prisma generation and adds null to the type.
 
 ### **How it works?**
 
