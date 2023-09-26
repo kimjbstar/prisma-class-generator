@@ -53,11 +53,12 @@ model Category {
 }
 
 model Company {
-  id          Int       @id
-  name        String
-  totalIncome BigInt    @default(100)
-  lat         Decimal
-  lng         Decimal
-  by          Bytes
-  products    Product[]
+  id            Int       @id
+  name          String
+  totalIncome   BigInt    @default(100)
+  lat           Decimal
+  lng           Decimal
+  by            Bytes
+  products      Product[]
+  establishedAt DateTime  @default("2000-01-01T01:00:00.00Z")
 }
