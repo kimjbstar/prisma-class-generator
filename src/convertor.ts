@@ -221,7 +221,9 @@ export class PrismaConvertor {
 			model.fields
 				.filter(
 					(field) =>
-						field.kind == 'object' && model.name !== field.type,
+						field.kind == 'object' &&
+						model.name !== field.type &&
+						!field.relationName,
 				)
 				.map((v) => v.type),
 		)
@@ -304,11 +306,11 @@ export class PrismaConvertor {
 						useGraphQL: this.config.useGraphQL,
 					}),
 				),
+				// mongodb Types support
 				...this.dmmf.datamodel.types.map((model) =>
 					this.getClass({
 						model,
 						extractRelationFields: true,
-						postfix: 'Type',
 						useGraphQL: this.config.useGraphQL,
 					}),
 				),
@@ -319,10 +321,10 @@ export class PrismaConvertor {
 			...models.map((model) =>
 				this.getClass({ model, useGraphQL: this.config.useGraphQL }),
 			),
+			// mongodb Types support
 			...this.dmmf.datamodel.types.map((model) =>
 				this.getClass({
 					model,
-					postfix: 'Type',
 					useGraphQL: this.config.useGraphQL,
 				}),
 			),
@@ -384,9 +386,6 @@ export class PrismaConvertor {
 
 		if (type) {
 			field.type = type
-		} else if (!dmmfField.relationName) {
-			// mongodb Type
-			field.type = dmmfField.type + 'Type'
 		} else {
 			field.type = dmmfField.type
 		}

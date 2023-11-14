@@ -1,7 +1,6 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
 import { parseEnvValue } from '@prisma/internals'
 import * as path from 'path'
-import { GeneratorPathNotExists } from './error-handler'
 import { PrismaConvertor } from './convertor'
 import {
 	getRelativeTSPath,
@@ -48,12 +47,12 @@ export const PrismaClassGeneratorOptions = {
 	},
 	useNonNullableAssertions: {
 		desc: 'applies non-nullable assertions (!) to class properties',
-		defaultValue: false
+		defaultValue: false,
 	},
 	preserveDefaultNullable: {
 		defaultValue: false,
-		desc: 'preserve default nullable behavior'
-	}
+		desc: 'preserve default nullable behavior',
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =
@@ -105,10 +104,15 @@ export class PrismaClassGenerator {
 		return PrismaClassGenerator.instance
 	}
 
-	getClientImportPath() {
-		return (
-			this.options.generator.config.clientImportPath ?? '@prisma/client'
-		)
+	getClientImportPath(): string {
+		const result = this.options.generator.config.clientImportPath
+		if (!result) {
+			return '@prisma/client'
+		}
+		if (Array.isArray(result)) {
+			return result[0]
+		}
+		return result
 	}
 
 	/** set clientPath to absolute prisma client path */
