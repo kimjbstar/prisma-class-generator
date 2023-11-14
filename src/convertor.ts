@@ -219,8 +219,11 @@ export class PrismaConvertor {
 
 		const typesTypes = uniquify(
 			model.fields
-				.filter(field => field.kind == "object" && model.name !== field.type)
-				.map(v => v.type)
+				.filter(
+					(field) =>
+						field.kind == 'object' && model.name !== field.type,
+				)
+				.map((v) => v.type),
 		)
 
 		const enums = model.fields.filter((field) => field.kind === 'enum')
@@ -244,7 +247,7 @@ export class PrismaConvertor {
 				? []
 				: enums.map((field) => field.type.toString())
 
-		classComponent.types = typesTypes;
+		classComponent.types = typesTypes
 
 		if (useGraphQL) {
 			const deco = new DecoratorComponent({
@@ -354,7 +357,7 @@ export class PrismaConvertor {
 			field.nonNullableAssertion = true
 		}
 
-		if(this.config.preserveDefaultNullable) {
+		if (this.config.preserveDefaultNullable) {
 			field.preserveDefaultNullable = true
 		}
 
@@ -381,8 +384,11 @@ export class PrismaConvertor {
 
 		if (type) {
 			field.type = type
+		} else if (!dmmfField.relationName) {
+			// mongodb Type
+			field.type = dmmfField.type + 'Type'
 		} else {
-			field.type = dmmfField.type + "Type"
+			field.type = dmmfField.type
 		}
 
 		if (dmmfField.isList) {

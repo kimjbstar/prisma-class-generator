@@ -62,3 +62,11 @@ model Company {
   products      Product[]
   establishedAt DateTime  @default("2000-01-01T01:00:00.00Z")
 }
+
+model Node {
+  id Int @id @default(autoincrement())
+
+  parentId Int?
+  parent   Node?  @relation("NodeToNodeParent", fields: [parentId], references: [id], onDelete: Restrict)
+  children Node[] @relation("NodeToNodeParent")
+}
