@@ -132,7 +132,7 @@ export class ProductDto extends IntersectionType(
     ```
 
     ```typescript
-    // product.ts
+    // company.ts
     import { Product } from './product'
     import { ApiProperty } from '@nestjs/swagger'
 
@@ -161,7 +161,7 @@ export class ProductDto extends IntersectionType(
     ```
 
     ```typescript
-    // category.ts
+    // product.ts
     import { Category } from './category'
     import { Company } from './company'
     import { ProductType } from '@prisma/client'
