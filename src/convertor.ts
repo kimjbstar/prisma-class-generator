@@ -387,7 +387,11 @@ export class PrismaConvertor {
 		if (type) {
 			field.type = type
 		} else {
-			field.type = dmmfField.type
+			if (dmmfField.relationName) {
+				field.type = `${dmmfField.type}AsType`
+			} else {
+				field.type = dmmfField.type
+			}
 		}
 
 		if (dmmfField.isList) {

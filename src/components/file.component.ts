@@ -86,6 +86,10 @@ export class FileComponent implements Echoable {
 				`${relationClassName}`,
 				FileComponent.TEMP_PREFIX + relationClassName,
 			)
+			this.registerImport(
+				`type ${relationClassName} as ${relationClassName}AsType`,
+				FileComponent.TEMP_PREFIX + relationClassName
+			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
 			this.registerImport(enumName, generator.getClientImportPath())
