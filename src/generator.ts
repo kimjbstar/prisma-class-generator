@@ -53,6 +53,10 @@ export const PrismaClassGeneratorOptions = {
 		defaultValue: false,
 		desc: 'preserve default nullable behavior',
 	},
+	useValidator: {
+		desc: 'use nest js class-validator decorators',
+		defaultValue: false,
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

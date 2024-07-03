@@ -1,6 +1,6 @@
 {
-	"name": "prisma-class-generator",
-	"version": "0.2.9",
+	"name": "prisma-class-generator-custom",
+	"version": "1.0.0",
 	"description": "Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
@@ -10,10 +10,10 @@
 		"typescript",
 		"generator"
 	],
-	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
+	"homepage": "https://github.com/ABHwan/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git://github.com/ABHwan/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
@@ -29,8 +29,8 @@
 		"node": ">=14"
 	},
 	"author": {
-		"name": "kimjbstar",
-		"email": "kimjbstar@gmail.com"
+		"name": "ABHwan",
+		"email": "say5131@gmail.com"
 	},
 	"dependencies": {
 		"@prisma/client": "^5.5.2",
