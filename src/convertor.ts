@@ -381,7 +381,6 @@ export class PrismaConvertor {
 
 		if (this.config.useValidator) {
 			const decorators = this.extractValidatorDecoratorsFromField(dmmfField)
-			console.log(decorators)
 			field.decorators.push(...decorators)
 		}
 
