@@ -211,8 +211,8 @@ export class PrismaConvertor {
 			decorators.push(new DecoratorComponent({ name, importFrom }))
 		}
 		if (dmmfField.kind === 'enum') {
-			name = 'IsIn'
-			decorators.push(new DecoratorComponent({ name, importFrom, params: [`getEnumValues(${String(dmmfField.type)})`] }))
+			name = 'IsEnum'
+			decorators.push(new DecoratorComponent({ name, importFrom, params: [`${String(dmmfField.type)}`] }))
 		}
 		return decorators;
 	}
