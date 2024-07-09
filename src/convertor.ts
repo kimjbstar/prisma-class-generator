@@ -3,13 +3,7 @@ import { ClassComponent } from './components/class.component'
 import { DecoratorComponent } from './components/decorator.component'
 import { FieldComponent } from './components/field.component'
 import { PrismaClassGeneratorConfig } from './generator'
-import {
-	arrayify,
-	capitalizeFirst,
-	uniquify,
-	wrapArrowFunction,
-	wrapQuote,
-} from './util'
+import { arrayify, capitalizeFirst, uniquify, wrapArrowFunction, wrapQuote } from './util'
 
 /** BigInt, Boolean, Bytes, DateTime, Decimal, Float, Int, JSON, String, $ModelName */
 type DefaultPrismaFieldType =
@@ -185,6 +179,44 @@ export class PrismaConvertor {
 		return decorator
 	}
 
+	extractValidatorDecoratorsFromField = (
+		dmmfField: DMMF.Field,
+	): DecoratorComponent[] => {
+		const decorators: DecoratorComponent[] = []
+		const importFrom = 'class-validator'
+		let name: string;
+		switch (dmmfField.type) {
+			case 'Int':
+				name = 'IsInt'
+				break;
+			case 'DateTime':
+				name = 'IsDate'
+				break;
+			case 'String':
+				name = 'IsString'
+				break;
+			case 'Boolean':
+				name = 'IsBoolean'
+				break;
+		}
+		if (name) {
+			decorators.push(new DecoratorComponent({ name, importFrom }))
+		}
+
+		if (dmmfField.isRequired) {
+			name = 'IsDefined'
+			decorators.push(new DecoratorComponent({ name, importFrom }))
+		} else {
+			name = 'IsOptional'
+			decorators.push(new DecoratorComponent({ name, importFrom }))
+		}
+		if (dmmfField.kind === 'enum') {
+			name = 'IsEnum'
+			decorators.push(new DecoratorComponent({ name, importFrom, params: [`${String(dmmfField.type)}`] }))
+		}
+		return decorators;
+	}
+
 	getClass = (input: ConvertModelInput): ClassComponent => {
 		/** options */
 		const options = Object.assign(
@@ -212,7 +244,11 @@ export class PrismaConvertor {
 		const relationTypes = uniquify(
 			model.fields
 				.filter(
-					(field) => field.relationName && (this._config.separateRelationFields ? true : model.name !== field.type),
+					(field) =>
+						field.relationName &&
+						(this._config.separateRelationFields
+							? true
+							: model.name !== field.type),
 				)
 				.map((v) => v.type),
 		)
@@ -341,6 +377,11 @@ export class PrismaConvertor {
 		if (this.config.useSwagger) {
 			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
 			field.decorators.push(decorator)
+		}
+
+		if (this.config.useValidator) {
+			const decorators = this.extractValidatorDecoratorsFromField(dmmfField)
+			field.decorators.push(...decorators)
 		}
 
 		if (this.config.useGraphQL) {
