@@ -28,7 +28,7 @@ const primitiveMapType: Record<DefaultPrismaFieldType, string> = {
 	String: 'string',
 	DateTime: 'Date',
 	Boolean: 'boolean',
-	Json: 'object',
+	Json: 'Record<string, unknown> | unknown[] | boolean | string | number | null',
 	BigInt: 'BigInt',
 	Float: 'number',
 	Decimal: 'number',
