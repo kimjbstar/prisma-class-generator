@@ -28,7 +28,7 @@ const primitiveMapType: Record<DefaultPrismaFieldType, string> = {
 	String: 'string',
 	DateTime: 'Date',
 	Boolean: 'boolean',
-	Json: 'Record<string, unknown> | unknown[] | boolean | string | number | null',
+	Json: 'object',
 	BigInt: 'BigInt',
 	Float: 'number',
 	Decimal: 'number',
@@ -212,7 +212,11 @@ export class PrismaConvertor {
 		const relationTypes = uniquify(
 			model.fields
 				.filter(
-					(field) => field.relationName && (this._config.separateRelationFields ? true : model.name !== field.type),
+					(field) =>
+						field.relationName &&
+						(this._config.separateRelationFields
+							? true
+							: model.name !== field.type),
 				)
 				.map((v) => v.type),
 		)
