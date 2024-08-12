@@ -162,6 +162,12 @@ export class PrismaConvertor {
 			options.isArray = true
 		}
 
+		if (dmmfField.type === 'Json') {
+			options.type = 'Object'
+			decorator.params.push(options);
+			return decorator
+		}
+
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
