@@ -71,6 +71,7 @@ export class ProductDto extends IntersectionType(
     ```prisma
     generator prismaClassGenerator {
         provider = "prisma-class-generator"
+        dryRun = false
     }
     ```
 
