@@ -89,3 +89,17 @@ export const writeTSFile = (
 export const prettierFormat = (content: string, options: Options = {}) => {
 	return format(content, { ...options, parser: 'typescript' })
 }
+
+export const rmdir = async (
+	dirPath: string,
+	rewrite: boolean = false,
+) => {
+	if (fs.existsSync(dirPath) && rewrite) {
+		const deletePromises = fs.readdirSync(dirPath).map(async (file) => {
+			const filePath = path.join(dirPath, file)
+			log(`Remove ${filePath}`)
+			return fs.unlinkSync(filePath)
+		})
+		await Promise.all(deletePromises)
+	}
+}

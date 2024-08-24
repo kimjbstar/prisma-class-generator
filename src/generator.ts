@@ -2,13 +2,7 @@ import { GeneratorOptions } from '@prisma/generator-helper'
 import { parseEnvValue } from '@prisma/internals'
 import * as path from 'path'
 import { PrismaConvertor } from './convertor'
-import {
-	getRelativeTSPath,
-	parseBoolean,
-	parseNumber,
-	prettierFormat,
-	writeTSFile,
-} from './util'
+import { getRelativeTSPath, parseBoolean, parseNumber, prettierFormat, rmdir, writeTSFile } from './util'
 import { INDEX_TEMPLATE } from './templates/index.template'
 import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
@@ -56,6 +50,10 @@ export const PrismaClassGeneratorOptions = {
 	useValidator: {
 		desc: 'use nest js class-validator decorators',
 		defaultValue: false,
+	},
+	rewrite: {
+		defaultValue: false,
+		desc: 'rewrite output at generate'
 	},
 } as const
 
@@ -136,6 +134,8 @@ export class PrismaClassGenerator {
 		const output = parseEnvValue(generator.output!)
 		const config = this.getConfig()
 		this.setPrismaClientPath()
+
+		await rmdir(output, config.rewrite)
 
 		const convertor = PrismaConvertor.getInstance()
 		convertor.dmmf = dmmf
