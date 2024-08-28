@@ -199,7 +199,7 @@ export class PrismaConvertor {
 				name = 'IsBoolean'
 				break;
 		}
-		if (name) {
+		if (name && !dmmfField.isList) {
 			decorators.push(new DecoratorComponent({ name, importFrom }))
 		}
 
