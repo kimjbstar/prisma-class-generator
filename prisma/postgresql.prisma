@@ -13,6 +13,7 @@ generator prismaClassGenerator {
   output                 = "../src/_gen/prisma-class"
   dryRun                 = "false"
   separateRelationFields = "false"
+  nameConvention         = "kebab"
 }
 
 enum ProductType {
@@ -27,7 +28,7 @@ enum ProductAnotherType {
   CC
 }
 
-model Product {
+model TestProduct {
   id            Int                @id
   title         String             @db.VarChar(255)
   desc          String             @default("abc") @db.VarChar(1024)
@@ -39,29 +40,29 @@ model Product {
   averageRating Float?
   categoryId    Int
   companyId     Int
-  category      Category           @relation(fields: [categoryId], references: [id])
-  company       Company            @relation(fields: [companyId], references: [id])
+  category      TestCategory       @relation(fields: [categoryId], references: [id])
+  company       TestCompany        @relation(fields: [companyId], references: [id])
   createdAt     DateTime           @default(now()) @db.Timestamp(6)
   updatedAt     DateTime           @updatedAt @db.Timestamp(6)
 }
 
-model Category {
-  id       Int       @id
-  products Product[]
+model TestCategory {
+  id       Int           @id
+  products TestProduct[]
 }
 
-model Company {
-  id                      Int       @id
+model TestCompany {
+  id                      Int           @id
   name                    String
-  totalIncome             BigInt    @default(100)
+  totalIncome             BigInt        @default(100)
   lat                     Decimal
   lng                     Decimal
   by                      Bytes
-  products                Product[]
+  products                TestProduct[]
   tags                    String[]
-  tagsWithEmptyDefault    String[]  @default([])
-  tagsWithDefault         String[]  @default(["a", "b"])
+  tagsWithEmptyDefault    String[]      @default([])
+  tagsWithDefault         String[]      @default(["a", "b"])
   numTags                 Int[]
-  numTagsWithEmptyDefault Int[]     @default([])
-  numTagsWithDefault      Int[]     @default([1, 2])
+  numTagsWithEmptyDefault Int[]         @default([])
+  numTagsWithDefault      Int[]         @default([1, 2])
 }
