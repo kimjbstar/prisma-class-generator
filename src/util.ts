@@ -5,6 +5,7 @@ import { GENERATOR_NAME } from './generator'
 import { GeneratorFormatNotValidError } from './error-handler'
 import { DMMF } from '@prisma/generator-helper'
 import { Options, format } from 'prettier'
+import { PrismaClassGeneratorOptions } from './interfaces/options'
 
 export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)
@@ -63,6 +64,22 @@ export const parseNumber = (value: unknown): number => {
 		)
 	}
 	return numbered
+}
+
+export const parseNameConvention = (
+	value: string | string[],
+): PrismaClassGeneratorOptions['nameConvention'] => {
+	if (Array.isArray(value)) {
+		throw new GeneratorFormatNotValidError(
+			`parseNameConvention failed : "nameConvention" should be string type`,
+		)
+	}
+	if (['snake', 'camel', 'pascal', 'kebab'].includes(value) === false) {
+		throw new GeneratorFormatNotValidError(
+			`parseNameConvention failed : "${value}" is not valid name convention ( snake | camel | pascal | kebab )`,
+		)
+	}
+	return value as PrismaClassGeneratorOptions['nameConvention']
 }
 
 export const toArray = <T>(value: T | T[]): T[] => {
