@@ -5,6 +5,7 @@ import { PrismaConvertor } from './convertor'
 import {
 	getRelativeTSPath,
 	parseBoolean,
+	parseNameConvention,
 	parseNumber,
 	prettierFormat,
 	writeTSFile,
@@ -13,53 +14,25 @@ import { INDEX_TEMPLATE } from './templates/index.template'
 import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
+import { PrismaClassGeneratorOptions } from './interfaces/options'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
 
-export const PrismaClassGeneratorOptions = {
-	makeIndexFile: {
-		desc: 'make index file',
-		defaultValue: true,
-	},
-	dryRun: {
-		desc: 'dry run',
-		defaultValue: true,
-	},
-	separateRelationFields: {
-		desc: 'separate relation fields',
-		defaultValue: false,
-	},
-	useSwagger: {
-		desc: 'use swagger decorstor',
-		defaultValue: true,
-	},
-	useGraphQL: {
-		desc: 'use graphql',
-		defaultValue: false,
-	},
-	useUndefinedDefault: {
-		desc: 'use undefined default',
-		defaultValue: false,
-	},
-	clientImportPath: {
-		desc: 'set prisma import path instead @prisma/client',
-		defaultValue: undefined,
-	},
-	useNonNullableAssertions: {
-		desc: 'applies non-nullable assertions (!) to class properties',
-		defaultValue: false,
-	},
-	preserveDefaultNullable: {
-		defaultValue: false,
-		desc: 'preserve default nullable behavior',
-	},
+export const DEFAULT_OPTIONS: PrismaClassGeneratorOptions = {
+	makeIndexFile: true,
+	dryRun: true,
+	separateRelationFields: false,
+	useSwagger: true,
+	useGraphQL: false,
+	useUndefinedDefault: false,
+	clientImportPath: undefined,
+	useNonNullableAssertions: false,
+	preserveDefaultNullable: false,
+	nameConvention: 'snake',
 } as const
 
-export type PrismaClassGeneratorOptionsKeys =
-	keyof typeof PrismaClassGeneratorOptions
-export type PrismaClassGeneratorConfig = Partial<
-	Record<PrismaClassGeneratorOptionsKeys, any>
->
+export type PrismaClassGeneratorOptionsKeys = keyof PrismaClassGeneratorOptions
+export type PrismaClassGeneratorConfig = Partial<PrismaClassGeneratorOptions>
 
 export class PrismaClassGenerator {
 	static instance: PrismaClassGenerator
@@ -139,7 +112,12 @@ export class PrismaClassGenerator {
 
 		const classes = convertor.getClasses()
 		const files = classes.map(
-			(classComponent) => new FileComponent({ classComponent, output }),
+			(classComponent) =>
+				new FileComponent({
+					classComponent,
+					output,
+					case: config.nameConvention,
+				}),
 		)
 
 		const classToPath = files.reduce((result, fileRow) => {
@@ -198,12 +176,15 @@ export class PrismaClassGenerator {
 		const config = this.options.generator.config
 
 		const result: PrismaClassGeneratorConfig = {}
-		for (const optionName in PrismaClassGeneratorOptions) {
-			const { defaultValue } = PrismaClassGeneratorOptions[optionName]
+		for (const optionName in DEFAULT_OPTIONS) {
+			const defaultValue = DEFAULT_OPTIONS[optionName]
 			result[optionName] = defaultValue
 
 			const value = config[optionName]
 			if (value) {
+				if (optionName === 'nameConvention') {
+					result[optionName] = parseNameConvention(value)
+				}
 				if (typeof defaultValue === 'boolean') {
 					result[optionName] = parseBoolean(value)
 				} else if (typeof defaultValue === 'number') {

@@ -1,10 +1,11 @@
-import { pascalCase, snakeCase } from 'change-case'
+import { pascalCase, snakeCase, camelCase, kebabCase } from 'change-case'
 import { ClassComponent } from './class.component'
 import * as path from 'path'
 import { getRelativeTSPath, prettierFormat, writeTSFile } from '../util'
 import { PrismaClassGenerator } from '../generator'
 import { Echoable } from '../interfaces/echoable'
 import { ImportComponent } from './import.component'
+import { PrismaClassGeneratorOptions } from '../interfaces/options'
 
 export class FileComponent implements Echoable {
 	private _dir?: string
@@ -45,11 +46,28 @@ export class FileComponent implements Echoable {
 		this._prismaClass = value
 	}
 
-	constructor(input: { classComponent: ClassComponent; output: string }) {
+	constructor(input: {
+		classComponent: ClassComponent
+		output: string
+		case: PrismaClassGeneratorOptions['nameConvention']
+	}) {
 		const { classComponent, output } = input
 		this._prismaClass = classComponent
 		this.dir = path.resolve(output)
-		this.filename = `${snakeCase(classComponent.name)}.ts`
+		switch (input.case) {
+			case 'camel':
+				this.filename = `${camelCase(classComponent.name)}.ts`
+				break
+			case 'pascal':
+				this.filename = `${pascalCase(classComponent.name)}.ts`
+				break
+			case 'kebab':
+				this.filename = `${kebabCase(classComponent.name)}.ts`
+				break
+			default:
+				this.filename = `${snakeCase(classComponent.name)}.ts`
+				break
+		}
 		this.resolveImports()
 	}
 
