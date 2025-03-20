@@ -264,6 +264,8 @@ export class ProductDto extends IntersectionType(
     -   Apply a ! after non-optional class fields to avoid strict mode warnings (Property has no initializer and is not definitely assigned in the constructor.)
 -   _preserveDefaultNullable_
     -   Determines how null fields are handled. When set to **false** (default), it turns all null fields to undefined. Otherwise, it follows Prisma generation and adds null to the type.
+-   _nameConvention_
+    -   Determines what naming convention to use for the generated classes' file names. The default value is **snake**. The other option is **pascal**, **camel**, **kebab**.
 
 ### **How it works?**
 
