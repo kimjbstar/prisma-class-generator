@@ -1,7 +1,7 @@
 {
-	"name": "prisma-class-generator",
-	"version": "0.2.11",
-	"description": "Class generator from Prisma schema",
+	"name": "@jannis6023/prisma-class-generator",
+	"version": "0.5.3",
+	"description": "One2One-Relation-fixed Class generator from Prisma schema",
 	"main": "dist/index.js",
 	"license": "MIT",
 	"keywords": [
@@ -10,10 +10,10 @@
 		"typescript",
 		"generator"
 	],
-	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
+	"homepage": "https://github.com/jannis6023/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git://github.com/jannis6023/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
@@ -40,9 +40,12 @@
 		"prettier": "2.5.1"
 	},
 	"devDependencies": {
+		"@nestjs/swagger": "^7.3.1",
 		"@types/jest": "^28.1.4",
 		"@types/node": "^18.15.11",
 		"@types/prettier": "^2.6.3",
+		"class-transformer": "^0.5.1",
+		"class-validator": "^0.14.1",
 		"prisma": "^5.5.2",
 		"swagger-ui-express": "^4.4.0",
 		"ts-node": "^10.9.1",

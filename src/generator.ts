@@ -53,6 +53,10 @@ export const PrismaClassGeneratorOptions = {
 		defaultValue: false,
 		desc: 'preserve default nullable behavior',
 	},
+	useClassValidator: {
+		desc: 'use class validator',
+		defaultValue: false
+	}
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

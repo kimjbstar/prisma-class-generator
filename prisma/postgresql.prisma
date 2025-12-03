@@ -13,18 +13,14 @@ generator prismaClassGenerator {
   output                 = "../src/_gen/prisma-class"
   dryRun                 = "false"
   separateRelationFields = "false"
+  useClassValidator      = "true"
 }
 
-enum ProductType {
-  A
-  B
-  C
-}
-
-enum ProductAnotherType {
-  AA
-  BB
-  CC
+enum TestEnum {
+  alfa
+  bravo
+  charlie
+  delta
 }
 
 model Product {
@@ -46,23 +42,14 @@ model Product {
   updatedAt     DateTime           @updatedAt @db.Timestamp(6)
 }
 
-model Category {
-  id       Int       @id
-  products Product[]
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
 }
 
-model Company {
-  id                      Int       @id
-  name                    String
-  totalIncome             BigInt    @default(100)
-  lat                     Decimal
-  lng                     Decimal
-  by                      Bytes
-  products                Product[]
-  tags                    String[]
-  tagsWithEmptyDefault    String[]  @default([])
-  tagsWithDefault         String[]  @default(["a", "b"])
-  numTags                 Int[]
-  numTagsWithEmptyDefault Int[]     @default([])
-  numTagsWithDefault      Int[]     @default([1, 2])
+model Category {
+  id        Int       @id
+  name      String    @db.VarChar(255)
+  products  Product[]
+  createdAt DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @db.Timestamp(6)
 }

@@ -238,7 +238,7 @@ export class PrismaConvertor {
 				}
 				return true
 			})
-			.map((field) => this.convertField(field))
+			.map((field) => this.convertField(field, extractRelationFields))
 		classComponent.relationTypes =
 			extractRelationFields === false ? [] : relationTypes
 
@@ -329,7 +329,286 @@ export class PrismaConvertor {
 		]
 	}
 
-	convertField = (dmmfField: DMMF.Field): FieldComponent => {
+	extractClassValidatorDecoratorsFromField = (dmmfField: DMMF.Field) => {
+		const documentation = dmmfField.documentation?.split(' ') ?? [];
+		const decorators = [];
+
+		const type = dmmfField.type;
+
+		if(dmmfField.isRequired){
+			decorators.push(new DecoratorComponent({
+				name: 'IsDefined',
+				importFrom: 'class-validator',
+			}));
+		}else{
+			decorators.push(new DecoratorComponent({
+				name: 'IsOptional',
+				importFrom: 'class-validator',
+			}));
+		}
+
+		if(dmmfField.relationName){
+			// is relation => ValidateNested
+			decorators.push(new DecoratorComponent({
+				name: 'ValidateNested',
+				importFrom: 'class-validator',
+			}))
+
+			return decorators;
+		}
+
+		if(dmmfField.kind === 'enum'){
+			decorators.push(new DecoratorComponent({
+				name: 'IsEnum',
+				importFrom: 'class-validator',
+				params: [dmmfField.type],
+			}))
+		}
+
+		if (documentation.length > 0) {
+			if(documentation.includes('isEmail')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsEmail',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isUrl')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsUrl',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isAlpha')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsAlpha',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isAlphanumeric')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsAlphanumeric',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isAscii')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsAscii',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isBase64')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsBase64',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isCreditCard')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsCreditCard',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isCurrency')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsCurrency',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isDecimal')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsDecimal',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isFQDN')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsFQDN',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isHash')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsHash',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isHexColor')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsHexColor',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isHexadecimal')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsHexadecimal',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isIP')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsIP',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isISBN')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsISBN',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isISIN')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsISIN',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isISO8601')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsISO8601',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isJWT')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsJWT',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.includes('isLatLong')){
+				decorators.push(new DecoratorComponent({
+					name: 'IsLatLong',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('minLength:'))){
+				const parts = documentation.find(s => s.includes('minLength:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'MinLength',
+					params: [value],
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('maxLength:'))){
+				const parts = documentation.find(s => s.includes('maxLength:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'MaxLength',
+					params: [value],
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('min:'))){
+				const parts = documentation.find(s => s.includes('min:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'Min',
+					params: [value],
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('max:'))){
+				const parts = documentation.find(s => s.includes('max:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'Max',
+					params: [value],
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('in:'))){
+				const parts = documentation.find(s => s.includes('in:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'IsIn',
+					params: [...value.split(',')],
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(documentation.some(s => s.startsWith('isDivisibleBy:'))){
+				const parts = documentation.find(s => s.includes('isDivisibleBy:')).split(':');
+				const value = parts[1];
+				decorators.push(new DecoratorComponent({
+					name: 'IsDivisibleBy',
+					params: [value],
+					importFrom: 'class-validator',
+				}))
+			}
+
+		}else{
+			// basic validation of types (IsString, etc...)
+
+			if(type === 'String'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsString',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(type === 'Json'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsObject',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(type === 'Int'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsInt',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(type === 'Boolean'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsBoolean',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(type === 'BigInt'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsInt',
+					importFrom: 'class-validator',
+				}))
+			}
+
+			if(type === 'DateTime'){
+				decorators.push(new DecoratorComponent({
+					name: 'IsDateString',
+					importFrom: 'class-validator',
+				}))
+			}
+		}
+
+		return decorators;
+	}
+
+	convertField = (dmmfField: DMMF.Field, relationField: boolean): FieldComponent => {
 		const field = new FieldComponent({
 			name: dmmfField.name,
 			useUndefinedDefault: this._config.useUndefinedDefault,
@@ -339,6 +618,11 @@ export class PrismaConvertor {
 		if (this.config.useSwagger) {
 			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
 			field.decorators.push(decorator)
+		}
+
+		if(this.config.useClassValidator){
+			const decorators = this.extractClassValidatorDecoratorsFromField(dmmfField);
+			field.decorators.push(...decorators)
 		}
 
 		if (this.config.useGraphQL) {
