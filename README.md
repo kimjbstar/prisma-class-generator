@@ -1,7 +1,10 @@
 # Prisma Class Generator
 
 [![npm version](https://img.shields.io/npm/v/prisma-class-generator.svg)](https://www.npmjs.com/package/prisma-class-generator)
+[![npm downloads](https://img.shields.io/npm/dm/prisma-class-generator.svg)](https://www.npmjs.com/package/prisma-class-generator)
+[![CI](https://github.com/kimjbstar/prisma-class-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/kimjbstar/prisma-class-generator/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/prisma-class-generator.svg)](./LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
 ## **Prisma**
 
