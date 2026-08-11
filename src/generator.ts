@@ -4,6 +4,7 @@ import * as path from 'path'
 import { PrismaConvertor } from './convertor'
 import {
 	getRelativeTSPath,
+	log,
 	parseBoolean,
 	parseNumber,
 	prettierFormat,
@@ -16,6 +17,7 @@ import { FileComponent } from './components/file.component'
 import { GeneratorPathNotExists } from './error-handler'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
+export const REPO_URL = 'https://github.com/kimjbstar/prisma-class-generator'
 
 /** Prisma 7 renamed the default client generator from 'prisma-client-js' to 'prisma-client'. Support both. */
 export const PRISMA_CLIENT_GENERATOR_PROVIDERS = [
@@ -235,6 +237,24 @@ export class PrismaClassGenerator {
 				this.prettierOptions,
 			)
 			writeTSFile(indexFilePath, formattedContent, config.dryRun)
+		}
+
+		// dryRun defaults to true, and "I ran this and nothing showed up in my output folder"
+		// was a recurring first-time-setup report (see #59) — the content was printed above,
+		// but easy to miss that it's a preview rather than a failure. Say so explicitly.
+		if (config.dryRun) {
+			log(
+				[
+					'',
+					`This was a dry run — ${files.length} file(s) were only printed above, nothing was written to disk.`,
+					'Set dryRun = "false" in your generator block once the preview looks right:',
+					'',
+					'  generator prismaClassGenerator {',
+					'    provider = "prisma-class-generator"',
+					'    dryRun   = "false"',
+					'  }',
+				].join('\n'),
+			)
 		}
 		return
 	}

@@ -2,7 +2,8 @@
 
 Guidance for AI coding assistants (and human contributors) working in this repo.
 For what this package *does* and how to *use* it, see [README.md](./README.md) — this file
-is about working on the generator itself.
+is about working on the generator itself. For the PR mechanics (checklist, what tends to get
+merged quickly), see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## What this is
 
