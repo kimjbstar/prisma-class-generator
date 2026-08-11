@@ -18,11 +18,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # No `registry-url` here on purpose: actions/setup-node's registry-url option writes
+      # its own .npmrc (pointed to via NPM_CONFIG_USERCONFIG) that expects a NODE_AUTH_TOKEN
+      # env var. That .npmrc takes npm config precedence over the one changesets/action
+      # writes for NPM_TOKEN below, so with only NPM_TOKEN set (no NODE_AUTH_TOKEN), npm ended
+      # up reading the setup-node one with an empty token -- an effectively-unauthenticated
+      # publish that failed with a 404 (npm's way of saying "no permission"), not the clearer
+      # 401 you'd expect. Reproduced on a real run, not guessed.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: yarn
-          registry-url: 'https://registry.npmjs.org'
 
       - run: yarn install --frozen-lockfile
       - run: npm run build
