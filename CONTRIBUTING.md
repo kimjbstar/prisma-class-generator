@@ -34,7 +34,8 @@ If both of those succeed, you're ready to make a change.
    will fail with a snapshot diff — run `npx jest -u` and **read the diff** before committing the
    updated snapshot. A snapshot diff you didn't expect is exactly the bug this test caught.
 4. Run `npm run build` — this does a clean build (`rm -rf dist && tsc`), which also catches
-   anything `tsc --noEmit` alone might not.
+   anything `tsc --noEmit` alone might not. While iterating, `npm run typecheck` (`tsc --noEmit`)
+   is faster for just checking types without producing `dist/`.
 5. If you touched `README.md`'s example output, regenerate it from the actual generator rather
    than hand-editing — stale examples are a real problem this repo has had before.
 

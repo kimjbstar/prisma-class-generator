@@ -30,6 +30,7 @@
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
 		"test": "jest",
+		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf dist",
 		"build": "npm run clean && tsc",
 		"prepublishOnly": "npm run build && npm test",

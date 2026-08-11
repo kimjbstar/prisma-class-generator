@@ -22,6 +22,7 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
+      - run: npm run typecheck
       - run: npm run build
       - run: npm test
 
