@@ -5,3 +5,6 @@ yarn-error.log
 .env
 src/_gen/prisma-class/*.ts
 .DS_Store
+
+# internal-only planning/strategy docs — not meant for the public repo
+REVIEW.md
