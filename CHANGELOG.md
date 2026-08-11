@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1
+
+### Patch Changes
+
+-   [`76f5de6`](https://github.com/kimjbstar/prisma-class-generator/commit/76f5de606fdcffa56fb507d064ed59a835ee7337) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Add property-based tests (fast-check) for default-value formatting and native-type validator
+    mapping — the two areas that have actually shipped bugs before. No behavior change to the
+    generator itself.
+
+-   [`f096801`](https://github.com/kimjbstar/prisma-class-generator/commit/f096801ab05cc8f2363d3a97744702707aaebd43) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Add a `typecheck` script (`tsc --noEmit`) and run it as a fast-failing first step in CI,
+    before the full build/test cycle. No behavior change to the generator itself.
+
 ## 0.5.0
 
 ### Minor Changes
