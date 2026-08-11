@@ -7,6 +7,10 @@ error, the CLI output itself links back here.
 For architecture, gotchas, and how the codebase fits together, read **[CLAUDE.md](./CLAUDE.md)**
 first — this file is just the PR mechanics.
 
+By participating in this project, you're expected to uphold the
+[Code of Conduct](./CODE_OF_CONDUCT.md). Found a security issue instead of a bug? See
+[SECURITY.md](./SECURITY.md) rather than opening a public issue.
+
 ## Getting set up
 
 ```
