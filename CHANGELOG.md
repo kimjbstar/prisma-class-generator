@@ -31,6 +31,8 @@ for the raw commit history if you need it.
   `///` doc comment and `example` from a literal `@default(...)` value
   (function-based defaults and BigInt/DateTime are skipped) — no separate
   option, both are schema-derived rather than guessed.
+- README FAQ: a `PartialType`/`OmitType` recipe for composing Create/Update
+  DTOs from the generated class, without any new generated code.
 - `scripts/verify-prisma-compat.sh` now generates a `@db.Uuid` field with
   `useValidation` on and asserts `@IsUUID()` (6+) vs. the `@IsString()`
   fallback (5), against a real `prisma generate` run — the native-type

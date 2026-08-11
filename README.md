@@ -443,3 +443,28 @@ This is because if too much is provided, the library becomes less adaptable acco
 No, but of course, it goes well with NestJS. I'm also planning to support the library related to NestJS.
 
 But even if you don't use NestJS, this library will be useful for you if you use class decorator based on reflect-metadata to develop web services.
+
+**3. OK, so how do I actually build Create/Update DTOs from the generated class?**
+
+The generated class is decorated with `@nestjs/swagger`'s `@ApiProperty`, which is exactly
+what `@nestjs/swagger`'s `PartialType`/`OmitType`/`PickType` helpers are designed to compose —
+no extra code generation needed, it already works out of the box:
+
+```typescript
+import { OmitType, PartialType } from '@nestjs/swagger'
+import { User } from './_gen/prisma-class/user'
+
+// omit auto-generated / server-controlled fields for creation
+export class CreateUserDto extends OmitType(User, ['id', 'createdAt', 'updatedAt'] as const) {}
+
+// every field optional, for a PATCH-style update
+export class UpdateUserDto extends PartialType(CreateUserDto) {}
+```
+
+If you'd rather not repeat the field list per model, pair this with `/// @skip` (see
+[Per-field directives](#per-field-directives)) on a *separate* generator run with a different
+`output` path to produce an already-trimmed base class — but for most projects, `OmitType` on
+the regular generated class is the simpler starting point. If you want this scaffolding
+generated automatically instead, `prisma-generator-nestjs-dto` does that out of the box (see
+the comparison table above) — this library deliberately stops one step short so the choice of
+which fields to omit stays explicit in your code, not implicit in generator config.
