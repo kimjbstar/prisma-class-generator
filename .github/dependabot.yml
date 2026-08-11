@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    groups:
+      prisma:
+        patterns:
+          - '@prisma/*'
+          - 'prisma'
+      dev-dependencies:
+        dependency-type: 'development'
+        exclude-patterns:
+          - '@prisma/*'
+          - 'prisma'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
