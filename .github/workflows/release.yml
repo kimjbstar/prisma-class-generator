@@ -2,17 +2,21 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -20,25 +24,19 @@ jobs:
           cache: yarn
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Verify tag matches package.json version
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          PKG_VERSION="$(node -p "require('./package.json').version")"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
-            exit 1
-          fi
-
       - run: yarn install --frozen-lockfile
       - run: npm run build
       - run: npm test
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public
+      # Opens/updates a "Version Packages" PR while changesets are pending in .changeset/.
+      # Once that PR is merged (no changesets left), this same job publishes to npm and
+      # creates the GitHub Release + git tag instead. See CONTRIBUTING.md#releasing.
+      - name: Create release PR or publish to npm
+        uses: changesets/action@v2
+        with:
+          version-script: npm run changeset:version
+          publish-script: npm run changeset:publish
+          create-github-releases: true
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create GitHub Release
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

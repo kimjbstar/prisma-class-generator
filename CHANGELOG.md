@@ -1,50 +1,18 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
-uses [Semantic Versioning](https://semver.org/).
+All notable changes to this project are documented here. The format loosely follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
+[Semantic Versioning](https://semver.org/).
 
-Versions before 0.3.0 aren't itemized here — they predate this project's
-CI/release automation and test suite, so a reliable per-version record
-doesn't exist. See the [releases page](https://github.com/kimjbstar/prisma-class-generator/releases)
-for the raw commit history if you need it.
+Starting after 0.4.1, releases are cut by [Changesets](https://github.com/changesets/changesets)
+— see [CONTRIBUTING.md](./CONTRIBUTING.md#releasing) for how that works. Entries above this
+point are generated automatically (`## <version>` with `### Major/Minor/Patch Changes`
+subheadings) rather than hand-written, so the format shifts slightly from the entries below.
 
-## [Unreleased]
-
-### Added
-
-- `validateNestedRelations` option: opt-in `@ValidateNested()` +
-  class-transformer's `@Type(() => X)` on relation/composite-type fields
-  when `useValidation` is enabled, so NestJS's `ValidationPipe` can recurse
-  into nested payloads.
-- `useValidation` now sharpens its class-validator decorators using a
-  field's `@db.*` native type on Prisma 6+ (a no-op on Prisma 5, whose DMMF
-  doesn't expose native types): `@db.Uuid`/`@db.UniqueIdentifier` and
-  MongoDB's `@db.ObjectId` replace the generic string validator with
-  `@IsUUID()`/`@IsMongoId()`; `@db.VarChar(n)`/`@db.Char(n)` (and
-  sqlserver's N-prefixed variants) add `@MaxLength(n)`; MySQL's unsigned
-  integer types add `@Min(0)`.
-- `useSerialization` option + `/// @exclude` directive: generates
-  class-transformer's `@Exclude()` for fields marked with the directive,
-  for use with NestJS's `ClassSerializerInterceptor`.
-- `useSwagger` now derives `@ApiProperty`'s `description` from a field's
-  `///` doc comment and `example` from a literal `@default(...)` value
-  (function-based defaults and BigInt/DateTime are skipped) — no separate
-  option, both are schema-derived rather than guessed.
-- README FAQ: a `PartialType`/`OmitType` recipe for composing Create/Update
-  DTOs from the generated class, without any new generated code.
-- `scripts/verify-prisma-compat.sh` now generates a `@db.Uuid` field with
-  `useValidation` on and asserts `@IsUUID()` (6+) vs. the `@IsString()`
-  fallback (5), against a real `prisma generate` run — the native-type
-  validator behavior above was previously only covered by unit tests with
-  a hand-constructed DMMF field, not an actual end-to-end generate.
-- Point usage questions at GitHub Discussions instead of Issues — a "Ask a
-  question" contact link in the issue template chooser, and a line in
-  README pointing bugs to Issues and "how do I...?" questions to
-  Discussions.
-- `SECURITY.md` (private vulnerability reporting) and `CODE_OF_CONDUCT.md`.
-- Dependabot dependency updates and CodeQL code scanning.
-- `.editorconfig` and CI/downloads/PRs-welcome README badges.
+Versions before 0.3.0 aren't itemized here — they predate this project's CI/release automation
+and test suite, so a reliable per-version record doesn't exist. See the
+[releases page](https://github.com/kimjbstar/prisma-class-generator/releases) for the raw
+commit history if you need it.
 
 ## [0.4.1] - 2026-08-11
 

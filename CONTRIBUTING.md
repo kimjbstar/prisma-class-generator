@@ -46,6 +46,12 @@ If both of those succeed, you're ready to make a change.
 - Confirm in the PR description that `npm test` and `npm run build` both pass locally — CI will
   verify this too (including against Prisma 5/6/7 and both the `prisma-client-js`/`prisma-client`
   providers), but saying so up front saves a round trip.
+- If the change should ship in the next release (almost everything except docs-only /
+  CI-only changes), run `npx changeset` and answer its prompts — it writes a small markdown
+  file to `.changeset/` describing the semver bump (patch/minor/major) and a one-line summary.
+  Commit that file with your PR. If you're not sure which bump type, `patch` for bug fixes and
+  `minor` for new/changed options is the right default (see [Releasing](#releasing) below for
+  what happens to it after merge).
 
 ## What tends to get merged quickly
 
@@ -62,3 +68,22 @@ If both of those succeed, you're ready to make a change.
   easier to agree on a name once than to rename it after someone's already depending on it.
 - Anything that changes default behavior for existing options (a real bug fix is fine even if
   it changes output; an intentional behavior change to something that already worked is not).
+
+## Releasing
+
+Releases are automated with [Changesets](https://github.com/changesets/changesets) — you don't
+need to be a maintainer to trigger this, just to add a changeset to your PR (see above).
+
+1. Every push to `main` with pending changeset files updates a standing **"Version Packages"**
+   pull request — it bumps `package.json`'s version and updates `CHANGELOG.md` based on
+   whatever changesets have landed since the last release, and keeps itself up to date as more
+   PRs merge.
+2. When a maintainer merges that "Version Packages" PR, the same CI job detects there are no
+   pending changesets left and instead runs the actual release: `npm publish` (with
+   provenance), a GitHub Release, and a git tag.
+3. There's no manual `npm version` step anymore — the version number is entirely derived from
+   the changeset files' bump types (`patch`/`minor`/`major`) accumulated since the last release.
+
+If you're fixing something that shouldn't trigger a release at all (a typo in a comment, CI-only
+changes), you can skip the changeset — `changeset status` treats "no changesets" as fine for
+non-code changes, it only insists on one when it detects `src/`/`package.json` changed.
