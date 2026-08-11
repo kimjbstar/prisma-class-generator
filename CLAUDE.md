@@ -66,6 +66,15 @@ npm run generate:*      # regenerate a fixture under prisma/*.prisma (postgresql
   resolving the *consuming project's* prettier config, not this repo's). To test methods that
   need `this.options` without a full `GeneratorOptions`, `Object.create(PrismaClassGenerator.prototype)`
   works and lets you set just `.options`/`.getConfig` as needed — see `generator.spec.ts`.
+- `src/convertor.property.spec.ts` uses [fast-check](https://github.com/dubzzz/fast-check) for
+  property-based coverage of the two areas that have actually shipped bugs before: default-value
+  formatting (the Date-misdetection/falsy-value-dropped bugs, #34/#56/#76) and native-type
+  validator mapping. Reach for a property here — instead of another hand-picked example in
+  `convertor.spec.ts` — when the bug class is "some input value triggers wrong behavior" rather
+  than "this specific schema shape is unsupported"; fast-check explores the value space a human
+  wouldn't think to enumerate by hand. On a failure, fast-check prints a shrunk counterexample
+  and a seed/path you can hardcode into `fc.assert(..., { seed, path })` to reproduce it exactly
+  while debugging.
 
 ## Known DMMF gotchas (learned the hard way)
 

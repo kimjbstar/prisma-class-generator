@@ -71,6 +71,7 @@
 		"@types/jest": "30.0.0",
 		"@types/node": "^18.15.11",
 		"@types/prettier": "^2.6.3",
+		"fast-check": "4.9.0",
 		"jest": "30.4.2",
 		"prisma": "^5.5.2",
 		"swagger-ui-express": "^4.4.0",
