@@ -315,6 +315,22 @@ describe('PrismaConvertor#extractTypeGraphQLDecoratorFromField', () => {
 		expect(echoed).toContain('@Field((type) => Int)')
 	})
 
+	// regression test: Int/Float/Decimal all map to the TS type 'number', but the old code
+	// collapsed all of them to GraphQL Int — a Float/Decimal field with a fractional value
+	// would fail GraphQL's own runtime validation for Int.
+	it('Float/Decimal 필드는 (type) => Int가 아니라 (type) => Float로 매핑된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int     @id
+        price Float
+        amt   Decimal
+      }
+    `)
+		const echoed = convert(model, { useGraphQL: true }).echo()
+		expect(echoed.match(/@Field\(\(type\) => Float\)/g)).toHaveLength(2)
+		expect(echoed).not.toContain('@Field((type) => Int)')
+	})
+
 	it('Json 필드는 GraphQLJSONObject로 매핑된다', async () => {
 		const model = await getModel(`
       model Foo {
@@ -418,5 +434,110 @@ describe('PrismaConvertor#convertField 설정 플래그', () => {
     `)
 		const echoed = convert(model, { useUndefinedDefault: true }).echo()
 		expect(echoed).toContain('value: string = undefined')
+	})
+
+	it('preserveDecimal이 켜지면 Decimal 필드가 Prisma.Decimal 타입으로 생성된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id  Int     @id
+        amt Decimal
+      }
+    `)
+		const withoutOption = convert(model).echo()
+		expect(withoutOption).toContain('amt: number')
+
+		const withOption = convert(model, { preserveDecimal: true }).echo()
+		expect(withOption).toContain('amt: Prisma.Decimal')
+	})
+
+	it('preserveDecimal이 켜져도 swagger 데코레이터의 type은 그대로 Number다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id  Int     @id
+        amt Decimal
+      }
+    `)
+		const echoed = convert(model, {
+			useSwagger: true,
+			preserveDecimal: true,
+		}).echo()
+		expect(echoed).toContain('type: Number')
+		expect(echoed).toContain('amt: Prisma.Decimal')
+	})
+})
+
+// regression tests for #72: `/// @skip` excludes a field from the generated class entirely.
+describe('PrismaConvertor#getClass — /// @skip 필드 디렉티브', () => {
+	it('@skip이 붙은 필드는 생성된 클래스에서 완전히 빠진다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id Int @id
+        /// @skip
+        createdAt DateTime @default(now())
+        name String
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).not.toContain('createdAt')
+		expect(echoed).toContain('name: string')
+	})
+
+	it('일반 // 주석은 @skip으로 인식되지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id Int @id
+        // @skip (regular comment, not a doc comment — DMMF never sees this)
+        createdAt DateTime @default(now())
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).toContain('createdAt: Date')
+	})
+
+	it('@skip된 relation 필드는 import도 함께 빠진다', async () => {
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        /// @skip
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const barClass = convert(barModel)
+		expect(barClass.relationTypes).toEqual([])
+		expect(barClass.echo()).not.toContain('foo:')
+	})
+})
+
+// regression tests for #39: `/// @ApiHideProperty` hides a field from Swagger docs without
+// removing it from the class.
+describe('PrismaConvertor#convertField — /// @ApiHideProperty 필드 디렉티브', () => {
+	it('@ApiHideProperty가 붙은 필드는 @ApiHideProperty() 데코레이터가 추가된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id Int @id
+        /// @ApiHideProperty
+        passwordHash String
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain('@ApiHideProperty()')
+		expect(echoed).toContain('passwordHash: string')
+	})
+
+	it('useSwagger가 꺼져 있으면 @ApiHideProperty 디렉티브가 있어도 데코레이터를 추가하지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id Int @id
+        /// @ApiHideProperty
+        passwordHash String
+      }
+    `)
+		const echoed = convert(model, { useSwagger: false }).echo()
+		expect(echoed).not.toContain('ApiHideProperty')
 	})
 })

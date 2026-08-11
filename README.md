@@ -281,6 +281,33 @@ export class ProductDto extends IntersectionType(
     -   Determines how null fields are handled. When set to **false** (default), it turns all null fields to undefined. Otherwise, it follows Prisma generation and adds null to the type.
 -   _useUndefinedDefault_
     -   Assigns `= undefined` to fields with no default value, so every class field has an explicit initializer. default value is **false**
+-   _preserveDecimal_
+    -   Generates `Decimal` fields as `Prisma.Decimal` instead of `number`, avoiding precision loss for values like money. default value is **false**
+        -   only changes the field's own TS type — the swagger/graphql decorator options stay `Number`/`Float`, since `Decimal` has no OpenAPI/GraphQL representation of its own
+
+#### **Per-field directives**
+
+These are set per-field with a `///` doc comment directly above the field in `schema.prisma` — a regular `//` comment won't work, since Prisma's DMMF only exposes triple-slash doc comments.
+
+-   `/// @skip`
+    -   Excludes the field entirely from the generated class (and from any relation/import it would otherwise pull in). Useful for auto-populated columns like `id`, `createdAt`, `updatedAt` that don't belong on a create/update DTO.
+        ```prisma
+        model Product {
+          id Int @id @default(autoincrement())
+          /// @skip
+          createdAt DateTime @default(now())
+          title     String
+        }
+        ```
+-   `/// @ApiHideProperty`
+    -   Keeps the field on the class but adds `@ApiHideProperty()` (from `@nestjs/swagger`), hiding it from the generated OpenAPI docs. Only applies when `useSwagger` is on. Useful for fields like `passwordHash` that the class still needs at the type level but shouldn't be documented.
+        ```prisma
+        model User {
+          id Int @id @default(autoincrement())
+          /// @ApiHideProperty
+          passwordHash String
+        }
+        ```
 
 ### **Supported databases**
 
@@ -322,6 +349,8 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 -   Support option to generate Swagger Decorator
 -   Support option to generate TypeGraphQL Decorator
 -   Format generated Classes with prettier, using the user's prettier config file if present
+-   Per-field `/// @skip` and `/// @ApiHideProperty` directives
+-   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 
 ### **Future Plan**
 

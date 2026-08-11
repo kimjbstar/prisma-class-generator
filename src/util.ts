@@ -69,6 +69,21 @@ export const toArray = <T>(value: T | T[]): T[] => {
 	return Array.isArray(value) ? value : [value]
 }
 
+/**
+ * Checks a Prisma field's `///` doc comment for a `@directive` token (e.g. `/// @skip`).
+ * Only triple-slash comments are visible here — DMMF drops regular `//` comments entirely,
+ * so those can't be used for this.
+ */
+export const hasFieldDirective = (
+	documentation: string | undefined,
+	directive: string,
+): boolean => {
+	if (!documentation) {
+		return false
+	}
+	return documentation.split(/\s+/).includes(`@${directive}`)
+}
+
 export const writeTSFile = (
 	fullPath: string,
 	content: string,

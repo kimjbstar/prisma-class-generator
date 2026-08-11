@@ -122,6 +122,12 @@ export class FileComponent implements Echoable {
 			this.registerImport(enumName, this._clientImportPath)
 		})
 
+		// preserveDecimal fields use `Prisma.Decimal` as their type (see convertor.ts) —
+		// bring in the `Prisma` namespace from the same place the client itself comes from.
+		if (this.prismaClass.fields.some((field) => field.type.startsWith('Prisma.'))) {
+			this.registerImport('Prisma', this._clientImportPath)
+		}
+
 		this.prismaClass.decorators.forEach((decorator) => {
 			this.registerImport(decorator.name, decorator.importFrom)
 		})

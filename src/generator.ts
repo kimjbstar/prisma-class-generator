@@ -85,6 +85,10 @@ export const PrismaClassGeneratorOptions = {
 		defaultValue: false,
 		desc: 'preserve default nullable behavior',
 	},
+	preserveDecimal: {
+		defaultValue: false,
+		desc: 'generate Decimal fields as Prisma.Decimal instead of number',
+	},
 } as const
 
 export type PrismaClassGeneratorOptionsKeys =

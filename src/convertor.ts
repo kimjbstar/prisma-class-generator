@@ -6,6 +6,7 @@ import { PrismaClassGeneratorConfig } from './generator'
 import {
 	arrayify,
 	capitalizeFirst,
+	hasFieldDirective,
 	uniquify,
 	wrapArrowFunction,
 	wrapQuote,
@@ -114,7 +115,14 @@ export class PrismaConvertor {
 		if (type && type !== 'any' && !isJson) {
 			let grahQLType = capitalizeFirst(type)
 			if (grahQLType === 'Number') {
-				grahQLType = 'Int'
+				// Int, Float, and Decimal all map to the TS type 'number', but GraphQL
+				// distinguishes Int from Float — Int must be a 32-bit integer, so a Float or
+				// Decimal field mapped to GraphQL Int would fail GraphQL's own runtime
+				// validation for any fractional value.
+				grahQLType =
+					dmmfField.type === 'Float' || dmmfField.type === 'Decimal'
+						? 'Float'
+						: 'Int'
 			}
 			if (dmmfField.isList) {
 				grahQLType = `[${grahQLType}]`
@@ -214,9 +222,16 @@ export class PrismaConvertor {
 		}
 		const classComponent = new ClassComponent({ name: className })
 
+		// `/// @skip` on a field excludes it from the generated class entirely (and from
+		// relation/enum/composite-type imports below) — useful for auto-populated columns
+		// like id/createdAt/updatedAt that shouldn't appear on a create/update DTO.
+		const visibleFields = model.fields.filter(
+			(field) => !hasFieldDirective(field.documentation, 'skip'),
+		)
+
 		/** relation & enums */
 		const relationTypes = uniquify(
-			model.fields
+			visibleFields
 				.filter(
 					(field) =>
 						field.relationName &&
@@ -228,7 +243,7 @@ export class PrismaConvertor {
 		)
 
 		const typesTypes = uniquify(
-			model.fields
+			visibleFields
 				.filter(
 					(field) =>
 						field.kind == 'object' &&
@@ -238,9 +253,9 @@ export class PrismaConvertor {
 				.map((v) => v.type),
 		)
 
-		const enums = model.fields.filter((field) => field.kind === 'enum')
+		const enums = visibleFields.filter((field) => field.kind === 'enum')
 
-		classComponent.fields = model.fields
+		classComponent.fields = visibleFields
 			.filter((field) => {
 				if (extractRelationFields === true) {
 					return field.relationName
@@ -351,6 +366,18 @@ export class PrismaConvertor {
 		if (this.config.useSwagger) {
 			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
 			field.decorators.push(decorator)
+
+			// `/// @ApiHideProperty` keeps the field on the class but hides it from the
+			// generated Swagger/OpenAPI docs — for fields like passwordHash that a DTO still
+			// needs at the type level but should never be documented.
+			if (hasFieldDirective(dmmfField.documentation, 'ApiHideProperty')) {
+				field.decorators.push(
+					new DecoratorComponent({
+						name: 'ApiHideProperty',
+						importFrom: '@nestjs/swagger',
+					}),
+				)
+			}
 		}
 
 		if (this.config.useGraphQL) {
@@ -404,6 +431,15 @@ export class PrismaConvertor {
 			field.type = `${dmmfField.type}AsType`
 		} else {
 			field.type = dmmfField.type
+		}
+
+		// preserveDecimal only swaps the field's own TS type to Prisma.Decimal (for
+		// type-safety against Prisma Client's own return types) — it intentionally leaves
+		// the swagger/graphql decorator options alone (still Number/Float), since Decimal
+		// has no OpenAPI/GraphQL representation of its own and documenting it as a plain
+		// number is still the right call there.
+		if (dmmfField.type === 'Decimal' && this.config.preserveDecimal) {
+			field.type = 'Prisma.Decimal'
 		}
 
 		if (dmmfField.isList) {

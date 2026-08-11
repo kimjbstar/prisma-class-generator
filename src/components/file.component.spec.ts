@@ -189,3 +189,30 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
 		)
 	})
 })
+
+describe('preserveDecimal — Prisma 네임스페이스 import', () => {
+	it('preserveDecimal 필드가 있으면 clientImportPath에서 Prisma를 import한다', async () => {
+		const files = await buildFiles(
+			`
+      model Foo {
+        id  Int     @id
+        amt Decimal
+      }
+    `,
+			{ preserveDecimal: true },
+		)
+		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		expect(findImportFrom(fooFile, 'Prisma')).toBe('@prisma/client')
+	})
+
+	it('preserveDecimal이 꺼져 있으면 Prisma를 import하지 않는다', async () => {
+		const files = await buildFiles(`
+      model Foo {
+        id  Int     @id
+        amt Decimal
+      }
+    `)
+		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		expect(findImportFrom(fooFile, 'Prisma')).toBeUndefined()
+	})
+})
