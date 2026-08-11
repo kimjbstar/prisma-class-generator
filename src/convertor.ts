@@ -112,11 +112,11 @@ export class PrismaConvertor {
 	private _config: PrismaClassGeneratorConfig
 	private _dmmf: DMMF.Document
 
-	public get dmmf() {
+	public get dmmf(): DMMF.Document {
 		return this._dmmf
 	}
 
-	public set dmmf(value) {
+	public set dmmf(value: DMMF.Document) {
 		this._dmmf = value
 	}
 
