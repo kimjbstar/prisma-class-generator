@@ -221,6 +221,25 @@ describe('PrismaConvertor#extractSwaggerDecoratorFromField', () => {
 		expect(echoed).toContain('type: () => Foo')
 	})
 
+	// regression test for #60 (see file.component.spec.ts for the reproduction/rationale):
+	// a relation field's *type annotation* must be the `...AsType` alias, not the plain
+	// class name, so it resolves to a `type`-only import with no runtime footprint.
+	it('relation 필드의 타입 annotation은 AsType 접미사가 붙은 alias를 쓴다', async () => {
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const echoed = convert(barModel).echo()
+		expect(echoed).toContain('foo: FooAsType')
+	})
+
 	it('enum 필드는 enum/enumName 옵션을 포함한다', async () => {
 		const model = await getModel(`
       enum Status {

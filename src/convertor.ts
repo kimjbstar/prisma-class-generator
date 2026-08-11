@@ -398,6 +398,10 @@ export class PrismaConvertor {
 
 		if (type) {
 			field.type = type
+		} else if (dmmfField.relationName) {
+			// use the `type`-only import alias FileComponent registers for relation fields
+			// (see resolveImports) to avoid an ESM circular-import crash — see #60.
+			field.type = `${dmmfField.type}AsType`
 		} else {
 			field.type = dmmfField.type
 		}

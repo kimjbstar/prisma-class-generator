@@ -84,6 +84,15 @@ npm run generate:*      # regenerate a fixture under prisma/*.prisma (postgresql
   add both names to `onManifest().requiresGenerators` — Prisma validates that array with AND
   semantics (every listed generator must be present), so listing both would require a schema to
   declare *both* client generators at once.
+- A relation field's type annotation (`book: BookAsType`, not `book: Book`) intentionally uses a
+  `type`-only import alias registered alongside the value import in
+  `FileComponent#resolveImports`. This isn't cosmetic: `emitDecoratorMetadata` (which most NestJS
+  projects turn on) emits an eager `__metadata("design:type", Book)` reference, and under ESM's
+  live-binding circular-import semantics two files that relate to each other will throw
+  `ReferenceError: Cannot access 'Book' before initialization` — reproduced with real
+  `tsc --module ES2020 --emitDecoratorMetadata` output run under Node's native ESM loader. A
+  `type`-only import has no runtime value, so TS can't emit a reference to it. Keep both the value
+  import (the decorator, e.g. `type: () => Book`, still needs it) and the type-only alias.
 
 ## Style
 

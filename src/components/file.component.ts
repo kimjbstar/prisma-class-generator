@@ -103,6 +103,20 @@ export class FileComponent implements Echoable {
 				`${relationClassName}`,
 				FileComponent.TEMP_PREFIX + relationClassName,
 			)
+			// Field *type annotations* use a `type`-only alias instead of the value import
+			// above. TypeScript's emitDecoratorMetadata emits a runtime reference to a
+			// property's declared type (`design:type`) — for two files that relate to each
+			// other, that reference is eager, and under ESM's live-binding circular-import
+			// semantics it throws "Cannot access 'X' before initialization" before both
+			// classes finish initializing (reproduced with tsc + emitDecoratorMetadata +
+			// native ESM output). A `type`-only import has no runtime value at all, so TS
+			// can't emit a reference to it and falls back to a generic Object — no crash.
+			// The decorator itself (e.g. `type: () => Book`) still uses the value import
+			// above; only the field's own type annotation switches to the alias.
+			this.registerImport(
+				`type ${relationClassName} as ${relationClassName}AsType`,
+				FileComponent.TEMP_PREFIX + relationClassName,
+			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
 			this.registerImport(enumName, this._clientImportPath)

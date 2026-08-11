@@ -97,6 +97,39 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
 		expect(findImportFrom(bookFile, 'Author')).toBe('./author')
 	})
 
+	// regression test for #60: reproduced with real tsc + emitDecoratorMetadata + native
+	// ESM output — TypeScript emits an eager `__metadata("design:type", Book)` runtime
+	// reference for a property typed `book: Book`, and under ESM's live-binding circular
+	// import semantics that throws "Cannot access 'Book' before initialization" before both
+	// classes finish initializing. A `type`-only import has no runtime value, so TS can't
+	// emit a reference to it (falls back to `Object`) — no crash. Every relation field's type
+	// annotation must use the `type ... as ...AsType` alias, not the plain value import.
+	it('relation import는 design:type 메타데이터로 인한 순환 참조 크래시를 피하려고 type-only alias를 함께 등록한다', async () => {
+		const files = await buildFiles(`
+      model Author {
+        id    Int    @id
+        books Book[]
+      }
+
+      model Book {
+        id       Int    @id
+        authorId Int
+        author   Author @relation(fields: [authorId], references: [id])
+      }
+    `)
+
+		const authorFile = files.find((f) => f.prismaClass.name === 'Author')
+		const bookFile = files.find((f) => f.prismaClass.name === 'Book')
+
+		const bookImport = authorFile.imports.find((i) => i.from === './book')
+		expect(bookImport.items).toContain('Book')
+		expect(bookImport.items).toContain('type Book as BookAsType')
+
+		const authorImport = bookFile.imports.find((i) => i.from === './author')
+		expect(authorImport.items).toContain('Author')
+		expect(authorImport.items).toContain('type Author as AuthorAsType')
+	})
+
 	// regression test for #35: separateRelationFields + self-relation 조합에서
 	// *Relations 클래스가 자기 자신의 base 클래스를 import해야 한다.
 	it('separateRelationFields + self-relation에서 Relations 클래스가 base 클래스를 import한다', async () => {

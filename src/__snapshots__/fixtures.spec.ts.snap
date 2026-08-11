@@ -2,7 +2,7 @@
 
 exports[`DB 픽스처 골든 테스트: cockroachdb prisma/cockroachdb.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
 "// category.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -14,13 +14,13 @@ export class Category {
 	name: string 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 }
 
 
 // product.ts
-import { Category } from './category'
+import { Category,type Category as CategoryAsType } from './category'
 import { Status } from '@prisma/client'
 import { ApiProperty } from '@nestjs/swagger'
 
@@ -45,7 +45,7 @@ export class Product {
 	categoryId: BigInt 
 	
 	@ApiProperty({type: () => Category})
-	category: Category 
+	category: CategoryAsType 
 	
 	@ApiProperty({type: Date})
 	createdAt: Date 
@@ -107,7 +107,7 @@ export class Dealer {
 
 exports[`DB 픽스처 골든 테스트: mssql prisma/mssql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
 "// category.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -119,7 +119,7 @@ export class Category {
 	name: string 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 }
 
@@ -136,16 +136,16 @@ export class Node {
 	parentId?: number 
 	
 	@ApiPropertyOptional({type: () => Node})
-	parent?: Node 
+	parent?: NodeAsType 
 	
 	@ApiProperty({isArray: true, type: () => Node})
-	children: Node[] 
+	children: NodeAsType[] 
 	
 }
 
 
 // product.ts
-import { Category } from './category'
+import { Category,type Category as CategoryAsType } from './category'
 import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
 
 
@@ -172,7 +172,7 @@ export class Product {
 	categoryId: number 
 	
 	@ApiProperty({type: () => Category})
-	category: Category 
+	category: CategoryAsType 
 	
 	@ApiProperty({type: Date})
 	createdAt: Date 
@@ -184,7 +184,7 @@ export class Product {
 
 exports[`DB 픽스처 골든 테스트: mysql prisma/mysql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
 "// category.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -193,13 +193,13 @@ export class Category {
 	id: number 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 }
 
 
 // company.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -223,7 +223,7 @@ export class Company {
 	by: Buffer 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 	@ApiProperty({type: Date})
 	establishedAt: Date = new Date('2000-01-01T01:00:00+00:00')
@@ -243,17 +243,17 @@ export class Node {
 	parentId?: number 
 	
 	@ApiPropertyOptional({type: () => Node})
-	parent?: Node 
+	parent?: NodeAsType 
 	
 	@ApiProperty({isArray: true, type: () => Node})
-	children: Node[] 
+	children: NodeAsType[] 
 	
 }
 
 
 // product.ts
-import { Category } from './category'
-import { Company } from './company'
+import { Category,type Category as CategoryAsType } from './category'
+import { Company,type Company as CompanyAsType } from './company'
 import { ProductType,ProductAnotherType } from '@prisma/client'
 import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
 
@@ -293,10 +293,10 @@ export class Product {
 	companyId: number 
 	
 	@ApiProperty({type: () => Category})
-	category: Category 
+	category: CategoryAsType 
 	
 	@ApiProperty({type: () => Company})
-	company: Company 
+	company: CompanyAsType 
 	
 	@ApiProperty({type: Date})
 	createdAt: Date 
@@ -311,7 +311,7 @@ export class Product {
 
 exports[`DB 픽스처 골든 테스트: postgresql prisma/postgresql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
 "// category.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -320,13 +320,13 @@ export class Category {
 	id: number 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 }
 
 
 // company.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -350,7 +350,7 @@ export class Company {
 	by: Buffer 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 	@ApiProperty({isArray: true, type: String})
 	tags: string[] 
@@ -374,8 +374,8 @@ export class Company {
 
 
 // product.ts
-import { Category } from './category'
-import { Company } from './company'
+import { Category,type Category as CategoryAsType } from './category'
+import { Company,type Company as CompanyAsType } from './company'
 import { ProductType,ProductAnotherType } from '@prisma/client'
 import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
 
@@ -415,10 +415,10 @@ export class Product {
 	companyId: number 
 	
 	@ApiProperty({type: () => Category})
-	category: Category 
+	category: CategoryAsType 
 	
 	@ApiProperty({type: () => Company})
-	company: Company 
+	company: CompanyAsType 
 	
 	@ApiProperty({type: Date})
 	createdAt: Date 
@@ -433,7 +433,7 @@ export class Product {
 
 exports[`DB 픽스처 골든 테스트: sqlite prisma/sqlite.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
 "// category.ts
-import { Product } from './product'
+import { Product,type Product as ProductAsType } from './product'
 import { ApiProperty } from '@nestjs/swagger'
 
 
@@ -445,7 +445,7 @@ export class Category {
 	name: string 
 	
 	@ApiProperty({isArray: true, type: () => Product})
-	products: Product[] 
+	products: ProductAsType[] 
 	
 }
 
@@ -462,16 +462,16 @@ export class Node {
 	parentId?: number 
 	
 	@ApiPropertyOptional({type: () => Node})
-	parent?: Node 
+	parent?: NodeAsType 
 	
 	@ApiProperty({isArray: true, type: () => Node})
-	children: Node[] 
+	children: NodeAsType[] 
 	
 }
 
 
 // product.ts
-import { Category } from './category'
+import { Category,type Category as CategoryAsType } from './category'
 import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
 
 
@@ -495,7 +495,7 @@ export class Product {
 	categoryId: number 
 	
 	@ApiProperty({type: () => Category})
-	category: Category 
+	category: CategoryAsType 
 	
 	@ApiProperty({type: Date})
 	createdAt: Date 
