@@ -276,6 +276,14 @@ export class ProductDto extends IntersectionType(
         -   relation and composite-type fields are intentionally left without a validator — this library hands DTO composition to the caller (see the FAQ below), so it doesn't guess what a nested payload should look like
         -   `DateTime` fields use `@IsDateString()` rather than `@IsDate()`, so it validates the raw string a JSON request body actually contains without requiring `class-transformer`'s `@Type(() => Date)` to run first
         -   `BigInt`/`Bytes`/`Json` fields get no type-specific validator — class-validator has no direct equivalent for those
+-   _validateNestedRelations_
+    -   requires `useValidation`. Adds `@ValidateNested()` (`{ each: true }` for list relations)
+        and class-transformer's `@Type(() => X)` to relation and composite-type fields, so
+        NestJS's `ValidationPipe` (with `transform: true`) recurses into nested payloads instead
+        of leaving them unvalidated. default value is **false**
+    -   off by default because it's an opt-in to a specific DTO shape (see the FAQ) — turn it on
+        if your relation fields *are* the nested payload you want validated as-is, not a DTO
+        with a different nested shape
 -   _makeIndexFile_
     -   makes index file, default value is **true**
 -   _separateRelationFields_

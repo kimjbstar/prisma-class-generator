@@ -75,6 +75,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'generate class-validator decorators',
 		defaultValue: false,
 	},
+	validateNestedRelations: {
+		desc: 'generate @ValidateNested()/@Type() for relation and composite-type fields (requires useValidation)',
+		defaultValue: false,
+	},
 	useUndefinedDefault: {
 		desc: 'use undefined default',
 		defaultValue: false,

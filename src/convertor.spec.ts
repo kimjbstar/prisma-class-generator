@@ -5,7 +5,10 @@ import { PrismaClassGeneratorConfig } from './generator'
 
 type SupportedProvider = 'postgresql' | 'mysql' | 'mongodb'
 
-const baseSchema = (modelBlock: string, provider: SupportedProvider = 'postgresql') => `
+const baseSchema = (
+	modelBlock: string,
+	provider: SupportedProvider = 'postgresql',
+) => `
 datasource db {
   provider = "${provider}"
   url      = env("DATABASE_URL")
@@ -107,7 +110,9 @@ describe('PrismaConvertor#convertField default value handling', () => {
         status Status @default(ACTIVE)
       }
     `)
-		expect(convert(model).echo()).toContain('status: Status = Status.ACTIVE')
+		expect(convert(model).echo()).toContain(
+			'status: Status = Status.ACTIVE',
+		)
 	})
 
 	it('함수 기반 기본값(now())은 리터럴을 생성하지 않는다', async () => {
@@ -179,7 +184,7 @@ describe('PrismaConvertor#extractSwaggerDecoratorFromField', () => {
       }
     `)
 		const echoed = convert(model, { useSwagger: true }).echo()
-		expect(echoed).toContain("@ApiProperty({type: String})")
+		expect(echoed).toContain('@ApiProperty({type: String})')
 	})
 
 	it('nullable 필드는 @ApiPropertyOptional을 사용한다', async () => {
@@ -656,5 +661,81 @@ describe('PrismaConvertor#extractValidationDecoratorsFromField (useValidation)',
     `)
 		const echoed = convert(barModel, { useValidation: true }).echo()
 		expect(echoed).not.toMatch(/foo:[\s\S]{0,40}@Is/)
+	})
+
+	it('validateNestedRelations를 켜지 않으면 relation 필드에 @ValidateNested/@Type이 붙지 않는다', async () => {
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const echoed = convert(barModel, { useValidation: true }).echo()
+		expect(echoed).not.toContain('@ValidateNested')
+		expect(echoed).not.toContain('@Type(')
+	})
+
+	it('validateNestedRelations를 켜면 relation 필드에 @ValidateNested()와 @Type(() => X)이 붙는다', async () => {
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const echoed = convert(barModel, {
+			useValidation: true,
+			validateNestedRelations: true,
+		}).echo()
+		expect(echoed).toContain('@ValidateNested()')
+		expect(echoed).toContain('@Type(() => Foo)')
+	})
+
+	it('validateNestedRelations + 리스트 relation은 { each: true }가 붙은 @ValidateNested를 받는다', async () => {
+		const fooModel = await getModel(`
+      model Foo {
+        id  Int   @id
+        bar Bar[]
+      }
+      model Bar {
+        id    Int @id
+        fooId Int
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+    `)
+		const echoed = convert(fooModel, {
+			useValidation: true,
+			validateNestedRelations: true,
+		}).echo()
+		expect(echoed).toContain('@ValidateNested({each: true})')
+		expect(echoed).toContain('@Type(() => Bar)')
+	})
+
+	it('validateNestedRelations가 켜져 있어도 useValidation이 꺼져 있으면 아무 데코레이터도 붙지 않는다', async () => {
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const echoed = convert(barModel, {
+			validateNestedRelations: true,
+		}).echo()
+		expect(echoed).not.toContain('@ValidateNested')
+		expect(echoed).not.toContain('@Type(')
 	})
 })

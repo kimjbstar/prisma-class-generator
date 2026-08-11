@@ -218,10 +218,12 @@ export class PrismaConvertor {
 	 * extractors this can return several decorators for one field (e.g. `@IsOptional()` +
 	 * `@IsString()`), so it returns an array instead of a single DecoratorComponent.
 	 *
-	 * Relation and composite-type fields are intentionally left without a validator: this
-	 * generator hands DTO composition to the caller rather than deciding what a create/update
-	 * payload should look like (see the README FAQ) — validating a nested object would require
-	 * assuming that shape.
+	 * Relation and composite-type fields are left without a type-specific validator by
+	 * default: this generator hands DTO composition to the caller rather than deciding what a
+	 * create/update payload should look like (see the README FAQ) — validating a nested object
+	 * would require assuming that shape. The `validateNestedRelations` option opts back in to
+	 * `@ValidateNested()` + `@Type(() => X)` for callers who *do* want NestJS's `ValidationPipe`
+	 * (with `transform: true`) to recurse into relation/composite payloads as-is.
 	 */
 	extractValidationDecoratorsFromField = (
 		dmmfField: DMMF.Field,
@@ -231,19 +233,44 @@ export class PrismaConvertor {
 		const eachOption = dmmfField.isList ? { each: true } : undefined
 
 		if (dmmfField.isRequired === false) {
-			decorators.push(new DecoratorComponent({ name: 'IsOptional', importFrom }))
+			decorators.push(
+				new DecoratorComponent({ name: 'IsOptional', importFrom }),
+			)
 		}
 
 		if (dmmfField.isList) {
-			decorators.push(new DecoratorComponent({ name: 'IsArray', importFrom }))
+			decorators.push(
+				new DecoratorComponent({ name: 'IsArray', importFrom }),
+			)
 		}
 
 		if (dmmfField.relationName || dmmfField.kind === 'object') {
+			if (this.config.validateNestedRelations) {
+				decorators.push(
+					new DecoratorComponent({
+						name: 'ValidateNested',
+						importFrom: 'class-validator',
+						params: eachOption ? [eachOption] : [],
+					}),
+				)
+				// class-transformer's @Type is what makes @ValidateNested actually recurse:
+				// without it, a plain JSON payload's nested object is never turned into an
+				// instance of the related class, so class-validator has nothing to validate.
+				decorators.push(
+					new DecoratorComponent({
+						name: 'Type',
+						importFrom: 'class-transformer',
+						params: [wrapArrowFunction(dmmfField)],
+					}),
+				)
+			}
 			return decorators
 		}
 
 		if (dmmfField.kind === 'enum') {
-			const params = eachOption ? [dmmfField.type, eachOption] : [dmmfField.type]
+			const params = eachOption
+				? [dmmfField.type, eachOption]
+				: [dmmfField.type]
 			decorators.push(
 				new DecoratorComponent({ name: 'IsEnum', importFrom, params }),
 			)
