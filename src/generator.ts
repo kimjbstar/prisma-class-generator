@@ -13,8 +13,15 @@ import { INDEX_TEMPLATE } from './templates/index.template'
 import { ImportComponent } from './components/import.component'
 import * as prettier from 'prettier'
 import { FileComponent } from './components/file.component'
+import { GeneratorPathNotExists } from './error-handler'
 
 export const GENERATOR_NAME = 'Prisma Class Generator'
+
+/** Prisma 7 renamed the default client generator from 'prisma-client-js' to 'prisma-client'. Support both. */
+export const PRISMA_CLIENT_GENERATOR_PROVIDERS = [
+	'prisma-client-js',
+	'prisma-client',
+]
 
 export const PrismaClassGeneratorOptions = {
 	makeIndexFile: {
@@ -119,9 +126,16 @@ export class PrismaClassGenerator {
 	setPrismaClientPath(): void {
 		const { otherGenerators, schemaPath } = this.options
 
-		const clientGenerator = otherGenerators.find(
-			(g) => g.provider.value === 'prisma-client-js',
+		const clientGenerator = otherGenerators.find((g) =>
+			PRISMA_CLIENT_GENERATOR_PROVIDERS.includes(g.provider.value),
 		)
+		if (!clientGenerator) {
+			throw new GeneratorPathNotExists(
+				`no prisma client generator found in schema.prisma. Add one of: ${PRISMA_CLIENT_GENERATOR_PROVIDERS.join(
+					', ',
+				)}`,
+			)
+		}
 
 		this.rootPath = schemaPath.replace('/prisma/schema.prisma', '')
 		this.clientPath = clientGenerator.output.value

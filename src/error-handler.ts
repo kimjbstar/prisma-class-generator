@@ -32,7 +32,7 @@ export const handleGenerateError = (e: Error) => {
 		return
 	}
 	if (e instanceof GeneratorPathNotExists) {
-		log('path not valid in generator')
+		log(e.message)
 		return
 	}
 	console.log('unexpected error occured')

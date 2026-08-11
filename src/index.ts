@@ -7,7 +7,10 @@ generatorHandler({
 	onManifest: () => ({
 		defaultOutput: '../src/_gen/prisma-class',
 		prettyName: GENERATOR_NAME,
-		requiresGenerators: ['prisma-client-js'],
+		// NOTE: intentionally not using `requiresGenerators` here — Prisma checks it with AND
+		// semantics, so listing both 'prisma-client-js' and 'prisma-client' (Prisma 7's renamed
+		// client generator) would wrongly require both to be present. See generator.ts,
+		// setPrismaClientPath() for the actual (either/or) check with a clearer error message.
 	}),
 	onGenerate: async (options: GeneratorOptions) => {
 		try {
