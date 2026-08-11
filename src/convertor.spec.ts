@@ -748,7 +748,7 @@ describe('PrismaConvertor#extractValidationDecoratorsFromField (네이티브 타
 	const withNativeType = (
 		field: DMMF.Field,
 		nativeType: [string, string[]] | null,
-	): DMMF.Field => ({ ...field, nativeType } as DMMF.Field)
+	): DMMF.Field => ({ ...field, nativeType }) as DMMF.Field
 
 	const convertField = (
 		field: DMMF.Field,

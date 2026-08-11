@@ -159,9 +159,9 @@ export class FileComponent implements Echoable {
 		}
 	}
 
-	write(dryRun: boolean) {
+	async write(dryRun: boolean): Promise<void> {
 		const filePath = path.resolve(this.dir, this.filename)
-		const content = prettierFormat(this.echo(), this._prettierOptions)
+		const content = await prettierFormat(this.echo(), this._prettierOptions)
 		writeTSFile(filePath, content, dryRun)
 	}
 

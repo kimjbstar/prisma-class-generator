@@ -52,7 +52,7 @@ const primitiveMapType: Record<DefaultPrismaFieldType, string> = {
 
 export type PrimitiveMapTypeKeys = keyof typeof primitiveMapType
 export type PrimitiveMapTypeValues =
-	typeof primitiveMapType[PrimitiveMapTypeKeys]
+	(typeof primitiveMapType)[PrimitiveMapTypeKeys]
 
 // class-validator has no direct equivalent for BigInt/Bytes/Json, so those are left without
 // a type-specific validator (they still get @IsOptional() when nullable).

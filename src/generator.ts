@@ -33,11 +33,14 @@ export const PRISMA_CLIENT_GENERATOR_PROVIDERS = [
  * FileComponent's path is known.
  */
 export const resolveRelationImports = (files: FileComponent[]): void => {
-	const classToPath = files.reduce((result, fileRow) => {
-		const fullPath = path.resolve(fileRow.dir, fileRow.filename)
-		result[fileRow.prismaClass.name] = fullPath
-		return result
-	}, {} as Record<string, string>)
+	const classToPath = files.reduce(
+		(result, fileRow) => {
+			const fullPath = path.resolve(fileRow.dir, fileRow.filename)
+			result[fileRow.prismaClass.name] = fullPath
+			return result
+		},
+		{} as Record<string, string>,
+	)
 
 	files.forEach((fileRow) => {
 		fileRow.imports = fileRow.imports.map((importRow) => {
@@ -122,17 +125,24 @@ export class PrismaClassGenerator {
 		if (options) {
 			this.options = options
 		}
-		const output = parseEnvValue(options.generator.output!)
-		// Looks for the consuming project's own prettier config (.prettierrc,
-		// prettier.config.js, "prettier" field in package.json, ...) starting from the
-		// output directory and walking up — this is how generated classes end up
-		// formatted with the user's own style instead of prisma-class-generator's
-		// defaults. Falls back to the process's cwd (always defined) rather than
-		// require.main.filename, which can be undefined depending on how the generator
-		// subprocess was launched and would crash the constructor.
+	}
+
+	/**
+	 * Looks for the consuming project's own prettier config (.prettierrc,
+	 * prettier.config.js, "prettier" field in package.json, ...) starting from the
+	 * output directory and walking up — this is how generated classes end up
+	 * formatted with the user's own style instead of prisma-class-generator's
+	 * defaults. Falls back to the process's cwd (always defined) rather than
+	 * require.main.filename, which can be undefined depending on how the generator
+	 * subprocess was launched and would crash otherwise. Prettier 3 dropped every
+	 * synchronous API (resolveConfig.sync et al.), so this has to be awaited rather
+	 * than resolved inline in the constructor.
+	 */
+	async resolvePrettierOptions(): Promise<void> {
+		const output = parseEnvValue(this.options.generator.output!)
 		this.prettierOptions =
-			prettier.resolveConfig.sync(output, { useCache: false }) ||
-			prettier.resolveConfig.sync(process.cwd(), { useCache: false })
+			(await prettier.resolveConfig(output, { useCache: false })) ||
+			(await prettier.resolveConfig(process.cwd(), { useCache: false }))
 	}
 
 	public get options() {
@@ -192,6 +202,7 @@ export class PrismaClassGenerator {
 	async run(): Promise<void> {
 		const { generator, dmmf } = this.options
 		const output = parseEnvValue(generator.output!)
+		await this.resolvePrettierOptions()
 		const config = this.getConfig()
 		this.setPrismaClientPath()
 
@@ -213,9 +224,7 @@ export class PrismaClassGenerator {
 
 		resolveRelationImports(files)
 
-		files.forEach((fileRow) => {
-			fileRow.write(config.dryRun)
-		})
+		await Promise.all(files.map((fileRow) => fileRow.write(config.dryRun)))
 		if (config.makeIndexFile) {
 			const indexFilePath = path.resolve(output, 'index.ts')
 			const imports = files.map(
@@ -240,7 +249,7 @@ export class PrismaClassGenerator {
 					'#!{CLASSES}',
 					files.map((f) => f.prismaClass.name).join(', '),
 				)
-			const formattedContent = prettierFormat(
+			const formattedContent = await prettierFormat(
 				content,
 				this.prettierOptions,
 			)

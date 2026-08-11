@@ -166,8 +166,8 @@ describe('parseNumber', () => {
 })
 
 describe('prettierFormat', () => {
-	it('기본 prettier 설정으로 TypeScript 코드를 포맷한다', () => {
-		const formatted = prettierFormat('const   x=1')
+	it('기본 prettier 설정으로 TypeScript 코드를 포맷한다', async () => {
+		const formatted = await prettierFormat('const   x=1')
 		expect(formatted).toBe('const x = 1;\n')
 	})
 })

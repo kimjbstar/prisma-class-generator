@@ -128,6 +128,9 @@ export const writeTSFile = (
 	fs.writeFileSync(fullPath, content)
 }
 
-export const prettierFormat = (content: string, options: Options = {}) => {
+export const prettierFormat = (
+	content: string,
+	options: Options = {},
+): Promise<string> => {
 	return format(content, { ...options, parser: 'typescript' })
 }

@@ -29,7 +29,7 @@
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
-		"test": "jest",
+		"test": "NODE_OPTIONS=--experimental-vm-modules jest",
 		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf dist",
 		"build": "npm run clean && tsc",
@@ -62,7 +62,7 @@
 		"@prisma/generator-helper": "^5.5.2",
 		"@prisma/internals": "^5.5.2",
 		"change-case": "^4.1.2",
-		"prettier": "2.5.1"
+		"prettier": "3.9.6"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "0.7.0",
@@ -70,7 +70,7 @@
 		"@prisma/client": "^5.5.2",
 		"@types/jest": "30.0.0",
 		"@types/node": "^18.15.11",
-		"@types/prettier": "^2.6.3",
+		"@types/prettier": "^3.0.0",
 		"fast-check": "4.9.0",
 		"jest": "30.4.2",
 		"prisma": "^5.5.2",
