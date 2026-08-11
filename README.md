@@ -6,7 +6,10 @@
 [![license](https://img.shields.io/npm/l/prisma-class-generator.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+See [CHANGELOG.md](./CHANGELOG.md) for release notes. Found a bug or want a feature? Open an
+[issue](https://github.com/kimjbstar/prisma-class-generator/issues). Have a "how do I...?"
+question instead? Ask in [Discussions](https://github.com/kimjbstar/prisma-class-generator/discussions) —
+it's faster for you and keeps the issue tracker focused on actual bugs.
 
 ## **Prisma**
 

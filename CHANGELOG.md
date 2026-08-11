@@ -38,6 +38,10 @@ for the raw commit history if you need it.
   fallback (5), against a real `prisma generate` run — the native-type
   validator behavior above was previously only covered by unit tests with
   a hand-constructed DMMF field, not an actual end-to-end generate.
+- Point usage questions at GitHub Discussions instead of Issues — a "Ask a
+  question" contact link in the issue template chooser, and a line in
+  README pointing bugs to Issues and "how do I...?" questions to
+  Discussions.
 - `SECURITY.md` (private vulnerability reporting) and `CODE_OF_CONDUCT.md`.
 - Dependabot dependency updates and CodeQL code scanning.
 - `.editorconfig` and CI/downloads/PRs-welcome README badges.

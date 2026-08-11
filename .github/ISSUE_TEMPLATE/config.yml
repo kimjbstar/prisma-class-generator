@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Ask a question
+    url: https://github.com/kimjbstar/prisma-class-generator/discussions/categories/q-a
+    about: "\"How do I...\" / \"is this expected?\" questions go here, not Issues — Issues are for bugs and feature requests."
   - name: Contributing guide
     url: https://github.com/kimjbstar/prisma-class-generator/blob/main/CONTRIBUTING.md
     about: Read this before opening a PR — includes the dev setup and PR checklist.
