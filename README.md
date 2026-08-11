@@ -365,6 +365,29 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 
 ---
 
+### **Comparison with similar tools**
+
+A few other Prisma generators solve overlapping problems. This is meant to help you pick the
+right one, not to talk anyone out of the alternatives — they're good tools with a different
+shape.
+
+| | prisma-class-generator | [prisma-class-validator-generator](https://github.com/omar-dulaimi/prisma-class-validator-generator) | [prisma-generator-nestjs-dto](https://github.com/Brakebein/prisma-generator-nestjs-dto) |
+|---|---|---|---|
+| Swagger decorators | ✅ | ✅ | ✅ |
+| class-validator decorators | ✅ | ✅ | ✅ |
+| GraphQL (TypeGraphQL) decorators | ✅ | — | — |
+| Classes generated per model | 1 (or 2 with `separateRelationFields`) | 1 (or 2 with `separateRelationFields`) | 5 (`Entity`, `Dto`, `CreateDto`, `UpdateDto`, `ConnectDto`) |
+| Databases verified against | postgresql, mysql, mongodb, sqlserver, sqlite, cockroachdb ([golden-tested](./prisma)) | not specified in their docs | not specified in their docs |
+| Prisma versions | 5, 6, 7 (both `prisma-client-js` and `prisma-client`) | `>=6.19 <8` (peer dependency) | not version-pinned |
+| Per-field customization | `/// @skip`, `/// @ApiHideProperty` doc-comment directives | schema-comment annotations (e.g. `@description`) | schema-comment annotations (e.g. `@description`, `@minimum`) |
+
+If you want a single class per model that mirrors what Prisma Client actually returns, and you
+compose your own Create/Update DTOs from it (see the FAQ below), this library is a good fit. If
+you'd rather have a full Create/Update/Connect DTO set generated for you out of the box,
+`prisma-generator-nestjs-dto` does more of that decision-making for you.
+
+---
+
 ### **FAQ**
 
 **1. Is it CRUD Generator?**

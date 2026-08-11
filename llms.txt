@@ -1,0 +1,29 @@
+# prisma-class-generator
+
+> A Prisma generator that reads schema.prisma via Prisma's DMMF and emits one TypeScript class
+> per model, decorated for @nestjs/swagger, class-validator, and/or TypeGraphQL. Runs as an
+> additional `generator` block during `prisma generate` — not a library you import at runtime.
+
+Use this when you need NestJS-friendly DTO/entity classes (Swagger schema, class-validator
+input validation, GraphQL object types) that stay in sync with schema.prisma as the single
+source of truth, without writing them by hand or committing to a full CRUD/DTO-generation
+framework.
+
+Verified against Prisma 5, 6, and 7 (both the `prisma-client-js` and `prisma-client` client
+generators), and against PostgreSQL, MySQL, MongoDB, SQL Server, SQLite, and CockroachDB.
+
+## Docs
+
+- [README.md](./README.md): install, configuration options, generated-output examples, a
+  comparison with similar generators, and the FAQ (notably: this is not a CRUD generator).
+- [CLAUDE.md](./CLAUDE.md): architecture and internals, for anyone (human or AI agent)
+  modifying this repo rather than just using the published package.
+
+## Notes for coding agents
+
+- The published package is invoked by Prisma's CLI, not imported — point an agent at the
+  `generator prismaClassGenerator { provider = "prisma-class-generator" ... }` block in the
+  target project's schema.prisma, not at this repo, unless the task is to modify the generator
+  itself.
+- Options are set in that generator block as strings (Prisma generator config values are
+  always strings, e.g. `useValidation = "true"`), not as JS booleans.
