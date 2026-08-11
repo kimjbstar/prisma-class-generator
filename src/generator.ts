@@ -23,6 +23,31 @@ export const PRISMA_CLIENT_GENERATOR_PROVIDERS = [
 	'prisma-client',
 ]
 
+/**
+ * Relation fields are registered as imports from a temporary `FileComponent.TEMP_PREFIX`
+ * placeholder (see FileComponent#resolveImports) because at construction time a
+ * FileComponent doesn't yet know the file paths of the other models it relates to.
+ * This resolves those placeholders to real relative import paths once every
+ * FileComponent's path is known.
+ */
+export const resolveRelationImports = (files: FileComponent[]): void => {
+	const classToPath = files.reduce((result, fileRow) => {
+		const fullPath = path.resolve(fileRow.dir, fileRow.filename)
+		result[fileRow.prismaClass.name] = fullPath
+		return result
+	}, {} as Record<string, string>)
+
+	files.forEach((fileRow) => {
+		fileRow.imports = fileRow.imports.map((importRow) => {
+			const pathToReplace = importRow.getReplacePath(classToPath)
+			if (pathToReplace !== null) {
+				importRow.from = fileRow.getRelativePath(pathToReplace)
+			}
+			return importRow
+		})
+	})
+}
+
 export const PrismaClassGeneratorOptions = {
 	makeIndexFile: {
 		desc: 'make index file',
@@ -156,21 +181,7 @@ export class PrismaClassGenerator {
 			(classComponent) => new FileComponent({ classComponent, output }),
 		)
 
-		const classToPath = files.reduce((result, fileRow) => {
-			const fullPath = path.resolve(fileRow.dir, fileRow.filename)
-			result[fileRow.prismaClass.name] = fullPath
-			return result
-		}, {} as Record<string, string>)
-
-		files.forEach((fileRow) => {
-			fileRow.imports = fileRow.imports.map((importRow) => {
-				const pathToReplace = importRow.getReplacePath(classToPath)
-				if (pathToReplace !== null) {
-					importRow.from = fileRow.getRelativePath(pathToReplace)
-				}
-				return importRow
-			})
-		})
+		resolveRelationImports(files)
 
 		files.forEach((fileRow) => {
 			fileRow.write(config.dryRun)
