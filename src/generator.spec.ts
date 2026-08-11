@@ -1,4 +1,6 @@
+import * as fs from 'fs'
 import * as os from 'os'
+import * as path from 'path'
 import { PrismaClassGenerator } from './generator'
 import { GeneratorPathNotExists, GeneratorFormatNotValidError } from './error-handler'
 
@@ -123,5 +125,79 @@ describe('PrismaClassGenerator#getConfig', () => {
 			generator: { config: { dryRun: 'nope' } },
 		} as unknown as PrismaClassGenerator['options']
 		expect(() => generator.getConfig()).toThrow(GeneratorFormatNotValidError)
+	})
+})
+
+describe('PrismaClassGenerator 생성자 — 사용자 prettier 설정 감지', () => {
+	// README에 문서화된 동작: "생성된 클래스는 (있다면) 사용자의 prettier 설정 파일을
+	// 사용해 포맷된다." output 디렉토리부터 상위로 올라가며 .prettierrc 등을 찾는다.
+	it('output 디렉토리 상위에 있는 .prettierrc를 찾아서 적용한다', () => {
+		const projectDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), 'pcg-prettier-test-'),
+		)
+		const outputDir = path.join(projectDir, 'src', '_gen', 'prisma-class')
+		fs.writeFileSync(
+			path.join(projectDir, '.prettierrc.json'),
+			JSON.stringify({ semi: false, singleQuote: true }),
+		)
+
+		const generator = new PrismaClassGenerator({
+			generator: { output: { fromEnvVar: null, value: outputDir } },
+		} as unknown as ConstructorParameters<typeof PrismaClassGenerator>[0])
+
+		expect(generator.prettierOptions).toMatchObject({
+			semi: false,
+			singleQuote: true,
+		})
+
+		fs.rmSync(projectDir, { recursive: true, force: true })
+	})
+
+	// regression test: output 디렉토리는 첫 실행 시 아직 존재하지 않는 게 일반적이다
+	// (dryRun이 아니고서야 이 시점엔 아직 안 만들어져 있음) — 존재하지 않는 경로를
+	// 줘도 상위 디렉토리 탐색이 정상 동작해야 한다.
+	it('output 디렉토리가 아직 생성되지 않았어도 상위의 prettier 설정을 찾는다', () => {
+		const projectDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), 'pcg-prettier-test-'),
+		)
+		fs.writeFileSync(
+			path.join(projectDir, '.prettierrc.json'),
+			JSON.stringify({ semi: false }),
+		)
+		const notYetCreatedOutputDir = path.join(
+			projectDir,
+			'src',
+			'_gen',
+			'prisma-class',
+		)
+
+		const generator = new PrismaClassGenerator({
+			generator: {
+				output: { fromEnvVar: null, value: notYetCreatedOutputDir },
+			},
+		} as unknown as ConstructorParameters<typeof PrismaClassGenerator>[0])
+
+		expect(generator.prettierOptions).toMatchObject({ semi: false })
+
+		fs.rmSync(projectDir, { recursive: true, force: true })
+	})
+
+	// regression test: 예전 코드는 fallback으로 require.main.filename을 읽었는데,
+	// 실행 방식에 따라 require.main이 undefined일 수 있어 생성자가 그냥 죽을 수
+	// 있었다. 지금은 process.cwd()로 대체했고, 설정이 전혀 없어도 크래시 없이
+	// null을 반환해야 한다.
+	it('prettier 설정이 어디에도 없어도 생성자가 죽지 않는다', () => {
+		const projectDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), 'pcg-prettier-test-'),
+		)
+		const outputDir = path.join(projectDir, 'out')
+
+		expect(() => {
+			new PrismaClassGenerator({
+				generator: { output: { fromEnvVar: null, value: outputDir } },
+			} as unknown as ConstructorParameters<typeof PrismaClassGenerator>[0])
+		}).not.toThrow()
+
+		fs.rmSync(projectDir, { recursive: true, force: true })
 	})
 })

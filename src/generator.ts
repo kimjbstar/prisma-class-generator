@@ -105,11 +105,16 @@ export class PrismaClassGenerator {
 			this.options = options
 		}
 		const output = parseEnvValue(options.generator.output!)
+		// Looks for the consuming project's own prettier config (.prettierrc,
+		// prettier.config.js, "prettier" field in package.json, ...) starting from the
+		// output directory and walking up — this is how generated classes end up
+		// formatted with the user's own style instead of prisma-class-generator's
+		// defaults. Falls back to the process's cwd (always defined) rather than
+		// require.main.filename, which can be undefined depending on how the generator
+		// subprocess was launched and would crash the constructor.
 		this.prettierOptions =
 			prettier.resolveConfig.sync(output, { useCache: false }) ||
-			prettier.resolveConfig.sync(path.dirname(require.main.filename), {
-				useCache: false,
-			})
+			prettier.resolveConfig.sync(process.cwd(), { useCache: false })
 	}
 
 	public get options() {
