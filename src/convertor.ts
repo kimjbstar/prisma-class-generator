@@ -122,7 +122,10 @@ export class PrismaConvertor {
 			decorator.params.push(`(type) => ${grahQLType}`)
 		}
 
-		if (dmmfField.relationName) {
+		// relation fields and MongoDB composite `type` fields both reference another
+		// generated class, so both need an explicit `(type) => X` — GraphQL can't infer
+		// this from reflection metadata alone.
+		if (dmmfField.relationName || dmmfField.kind === 'object') {
 			let type = dmmfField.type
 			if (dmmfField.isList) {
 				type = `[${type}]`
@@ -170,7 +173,10 @@ export class PrismaConvertor {
 		}
 		type = dmmfField.type.toString()
 
-		if (dmmfField.relationName) {
+		// relation fields and MongoDB composite `type` fields both reference another
+		// generated class, so both need an explicit type — Swagger can't reliably infer
+		// this from TS reflection metadata, especially for arrays.
+		if (dmmfField.relationName || dmmfField.kind === 'object') {
 			options.type = wrapArrowFunction(dmmfField)
 			decorator.params.push(options)
 			return decorator
