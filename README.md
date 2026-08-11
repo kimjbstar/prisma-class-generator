@@ -1,5 +1,8 @@
 # Prisma Class Generator
 
+[![npm version](https://img.shields.io/npm/v/prisma-class-generator.svg)](https://www.npmjs.com/package/prisma-class-generator)
+[![license](https://img.shields.io/npm/l/prisma-class-generator.svg)](./LICENSE)
+
 ## **Prisma**
 
 > [Prisma](https://www.prisma.io/) is Database ORM Library for Node.js, Typescript.
@@ -74,6 +77,11 @@ export class ProductDto extends IntersectionType(
     }
     ```
 
+    This generator reads the Prisma Client generator declared in the same schema to figure out
+    where the client lives, so make sure one is present too — either the legacy
+    `provider = "prisma-client-js"` or the newer `provider = "prisma-client"` (default since
+    Prisma 7). Both are supported.
+
 3. **😎 done! Let's check out generated files.**
 
     if this models were defined in your prisma.schema file,
@@ -127,7 +135,7 @@ export class ProductDto extends IntersectionType(
     	id: number
 
     	@ApiProperty({ isArray: true, type: () => Product })
-    	products: Product
+    	products: Product[]
     }
     ```
 
@@ -143,8 +151,8 @@ export class ProductDto extends IntersectionType(
     	@ApiProperty({ type: String })
     	name: string
 
-    	@ApiProperty({ type: Bigint })
-    	totalIncome: bigint
+    	@ApiProperty({ type: BigInt })
+    	totalIncome: BigInt
 
     	@ApiProperty({ type: Number })
     	lat: number
@@ -156,7 +164,7 @@ export class ProductDto extends IntersectionType(
     	by: Buffer
 
     	@ApiProperty({ isArray: true, type: () => Product })
-    	products: Product
+    	products: Product[]
     }
     ```
 
@@ -165,7 +173,7 @@ export class ProductDto extends IntersectionType(
     import { Category } from './category'
     import { Company } from './company'
     import { ProductType } from '@prisma/client'
-    import { ApiProperty } from '@nestjs/swagger'
+    import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
     export class Product {
     	@ApiProperty({ type: Number })
@@ -177,20 +185,20 @@ export class ProductDto extends IntersectionType(
     	@ApiProperty({ type: String })
     	desc: string
 
-    	@ApiProperty()
-    	images: any
+    	@ApiProperty({ type: Object })
+    	images: object
 
-    	@ApiProperty({ type: Boolean })
-    	isShown: boolean
+    	@ApiPropertyOptional({ type: Boolean })
+    	isShown?: boolean = false
 
-    	@ApiProperty({ type: Number })
-    	stock: number
+    	@ApiPropertyOptional({ type: Number })
+    	stock?: number = 0
 
     	@ApiProperty({ enum: ProductType, enumName: 'ProductType' })
     	type: ProductType
 
-    	@ApiProperty({ type: Number })
-    	averageRating: number
+    	@ApiPropertyOptional({ type: Number })
+    	averageRating?: number
 
     	@ApiProperty({ type: Number })
     	categoryId: number
@@ -211,6 +219,10 @@ export class ProductDto extends IntersectionType(
     	updatedAt: Date
     }
     ```
+
+    Note that optional fields with a schema-level default (`isShown`, `stock` above) are
+    generated with that default value already assigned, so a `new Product()` starts in a
+    valid state without every caller having to set them.
 
     ```typescript
     // index.ts
@@ -253,17 +265,47 @@ export class ProductDto extends IntersectionType(
 -   _output_
     -   sets output path. default is **'../src/\_gen/prisma-class'**
 -   _useSwagger_
-    -   generates swggger decorator. default value is **true**
+    -   generates swagger decorator (`@ApiProperty`/`@ApiPropertyOptional` from `@nestjs/swagger`). default value is **true**
+-   _useGraphQL_
+    -   generates TypeGraphQL decorator (`@Field` from `@nestjs/graphql`). default value is **false**
 -   _makeIndexFile_
     -   makes index file, default value is **true**
 -   _separateRelationFields_
     -   puts relational fields into different file for each model. This way the class will match the object returned by a Prisma query, default value is **false**
 -   _clientImportPath_
     -   set prisma client import path manually, default value is **@prisma/client**
+        -   set this explicitly when using Prisma 7's `prisma-client` generator, since its output is no longer `@prisma/client` by default
 -   _useNonNullableAssertions_
     -   Apply a ! after non-optional class fields to avoid strict mode warnings (Property has no initializer and is not definitely assigned in the constructor.)
 -   _preserveDefaultNullable_
     -   Determines how null fields are handled. When set to **false** (default), it turns all null fields to undefined. Otherwise, it follows Prisma generation and adds null to the type.
+-   _useUndefinedDefault_
+    -   Assigns `= undefined` to fields with no default value, so every class field has an explicit initializer. default value is **false**
+
+### **Supported databases**
+
+Prisma normalizes every connector's column types down to the same DMMF scalar set, so this
+generator works the same way regardless of database. Verified end-to-end (and covered by
+[golden tests](./prisma) in this repo) against every database Prisma ORM currently supports:
+
+-   PostgreSQL
+-   MySQL
+-   MongoDB (including composite `type` blocks)
+-   SQL Server (mssql)
+-   SQLite
+-   CockroachDB
+
+Native-type annotations (`@db.VarChar`, `@db.Money`, `@db.ObjectId`, ...) don't change what
+gets generated — they only affect the underlying column, not the DMMF scalar type this
+generator reads from. Two connector-level limits are worth knowing, though they're Prisma
+restrictions rather than anything this generator controls: SQL Server and SQLite don't support
+Prisma's native `enum`, and Prisma's `Unsupported("...")` escape-hatch type is excluded from
+the DMMF entirely (so it never reaches Prisma Client either).
+
+### **Supported Prisma versions**
+
+Tested against Prisma **5, 6, and 7**, including both the legacy `prisma-client-js` generator
+and the `prisma-client` generator that became the default in Prisma 7.
 
 ### **How it works?**
 
@@ -278,14 +320,13 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 -   generate Classes from prisma model definition
 -   Support Basic Type and Relation
 -   Support option to generate Swagger Decorator
+-   Support option to generate TypeGraphQL Decorator
 -   Format generated Classes with prettier, using the user's prettier config file if present
 
 ### **Future Plan**
 
--   Considers all class-based things that are not limited to Nest.JS
--   Support all types in prisma.schema
--   Support TypeGraphQL
--   Support DTO
+-   Support class-validator decorators
+-   Support DTO (Create/Update/Connect style classes generated per model)
 -   Support custom path, case or name per each model
 
 ---
