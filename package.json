@@ -17,6 +17,10 @@
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
+		"test": "jest",
+		"clean": "rm -rf dist",
+		"build": "npm run clean && tsc",
+		"prepublishOnly": "npm run build && npm test",
 		"dev": "node -r ts-node/register src/index.ts",
 		"generate:postgresql": "prisma generate --schema prisma/postgresql.prisma",
 		"generate:mysql": "prisma generate --schema prisma/mysql.prisma",
@@ -25,6 +29,9 @@
 	"bin": {
 		"prisma-class-generator": "dist/bin.js"
 	},
+	"files": [
+		"dist"
+	],
 	"engines": {
 		"node": ">=14"
 	},
@@ -33,18 +40,20 @@
 		"email": "kimjbstar@gmail.com"
 	},
 	"dependencies": {
-		"@prisma/client": "^5.5.2",
 		"@prisma/generator-helper": "^5.5.2",
 		"@prisma/internals": "^5.5.2",
 		"change-case": "^4.1.2",
 		"prettier": "2.5.1"
 	},
 	"devDependencies": {
-		"@types/jest": "^28.1.4",
+		"@prisma/client": "^5.5.2",
+		"@types/jest": "30.0.0",
 		"@types/node": "^18.15.11",
 		"@types/prettier": "^2.6.3",
+		"jest": "30.4.2",
 		"prisma": "^5.5.2",
 		"swagger-ui-express": "^4.4.0",
+		"ts-jest": "29.4.12",
 		"ts-node": "^10.9.1",
 		"ts-toolbelt": "^9.6.0",
 		"typescript": "^5.0.4"
