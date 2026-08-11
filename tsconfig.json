@@ -1,14 +1,19 @@
 {
 	"compilerOptions": {
 		"target": "es2017",
-		"module": "commonjs",
-		"moduleResolution": "node",
+		"module": "node16",
+		"moduleResolution": "node16",
+		// TypeScript 6+ defaults "strict" to true when omitted. This codebase predates strict
+		// mode and isn't strict-clean (~60 errors: strictNullChecks, noImplicitAny,
+		// strictPropertyInitialization). Pinning it off keeps current behavior; adopting strict
+		// mode is a real, separate undertaking, not a side effect of a tsconfig modernization.
+		"strict": false,
 		"allowSyntheticDefaultImports": true,
-		"baseUrl": "./",
 		"paths": {
 			"@src/*": ["./src/*"]
 		},
 		"outDir": "./dist",
+		"rootDir": "./src",
 		"declaration": true,
 		"diagnostics": false,
 		"traceResolution": false,
@@ -18,8 +23,6 @@
 		"allowUnusedLabels": false,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
-		"suppressExcessPropertyErrors": false,
-		"suppressImplicitAnyIndexErrors": false,
 		"emitBOM": false,
 		"removeComments": true,
 		"disableSizeLimit": false,
@@ -27,7 +30,6 @@
 		"noEmitOnError": false,
 		"preserveConstEnums": true,
 		"lib": ["esnext", "dom"],
-		"downlevelIteration": false,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"stripInternal": false,
