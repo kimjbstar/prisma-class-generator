@@ -88,15 +88,8 @@ describe('PrismaClassGenerator#getClientImportPath', () => {
 })
 
 describe('PrismaClassGenerator#getConfig', () => {
-	// getConfig는 (run과 마찬가지로) 클래스 필드 화살표 함수라 프로토타입에 없다 —
-	// Object.create(prototype) 우회로는 못 가져온다. 대신 생성자를 한 번 정상적으로
-	// 통과시켜 실제 getConfig를 얻어두고, 테스트마다 options만 바꿔 끼운다.
-	const generator = new PrismaClassGenerator({
-		generator: { output: { fromEnvVar: null, value: os.tmpdir() } },
-	} as unknown as ConstructorParameters<typeof PrismaClassGenerator>[0])
-
 	it('아무 설정도 없으면 모든 옵션이 기본값으로 채워진다', () => {
-		generator.options = { generator: { config: {} } } as unknown as PrismaClassGenerator['options']
+		const generator = makeGeneratorWithConfig({})
 		const config = generator.getConfig()
 		expect(config).toMatchObject({
 			makeIndexFile: true,
@@ -112,18 +105,17 @@ describe('PrismaClassGenerator#getConfig', () => {
 
 	// Prisma generator config 값은 스키마에서 전부 문자열로 넘어온다("true"/"false").
 	it("boolean 옵션은 문자열 'true'/'false'를 실제 boolean으로 파싱한다", () => {
-		generator.options = {
-			generator: { config: { dryRun: 'false', useGraphQL: 'true' } },
-		} as unknown as PrismaClassGenerator['options']
+		const generator = makeGeneratorWithConfig({
+			dryRun: 'false',
+			useGraphQL: 'true',
+		})
 		const config = generator.getConfig()
 		expect(config.dryRun).toBe(false)
 		expect(config.useGraphQL).toBe(true)
 	})
 
 	it("boolean 옵션에 'true'/'false'가 아닌 문자열을 주면 에러를 던진다", () => {
-		generator.options = {
-			generator: { config: { dryRun: 'nope' } },
-		} as unknown as PrismaClassGenerator['options']
+		const generator = makeGeneratorWithConfig({ dryRun: 'nope' })
 		expect(() => generator.getConfig()).toThrow(GeneratorFormatNotValidError)
 	})
 })

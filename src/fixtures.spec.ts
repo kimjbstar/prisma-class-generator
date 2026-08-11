@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { getDMMF } from '@prisma/internals'
 import { PrismaConvertor } from './convertor'
-import { PrismaClassGenerator, resolveRelationImports } from './generator'
+import { resolveRelationImports } from './generator'
 import { FileComponent } from './components/file.component'
 
 /**
@@ -29,15 +29,6 @@ const generateFixture = async (fixtureFile: string) => {
 	)
 	const dmmf = await getDMMF({ datamodel })
 
-	const generator: PrismaClassGenerator = Object.create(
-		PrismaClassGenerator.prototype,
-	)
-	generator.options = {
-		generator: { config: { useGraphQL: false } },
-	} as unknown as PrismaClassGenerator['options']
-	generator.getConfig = () => ({ useGraphQL: false })
-	PrismaClassGenerator.instance = generator
-
 	const convertor = new PrismaConvertor()
 	convertor.dmmf = dmmf
 	convertor.config = {
@@ -51,7 +42,14 @@ const generateFixture = async (fixtureFile: string) => {
 
 	const classes = convertor.getClasses()
 	const files = classes.map(
-		(classComponent) => new FileComponent({ classComponent, output: '/output' }),
+		(classComponent) =>
+			new FileComponent({
+				classComponent,
+				output: '/output',
+				clientImportPath: '@prisma/client',
+				useGraphQL: false,
+				prettierOptions: {},
+			}),
 	)
 	resolveRelationImports(files)
 

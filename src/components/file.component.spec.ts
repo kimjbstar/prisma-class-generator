@@ -1,10 +1,6 @@
 import { getDMMF } from '@prisma/internals'
 import { PrismaConvertor } from '../convertor'
-import {
-	PrismaClassGenerator,
-	PrismaClassGeneratorConfig,
-	resolveRelationImports,
-} from '../generator'
+import { PrismaClassGeneratorConfig, resolveRelationImports } from '../generator'
 import { FileComponent } from './file.component'
 
 const baseSchema = (modelBlock: string, provider: 'postgresql' | 'mongodb' = 'postgresql') => `
@@ -15,21 +11,6 @@ datasource db {
 
 ${modelBlock}
 `
-
-/** FileComponent constructs its imports through PrismaClassGenerator.getInstance(), so the
- * singleton needs a minimal-but-real instance wired up before any FileComponent is built.
- * `getConfig`/`run` are arrow-function class fields (set in the constructor, not the
- * prototype), so Object.create(prototype) skips them — they're stubbed by hand here. */
-beforeEach(() => {
-	const generator: PrismaClassGenerator = Object.create(
-		PrismaClassGenerator.prototype,
-	)
-	generator.options = {
-		generator: { config: { useGraphQL: false } },
-	} as unknown as PrismaClassGenerator['options']
-	generator.getConfig = () => ({ useGraphQL: false })
-	PrismaClassGenerator.instance = generator
-})
 
 const buildFiles = async (
 	modelBlock: string,
@@ -50,7 +31,14 @@ const buildFiles = async (
 	}
 	const classes = convertor.getClasses()
 	const files = classes.map(
-		(classComponent) => new FileComponent({ classComponent, output: '/output' }),
+		(classComponent) =>
+			new FileComponent({
+				classComponent,
+				output: '/output',
+				clientImportPath: '@prisma/client',
+				useGraphQL: false,
+				prettierOptions: {},
+			}),
 	)
 	resolveRelationImports(files)
 	return files
