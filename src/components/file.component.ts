@@ -103,7 +103,10 @@ export class FileComponent implements Echoable {
 
 		if (this.prismaClass.types) {
 			this.prismaClass.types.forEach((type) => {
-				this.registerImport(type, './' + type.toLowerCase())
+				// must match the snake_case filename FileComponent itself generates below,
+				// otherwise multi-word MongoDB composite type names (e.g. ShippingAddress)
+				// import from a path that doesn't match the file actually written to disk.
+				this.registerImport(type, './' + snakeCase(type))
 			})
 		}
 
