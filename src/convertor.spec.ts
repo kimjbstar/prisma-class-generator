@@ -235,6 +235,43 @@ describe('PrismaConvertor#extractSwaggerDecoratorFromField', () => {
 		const echoed = convert(model, { useSwagger: true }).echo()
 		expect(echoed).toContain("enum: Status, enumName: 'Status'")
 	})
+
+	// regression test: MongoDB composite `type` 필드(relation도 enum도 아닌, 임베드된
+	// 객체)는 relation과 마찬가지로 다른 생성 클래스를 가리키는데, type 옵션 없이
+	// @ApiProperty()만 나가고 있었다 — Swagger가 리플렉션만으로는 이 타입을 알 수 없다.
+	it('MongoDB composite type 필드는 relation처럼 화살표 함수 타입으로 감싸진다', async () => {
+		const model = await getModel(
+			`
+      model Dealer {
+        id      String  @id @default(auto()) @map("_id") @db.ObjectId
+        address Address
+      }
+      type Address {
+        city String
+      }
+    `,
+			'mongodb',
+		)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain('type: () => Address')
+	})
+
+	it('MongoDB composite type 리스트 필드는 isArray와 화살표 함수 타입을 함께 받는다', async () => {
+		const model = await getModel(
+			`
+      model Dealer {
+        id        String    @id @default(auto()) @map("_id") @db.ObjectId
+        addresses Address[]
+      }
+      type Address {
+        city String
+      }
+    `,
+			'mongodb',
+		)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain('isArray: true, type: () => Address')
+	})
 })
 
 describe('PrismaConvertor#extractTypeGraphQLDecoratorFromField', () => {
@@ -290,6 +327,43 @@ describe('PrismaConvertor#extractTypeGraphQLDecoratorFromField', () => {
     `)
 		const echoed = convert(model, { useGraphQL: true }).echo()
 		expect(echoed).toContain('{nullable : true}')
+	})
+
+	// regression test: swagger와 같은 이유로 graphql @Field도 composite type을
+	// (type) => X 없이 내보내고 있었다 — nestjs/graphql은 이 정보 없이는
+	// "Cannot determine a GraphQL output type" 런타임 에러를 낸다.
+	it('MongoDB composite type 필드는 relation처럼 (type) => X로 감싸진다', async () => {
+		const model = await getModel(
+			`
+      model Dealer {
+        id      String  @id @default(auto()) @map("_id") @db.ObjectId
+        address Address
+      }
+      type Address {
+        city String
+      }
+    `,
+			'mongodb',
+		)
+		const echoed = convert(model, { useGraphQL: true }).echo()
+		expect(echoed).toContain('@Field((type) => Address)')
+	})
+
+	it('MongoDB composite type 리스트 필드는 (type) => [X]로 감싸진다', async () => {
+		const model = await getModel(
+			`
+      model Dealer {
+        id        String    @id @default(auto()) @map("_id") @db.ObjectId
+        addresses Address[]
+      }
+      type Address {
+        city String
+      }
+    `,
+			'mongodb',
+		)
+		const echoed = convert(model, { useGraphQL: true }).echo()
+		expect(echoed).toContain('@Field((type) => [Address])')
 	})
 })
 

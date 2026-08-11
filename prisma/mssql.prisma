@@ -1,0 +1,43 @@
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaClassGenerator {
+  provider               = "node -r ts-node/register/transpile-only src/index.ts"
+  output                 = "../src/_gen/prisma-class"
+  dryRun                 = "false"
+  separateRelationFields = "false"
+}
+
+// SQL Server has no native enum type, so Prisma rejects `enum` blocks on this
+// connector entirely -- unlike postgresql/mysql/mongodb, there's nothing to model here.
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @db.NVarChar(255)
+  products Product[]
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.NVarChar(255)
+  notes      String?  @db.NText
+  price      Float    @db.Money
+  weight     Float    @db.Real
+  externalId String   @db.UniqueIdentifier @default(dbgenerated("newid()"))
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @db.DateTime2 @default(now())
+}
+
+model Node {
+  id       Int    @id @default(autoincrement())
+  parentId Int?
+  parent   Node?  @relation("NodeToNodeParent", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Node[] @relation("NodeToNodeParent")
+}

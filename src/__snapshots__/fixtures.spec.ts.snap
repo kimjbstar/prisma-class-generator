@@ -42,8 +42,85 @@ export class Dealer {
 	@ApiProperty({type: String})
 	slug: string 
 	
-	@ApiProperty()
+	@ApiProperty({type: () => Address})
 	address: Address 
+	
+}
+
+"
+`;
+
+exports[`DB 픽스처 골든 테스트: mssql prisma/mssql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
+"// category.ts
+import { Product } from './product'
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Category {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	name: string 
+	
+	@ApiProperty({isArray: true, type: () => Product})
+	products: Product[] 
+	
+}
+
+
+// node.ts
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+
+
+export class Node {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiPropertyOptional({type: Number})
+	parentId?: number 
+	
+	@ApiPropertyOptional({type: () => Node})
+	parent?: Node 
+	
+	@ApiProperty({isArray: true, type: () => Node})
+	children: Node[] 
+	
+}
+
+
+// product.ts
+import { Category } from './category'
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+
+
+export class Product {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	title: string 
+	
+	@ApiPropertyOptional({type: String})
+	notes?: string 
+	
+	@ApiProperty({type: Number})
+	price: number 
+	
+	@ApiProperty({type: Number})
+	weight: number 
+	
+	@ApiProperty({type: String})
+	externalId: string 
+	
+	@ApiProperty({type: Number})
+	categoryId: number 
+	
+	@ApiProperty({type: () => Category})
+	category: Category 
+	
+	@ApiProperty({type: Date})
+	createdAt: Date 
 	
 }
 
