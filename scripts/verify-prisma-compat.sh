@@ -54,16 +54,18 @@ $DATASOURCE_BLOCK
 $CLIENT_BLOCK
 
 generator prismaClassGenerator {
-  provider = "node $DIST_ENTRY"
-  output   = "./generated/prisma-class"
-  dryRun   = "false"
+  provider     = "node $DIST_ENTRY"
+  output       = "./generated/prisma-class"
+  dryRun       = "false"
+  useValidation = "true"
 }
 
 model Foo {
-  id    Int  @id
-  count Int  @default(1)
-  zero  Int  @default(0)
+  id    Int     @id
+  count Int     @default(1)
+  zero  Int     @default(0)
   flag  Boolean @default(false)
+  uuid  String  @db.Uuid
 }
 EOF
 
@@ -99,5 +101,30 @@ for expected in 'count: number = 1' 'zero: number = 0' 'flag: boolean = false'; 
 		exit 1
 	fi
 done
+
+# DMMF only exposes a field's `@db.*` native type (`nativeType`) starting with Prisma 6 --
+# on 6+, `uuid`'s `@db.Uuid` should sharpen its validator to @IsUUID(); on 5, there's no
+# nativeType to read at all, so it must silently fall back to the generic @IsString() rather
+# than error. `uuid` is the only String field in this schema, so a plain grep for @IsString()
+# is unambiguous either way.
+if [ "$PRISMA_MAJOR" -ge 6 ] 2>/dev/null; then
+	if ! grep -qF '@IsUUID()' "$OUTPUT_FILE"; then
+		echo "FAIL: expected @IsUUID() from @db.Uuid native type on Prisma $PRISMA_VERSION"
+		exit 1
+	fi
+	if grep -qF '@IsString()' "$OUTPUT_FILE"; then
+		echo "FAIL: @db.Uuid should replace @IsString(), not add to it"
+		exit 1
+	fi
+else
+	if ! grep -qF '@IsString()' "$OUTPUT_FILE"; then
+		echo "FAIL: expected @IsString() fallback on Prisma 5 (no nativeType in DMMF)"
+		exit 1
+	fi
+	if grep -qF '@IsUUID()' "$OUTPUT_FILE"; then
+		echo "FAIL: Prisma 5 has no nativeType in DMMF -- @IsUUID() shouldn't be possible"
+		exit 1
+	fi
+fi
 
 echo "OK: prisma@$PRISMA_VERSION + $CLIENT_PROVIDER generated correctly"

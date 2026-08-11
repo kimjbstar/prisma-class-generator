@@ -739,3 +739,277 @@ describe('PrismaConvertor#extractValidationDecoratorsFromField (useValidation)',
 		expect(echoed).not.toContain('@Type(')
 	})
 })
+
+describe('PrismaConvertor#extractValidationDecoratorsFromField (네이티브 타입 기반 validator)', () => {
+	// 로컬 devDependency가 Prisma 5.5.2로 고정돼 있어 getDMMF()가 nativeType을 절대
+	// 돌려주지 않는다 (Prisma 6부터 추가됨, 직접 getDMMF 6/7로 검증 완료). 그래서 이
+	// describe만은 getModel() 대신 실제 필드를 가져온 뒤 nativeType을 직접 붙여
+	// Prisma 6/7 런타임을 흉내낸다.
+	const withNativeType = (
+		field: DMMF.Field,
+		nativeType: [string, string[]] | null,
+	): DMMF.Field => ({ ...field, nativeType } as DMMF.Field)
+
+	const convertField = (
+		field: DMMF.Field,
+		config: Partial<PrismaClassGeneratorConfig> = {},
+	) => {
+		const convertor = new PrismaConvertor()
+		convertor.config = { ...defaultConfig, useValidation: true, ...config }
+		return convertor.convertField(field)
+	}
+
+	it.each([
+		['Uuid', 'IsUUID'],
+		['UniqueIdentifier', 'IsUUID'],
+		['ObjectId', 'IsMongoId'],
+	])(
+		'nativeType %s는 기본 문자열 validator 대신 @%s()를 사용한다',
+		async (nativeTypeName, validatorName) => {
+			const model = await getModel(`
+        model Foo {
+          id    Int @id
+          value String
+        }
+      `)
+			const field = withNativeType(model.fields[1], [nativeTypeName, []])
+			const echoed = convertField(field).echo()
+			expect(echoed).toContain(`@${validatorName}()`)
+			expect(echoed).not.toContain('@IsString()')
+		},
+	)
+
+	it.each([
+		['VarChar', ['120']],
+		['NVarChar', ['255']],
+		['Char', ['5']],
+		['NChar', ['5']],
+	])(
+		'nativeType %s(n)는 @IsString()과 함께 @MaxLength(n)을 받는다',
+		async (nativeTypeName, args) => {
+			const model = await getModel(`
+        model Foo {
+          id    Int @id
+          value String
+        }
+      `)
+			const field = withNativeType(model.fields[1], [
+				nativeTypeName,
+				args,
+			])
+			const echoed = convertField(field).echo()
+			expect(echoed).toContain('@IsString()')
+			expect(echoed).toContain(`@MaxLength(${args[0]})`)
+		},
+	)
+
+	it.each([
+		'UnsignedInt',
+		'UnsignedTinyInt',
+		'UnsignedSmallInt',
+		'UnsignedMediumInt',
+	])(
+		'nativeType %s는 @IsInt()와 함께 @Min(0)을 받는다',
+		async (nativeTypeName) => {
+			const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value Int
+      }
+    `)
+			const field = withNativeType(model.fields[1], [nativeTypeName, []])
+			const echoed = convertField(field).echo()
+			expect(echoed).toContain('@IsInt()')
+			expect(echoed).toContain('@Min(0)')
+		},
+	)
+
+	it('nativeType이 없으면(null) 기존 동작 그대로 @IsString()만 받는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value String
+      }
+    `)
+		const field = withNativeType(model.fields[1], null)
+		const echoed = convertField(field).echo()
+		expect(echoed).toContain('@IsString()')
+		expect(echoed).not.toContain('@MaxLength')
+	})
+
+	it('리스트 필드의 nativeType 기반 @MaxLength는 { each: true } 옵션을 받는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int      @id
+        value String[]
+      }
+    `)
+		const field = withNativeType(model.fields[1], ['VarChar', ['50']])
+		const echoed = convertField(field).echo()
+		expect(echoed).toContain('@MaxLength(50, {each: true})')
+	})
+
+	it('nativeType이 undefined면(Prisma 5) 에러 없이 기존 동작으로 처리된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value String
+      }
+    `)
+		// Prisma 5의 실제 런타임과 동일하게 nativeType 키 자체가 없는 상태
+		const field = model.fields[1]
+		expect(() => convertField(field).echo()).not.toThrow()
+		expect(convertField(field).echo()).toContain('@IsString()')
+	})
+})
+
+describe('PrismaConvertor#convertField (useSerialization / @exclude)', () => {
+	it('useSerialization이 꺼져 있으면 @exclude directive가 있어도 @Exclude()가 붙지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id       Int @id
+        /// @exclude
+        password String
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).not.toContain('@Exclude()')
+	})
+
+	it('useSerialization이 켜져 있어도 @exclude directive가 없으면 @Exclude()가 붙지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).not.toContain('@Exclude()')
+	})
+
+	it('useSerialization + @exclude directive가 모두 있으면 @Exclude()가 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id       Int @id
+        /// @exclude
+        password String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).toContain('@Exclude()')
+	})
+
+	it('@exclude가 붙어도 필드 자체는 클래스에 남아있다 (@skip과 다름)', async () => {
+		const model = await getModel(`
+      model Foo {
+        id       Int @id
+        /// @exclude
+        password String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).toContain('password: string')
+	})
+})
+
+describe('PrismaConvertor#extractSwaggerDecoratorFromField (description / example)', () => {
+	it('doc-comment가 없으면 description이 붙지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value String
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).not.toContain('description:')
+	})
+
+	it('doc-comment는 description으로 반영된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        /// The password hash, hashed with bcrypt.
+        value String
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain(
+			"description: 'The password hash, hashed with bcrypt.'",
+		)
+	})
+
+	it('doc-comment의 @directive 토큰은 description에서 제외된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        /// Internal only.
+        /// @ApiHideProperty
+        value String
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain("description: 'Internal only.'")
+		expect(echoed).not.toContain('@ApiHideProperty.')
+	})
+
+	it('String 기본값은 example로 반영된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int    @id
+        value String @default("abc")
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain("example: 'abc'")
+	})
+
+	it('숫자/불리언 기본값은 example로 반영된다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id     Int     @id
+        count  Int     @default(1)
+        active Boolean @default(true)
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain('example: 1')
+		expect(echoed).toContain('example: true')
+	})
+
+	it('enum 기본값은 Enum.Member 형태의 example로 반영된다', async () => {
+		const model = await getModel(`
+      enum Status {
+        ACTIVE
+        INACTIVE
+      }
+      model Foo {
+        id     Int    @id
+        status Status @default(ACTIVE)
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).toContain('example: Status.ACTIVE')
+	})
+
+	it('함수 기반 기본값(now())은 example을 만들지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id        Int      @id
+        createdAt DateTime @default(now())
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).not.toContain('example:')
+	})
+
+	it('BigInt 기본값은 example을 만들지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id     Int    @id
+        amount BigInt @default(100)
+      }
+    `)
+		const echoed = convert(model, { useSwagger: true }).echo()
+		expect(echoed).not.toContain('example:')
+	})
+})

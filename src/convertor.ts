@@ -6,11 +6,25 @@ import { PrismaClassGeneratorConfig, REPO_URL } from './generator'
 import {
 	arrayify,
 	capitalizeFirst,
+	escapeSingleQuotedString,
+	getFieldDescription,
 	hasFieldDirective,
 	uniquify,
 	wrapArrowFunction,
 	wrapQuote,
 } from './util'
+
+/**
+ * `nativeType` was added to DMMF.Field in Prisma 6 and isn't declared on the pinned
+ * `@prisma/generator-helper` 5.x types this repo builds against — but the field object a
+ * Prisma 6/7 CLI actually hands to this generator at runtime does include it (verified via
+ * `getDMMF` against real 6.19.3/7.9.1 installs, not guessed). It's `undefined` on Prisma 5
+ * (the key is absent entirely), `null` when the field has no `@db.*` annotation, or
+ * `[typeName, args]`, e.g. `@db.VarChar(191)` -> `['VarChar', ['191']]`.
+ */
+type FieldWithNativeType = DMMF.Field & {
+	nativeType?: [string, string[]] | null
+}
 
 /** BigInt, Boolean, Bytes, DateTime, Decimal, Float, Int, JSON, String, $ModelName */
 type DefaultPrismaFieldType =
@@ -54,11 +68,36 @@ const validationDecoratorMap: Partial<Record<DefaultPrismaFieldType, string>> =
 		DateTime: 'IsDateString',
 	}
 
+// `@db.*` native types that fully replace the generic type-based validator above, because
+// they describe a specific string *format* rather than just "a string". One validator name
+// per format, shared across the connectors that use it (postgresql/cockroachdb's `Uuid` and
+// sqlserver's `UniqueIdentifier` are both UUIDs; mongodb's `ObjectId` is its own format).
+// Verified against real Prisma 6/7 DMMF output per connector, not guessed.
+const nativeTypeReplacementValidatorMap: Record<string, string> = {
+	Uuid: 'IsUUID',
+	UniqueIdentifier: 'IsUUID',
+	ObjectId: 'IsMongoId',
+}
+
+// `@db.VarChar(n)`/`@db.Char(n)` (and sqlserver's N-prefixed variants) carry a length
+// constraint that class-validator can check directly -- added alongside the base @IsString().
+const nativeTypesWithLengthConstraint = ['VarChar', 'NVarChar', 'Char', 'NChar']
+
+// mysql's unsigned integer native types -- added alongside the base @IsInt().
+const unsignedIntegerNativeTypes = [
+	'UnsignedInt',
+	'UnsignedTinyInt',
+	'UnsignedSmallInt',
+	'UnsignedMediumInt',
+]
+
 export interface SwaggerDecoratorParams {
 	isArray?: boolean
 	type?: string
 	enum?: string
 	enumName?: string
+	description?: string
+	example?: string
 }
 
 export interface ConvertModelInput {
@@ -190,27 +229,65 @@ export class PrismaConvertor {
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 		if (type && type !== 'any') {
 			options.type = capitalizeFirst(type)
-			decorator.params.push(options)
-			return decorator
-		}
-		type = dmmfField.type.toString()
+		} else {
+			type = dmmfField.type.toString()
 
-		// relation fields and MongoDB composite `type` fields both reference another
-		// generated class, so both need an explicit type — Swagger can't reliably infer
-		// this from TS reflection metadata, especially for arrays.
-		if (dmmfField.relationName || dmmfField.kind === 'object') {
-			options.type = wrapArrowFunction(dmmfField)
-			decorator.params.push(options)
-			return decorator
+			// relation fields and MongoDB composite `type` fields both reference another
+			// generated class, so both need an explicit type — Swagger can't reliably infer
+			// this from TS reflection metadata, especially for arrays.
+			if (dmmfField.relationName || dmmfField.kind === 'object') {
+				options.type = wrapArrowFunction(dmmfField)
+			} else if (dmmfField.kind === 'enum') {
+				options.enum = dmmfField.type
+				options.enumName = wrapQuote(dmmfField)
+			}
 		}
 
-		if (dmmfField.kind === 'enum') {
-			options.enum = dmmfField.type
-			options.enumName = wrapQuote(dmmfField)
+		// both are derived straight from the schema (the doc comment text, the @default(...)
+		// value) rather than guessed, so they're safe to include unconditionally whenever
+		// useSwagger is on -- no separate opt-in option.
+		const description = getFieldDescription(dmmfField.documentation)
+		if (description) {
+			options.description = `'${escapeSingleQuotedString(description)}'`
+		}
+		const example = this.getExampleValueFromDefault(dmmfField)
+		if (example !== undefined) {
+			options.example = example
 		}
 
 		decorator.params.push(options)
 		return decorator
+	}
+
+	/**
+	 * Builds a swagger `example` value from a field's literal `@default(...)`, formatted as
+	 * a ready-to-interpolate JS literal (matching how `field.default` is formatted in
+	 * convertField). Deliberately conservative: function-based defaults (`now()`,
+	 * `autoincrement()`, `dbgenerated()`) and array defaults are skipped entirely (there's no
+	 * single literal to show), and so are BigInt/DateTime, where `BigInt(...)`/`new Date(...)`
+	 * inside an `example` would be more noise than signal.
+	 */
+	getExampleValueFromDefault = (
+		dmmfField: DMMF.Field,
+	): string | undefined => {
+		if (dmmfField.default === undefined || dmmfField.default === null) {
+			return undefined
+		}
+		if (typeof dmmfField.default !== 'object') {
+			if (dmmfField.kind === 'enum') {
+				return `${dmmfField.type}.${dmmfField.default}`
+			}
+			if (dmmfField.type === 'BigInt' || dmmfField.type === 'DateTime') {
+				return undefined
+			}
+			if (dmmfField.type === 'String') {
+				return `'${escapeSingleQuotedString(
+					dmmfField.default.toString(),
+				)}'`
+			}
+			return dmmfField.default.toString()
+		}
+		return undefined
 	}
 
 	/**
@@ -278,7 +355,14 @@ export class PrismaConvertor {
 		}
 
 		if (typeof dmmfField.type === 'string') {
+			const [nativeTypeName, nativeTypeArgs] =
+				(dmmfField as FieldWithNativeType).nativeType ?? []
+
+			// a native type that describes a specific string format (Uuid, ObjectId, ...)
+			// replaces the generic type-based validator instead of stacking alongside it.
 			const validatorName =
+				(nativeTypeName &&
+					nativeTypeReplacementValidatorMap[nativeTypeName]) ||
 				validationDecoratorMap[dmmfField.type as DefaultPrismaFieldType]
 			if (validatorName) {
 				decorators.push(
@@ -286,6 +370,36 @@ export class PrismaConvertor {
 						name: validatorName,
 						importFrom,
 						params: eachOption ? [eachOption] : [],
+					}),
+				)
+			}
+
+			if (
+				nativeTypeName &&
+				nativeTypesWithLengthConstraint.includes(nativeTypeName) &&
+				nativeTypeArgs?.[0]
+			) {
+				const maxLength = Number(nativeTypeArgs[0])
+				decorators.push(
+					new DecoratorComponent({
+						name: 'MaxLength',
+						importFrom,
+						params: eachOption
+							? [maxLength, eachOption]
+							: [maxLength],
+					}),
+				)
+			}
+
+			if (
+				nativeTypeName &&
+				unsignedIntegerNativeTypes.includes(nativeTypeName)
+			) {
+				decorators.push(
+					new DecoratorComponent({
+						name: 'Min',
+						importFrom,
+						params: eachOption ? [0, eachOption] : [0],
 					}),
 				)
 			}
@@ -485,6 +599,21 @@ export class PrismaConvertor {
 		if (this.config.useValidation) {
 			field.decorators.push(
 				...this.extractValidationDecoratorsFromField(dmmfField),
+			)
+		}
+
+		// `/// @exclude` keeps the field on the class but adds class-transformer's @Exclude(),
+		// so a ClassSerializerInterceptor strips it from responses -- for fields like
+		// passwordHash that the class needs at the type level but should never be serialized.
+		if (
+			this.config.useSerialization &&
+			hasFieldDirective(dmmfField.documentation, 'exclude')
+		) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'Exclude',
+					importFrom: 'class-transformer',
+				}),
 			)
 		}
 

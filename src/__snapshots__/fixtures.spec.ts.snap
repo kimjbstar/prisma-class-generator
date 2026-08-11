@@ -35,7 +35,7 @@ export class Product {
 	@ApiProperty({type: Number})
 	price: number 
 	
-	@ApiProperty({enum: Status, enumName: 'Status'})
+	@ApiProperty({enum: Status, enumName: 'Status', example: Status.ACTIVE})
 	status: Status = Status.ACTIVE
 	
 	@ApiProperty({isArray: true, type: String})
@@ -265,22 +265,22 @@ export class Product {
 	@ApiProperty({type: String})
 	title: string 
 	
-	@ApiProperty({type: String})
+	@ApiProperty({type: String, example: 'abc'})
 	desc: string = 'abc'
 	
 	@ApiProperty({type: Object})
 	images: object 
 	
-	@ApiPropertyOptional({type: Boolean})
+	@ApiPropertyOptional({type: Boolean, example: false})
 	isShown?: boolean = false
 	
-	@ApiPropertyOptional({type: Number})
+	@ApiPropertyOptional({type: Number, example: 0})
 	stock?: number = 0
 	
 	@ApiProperty({enum: ProductType, enumName: 'ProductType'})
 	type: ProductType 
 	
-	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType'})
+	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType', example: ProductAnotherType.AA})
 	anotherType: ProductAnotherType = ProductAnotherType.AA
 	
 	@ApiPropertyOptional({type: Number})
@@ -387,22 +387,22 @@ export class Product {
 	@ApiProperty({type: String})
 	title: string 
 	
-	@ApiProperty({type: String})
+	@ApiProperty({type: String, example: 'abc'})
 	desc: string = 'abc'
 	
 	@ApiProperty({type: Object})
 	images: object 
 	
-	@ApiPropertyOptional({type: Boolean})
+	@ApiPropertyOptional({type: Boolean, example: false})
 	isShown?: boolean = false
 	
-	@ApiPropertyOptional({type: Number})
+	@ApiPropertyOptional({type: Number, example: 0})
 	stock?: number = 0
 	
 	@ApiProperty({enum: ProductType, enumName: 'ProductType'})
 	type: ProductType 
 	
-	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType'})
+	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType', example: ProductAnotherType.AA})
 	anotherType: ProductAnotherType = ProductAnotherType.AA
 	
 	@ApiPropertyOptional({type: Number})
@@ -488,7 +488,7 @@ export class Product {
 	@ApiProperty({type: Number})
 	price: number 
 	
-	@ApiProperty({type: Boolean})
+	@ApiProperty({type: Boolean, example: true})
 	isActive: boolean = true
 	
 	@ApiProperty({type: Number})

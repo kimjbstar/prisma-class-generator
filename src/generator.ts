@@ -79,6 +79,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'generate @ValidateNested()/@Type() for relation and composite-type fields (requires useValidation)',
 		defaultValue: false,
 	},
+	useSerialization: {
+		desc: "generate class-transformer's @Exclude() from a field's /// @exclude directive",
+		defaultValue: false,
+	},
 	useUndefinedDefault: {
 		desc: 'use undefined default',
 		defaultValue: false,

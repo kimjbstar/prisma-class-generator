@@ -6,6 +6,8 @@ import { GeneratorFormatNotValidError } from './error-handler'
 import {
 	arrayify,
 	capitalizeFirst,
+	escapeSingleQuotedString,
+	getFieldDescription,
 	getRelativeTSPath,
 	parseBoolean,
 	parseNumber,
@@ -87,6 +89,50 @@ describe('wrapArrowFunction / wrapQuote', () => {
 
 	it("wrapQuote는 type이 문자열이 아니면 'unknown'을 쓴다", () => {
 		expect(wrapQuote(nonStringTypeField)).toBe("'unknown'")
+	})
+})
+
+describe('getFieldDescription', () => {
+	it('documentation이 없으면 undefined를 반환한다', () => {
+		expect(getFieldDescription(undefined)).toBeUndefined()
+	})
+
+	it('directive가 없는 순수 설명 텍스트는 그대로 반환한다', () => {
+		expect(
+			getFieldDescription('The password hash, hashed with bcrypt.'),
+		).toBe('The password hash, hashed with bcrypt.')
+	})
+
+	it('@directive 토큰을 제거하고 남은 설명만 반환한다', () => {
+		expect(getFieldDescription('Internal only. @ApiHideProperty')).toBe(
+			'Internal only.',
+		)
+	})
+
+	it('directive만 있고 설명이 없으면 undefined를 반환한다', () => {
+		expect(getFieldDescription('@skip')).toBeUndefined()
+	})
+
+	it('여러 줄(공백)로 이어진 설명은 한 줄로 합쳐진다', () => {
+		expect(getFieldDescription('Line one\nLine two')).toBe(
+			'Line one Line two',
+		)
+	})
+})
+
+describe('escapeSingleQuotedString', () => {
+	it('작은따옴표를 이스케이프한다', () => {
+		expect(escapeSingleQuotedString("user's password")).toBe(
+			"user\\'s password",
+		)
+	})
+
+	it('백슬래시를 이스케이프한다', () => {
+		expect(escapeSingleQuotedString('a\\b')).toBe('a\\\\b')
+	})
+
+	it('특수문자가 없으면 그대로 반환한다', () => {
+		expect(escapeSingleQuotedString('plain text')).toBe('plain text')
 	})
 })
 

@@ -84,6 +84,33 @@ export const hasFieldDirective = (
 	return documentation.split(/\s+/).includes(`@${directive}`)
 }
 
+const DIRECTIVE_TOKEN_PATTERN = /^@[A-Za-z]+$/
+
+/**
+ * Strips `@directive` tokens (see hasFieldDirective) out of a field's `///` doc comment,
+ * leaving the plain-text description behind for use as an OpenAPI `description`. Any
+ * `@word`-shaped token is stripped, not just the directives this generator currently
+ * recognizes, so adding a new directive later doesn't also require updating this filter.
+ */
+export const getFieldDescription = (
+	documentation: string | undefined,
+): string | undefined => {
+	if (!documentation) {
+		return undefined
+	}
+	const description = documentation
+		.split(/\s+/)
+		.filter((token) => !DIRECTIVE_TOKEN_PATTERN.test(token))
+		.join(' ')
+		.trim()
+	return description.length > 0 ? description : undefined
+}
+
+/** Escapes a string for safe embedding inside a single-quoted TS string literal. */
+export const escapeSingleQuotedString = (value: string): string => {
+	return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
 export const writeTSFile = (
 	fullPath: string,
 	content: string,

@@ -17,6 +17,25 @@ for the raw commit history if you need it.
   class-transformer's `@Type(() => X)` on relation/composite-type fields
   when `useValidation` is enabled, so NestJS's `ValidationPipe` can recurse
   into nested payloads.
+- `useValidation` now sharpens its class-validator decorators using a
+  field's `@db.*` native type on Prisma 6+ (a no-op on Prisma 5, whose DMMF
+  doesn't expose native types): `@db.Uuid`/`@db.UniqueIdentifier` and
+  MongoDB's `@db.ObjectId` replace the generic string validator with
+  `@IsUUID()`/`@IsMongoId()`; `@db.VarChar(n)`/`@db.Char(n)` (and
+  sqlserver's N-prefixed variants) add `@MaxLength(n)`; MySQL's unsigned
+  integer types add `@Min(0)`.
+- `useSerialization` option + `/// @exclude` directive: generates
+  class-transformer's `@Exclude()` for fields marked with the directive,
+  for use with NestJS's `ClassSerializerInterceptor`.
+- `useSwagger` now derives `@ApiProperty`'s `description` from a field's
+  `///` doc comment and `example` from a literal `@default(...)` value
+  (function-based defaults and BigInt/DateTime are skipped) — no separate
+  option, both are schema-derived rather than guessed.
+- `scripts/verify-prisma-compat.sh` now generates a `@db.Uuid` field with
+  `useValidation` on and asserts `@IsUUID()` (6+) vs. the `@IsString()`
+  fallback (5), against a real `prisma generate` run — the native-type
+  validator behavior above was previously only covered by unit tests with
+  a hand-constructed DMMF field, not an actual end-to-end generate.
 - `SECURITY.md` (private vulnerability reporting) and `CODE_OF_CONDUCT.md`.
 - Dependabot dependency updates and CodeQL code scanning.
 - `.editorconfig` and CI/downloads/PRs-welcome README badges.
