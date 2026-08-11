@@ -6,6 +6,8 @@
 [![license](https://img.shields.io/npm/l/prisma-class-generator.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
 ## **Prisma**
 
 > [Prisma](https://www.prisma.io/) is Database ORM Library for Node.js, Typescript.
