@@ -171,7 +171,7 @@ export class PrismaClassGenerator {
 		this.clientPath = clientGenerator.output.value
 	}
 
-	run = async (): Promise<void> => {
+	async run(): Promise<void> {
 		const { generator, dmmf } = this.options
 		const output = parseEnvValue(generator.output!)
 		const config = this.getConfig()
@@ -183,7 +183,14 @@ export class PrismaClassGenerator {
 
 		const classes = convertor.getClasses()
 		const files = classes.map(
-			(classComponent) => new FileComponent({ classComponent, output }),
+			(classComponent) =>
+				new FileComponent({
+					classComponent,
+					output,
+					clientImportPath: this.getClientImportPath(),
+					useGraphQL: !!config.useGraphQL,
+					prettierOptions: this.prettierOptions,
+				}),
 		)
 
 		resolveRelationImports(files)
@@ -224,7 +231,7 @@ export class PrismaClassGenerator {
 		return
 	}
 
-	getConfig = (): PrismaClassGeneratorConfig => {
+	getConfig(): PrismaClassGeneratorConfig {
 		const config = this.options.generator.config
 
 		const result: PrismaClassGeneratorConfig = {}

@@ -1,8 +1,8 @@
 import { pascalCase, snakeCase } from 'change-case'
+import * as prettier from 'prettier'
 import { ClassComponent } from './class.component'
 import * as path from 'path'
 import { getRelativeTSPath, prettierFormat, writeTSFile } from '../util'
-import { PrismaClassGenerator } from '../generator'
 import { Echoable } from '../interfaces/echoable'
 import { ImportComponent } from './import.component'
 
@@ -11,6 +11,9 @@ export class FileComponent implements Echoable {
 	private _filename?: string
 	private _imports?: ImportComponent[] = []
 	private _prismaClass: ClassComponent
+	private _clientImportPath: string
+	private _useGraphQL: boolean
+	private _prettierOptions: prettier.Options
 	static TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__'
 
 	public get dir() {
@@ -45,11 +48,26 @@ export class FileComponent implements Echoable {
 		this._prismaClass = value
 	}
 
-	constructor(input: { classComponent: ClassComponent; output: string }) {
-		const { classComponent, output } = input
+	constructor(input: {
+		classComponent: ClassComponent
+		output: string
+		clientImportPath: string
+		useGraphQL: boolean
+		prettierOptions: prettier.Options
+	}) {
+		const {
+			classComponent,
+			output,
+			clientImportPath,
+			useGraphQL,
+			prettierOptions,
+		} = input
 		this._prismaClass = classComponent
 		this.dir = path.resolve(output)
 		this.filename = `${snakeCase(classComponent.name)}.ts`
+		this._clientImportPath = clientImportPath
+		this._useGraphQL = useGraphQL
+		this._prettierOptions = prettierOptions
 		this.resolveImports()
 	}
 
@@ -80,7 +98,6 @@ export class FileComponent implements Echoable {
 	}
 
 	resolveImports() {
-		const generator = PrismaClassGenerator.getInstance()
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
 			this.registerImport(
 				`${relationClassName}`,
@@ -88,7 +105,7 @@ export class FileComponent implements Echoable {
 			)
 		})
 		this.prismaClass.enumTypes.forEach((enumName) => {
-			this.registerImport(enumName, generator.getClientImportPath())
+			this.registerImport(enumName, this._clientImportPath)
 		})
 
 		this.prismaClass.decorators.forEach((decorator) => {
@@ -110,7 +127,7 @@ export class FileComponent implements Echoable {
 			})
 		}
 
-		if (generator.getConfig().useGraphQL) {
+		if (this._useGraphQL) {
 			this.registerImport('ID', '@nestjs/graphql')
 			this.registerImport('Int', '@nestjs/graphql')
 			this.registerImport('registerEnumType', '@nestjs/graphql')
@@ -119,9 +136,8 @@ export class FileComponent implements Echoable {
 	}
 
 	write(dryRun: boolean) {
-		const generator = PrismaClassGenerator.getInstance()
 		const filePath = path.resolve(this.dir, this.filename)
-		const content = prettierFormat(this.echo(), generator.prettierOptions)
+		const content = prettierFormat(this.echo(), this._prettierOptions)
 		writeTSFile(filePath, content, dryRun)
 	}
 
