@@ -367,15 +367,17 @@ export class PrismaConvertor {
 			field.preserveDefaultNullable = true
 		}
 
-		if (dmmfField.default) {
+		if (dmmfField.default !== undefined && dmmfField.default !== null) {
 			if (typeof dmmfField.default !== 'object') {
-				field.default = dmmfField.default?.toString()
+				field.default = dmmfField.default.toString()
 				if (dmmfField.kind === 'enum') {
 					field.default = `${dmmfField.type}.${dmmfField.default}`
 				} else if (dmmfField.type === 'BigInt') {
 					field.default = `BigInt(${field.default})`
 				} else if (dmmfField.type === 'String') {
 					field.default = `'${field.default}'`
+				} else if (dmmfField.type === 'DateTime') {
+					field.default = `new Date('${field.default}')`
 				}
 			} else if (Array.isArray(dmmfField.default)) {
 				if (dmmfField.type === 'String') {
