@@ -2,7 +2,10 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { PrismaClassGenerator } from './generator'
-import { GeneratorPathNotExists, GeneratorFormatNotValidError } from './error-handler'
+import {
+	GeneratorPathNotExists,
+	GeneratorFormatNotValidError,
+} from './error-handler'
 
 // Constructs an instance without running the constructor (which needs a full
 // GeneratorOptions + prettier config resolution) — we only need `options`
@@ -27,7 +30,9 @@ describe('PrismaClassGenerator#setPrismaClientPath', () => {
 			},
 		])
 		generator.setPrismaClientPath()
-		expect(generator.clientPath).toBe('/project/node_modules/@prisma/client')
+		expect(generator.clientPath).toBe(
+			'/project/node_modules/@prisma/client',
+		)
 	})
 
 	// regression test: Prisma 7부터 기본 client 생성기 이름이 'prisma-client-js'에서
@@ -46,7 +51,10 @@ describe('PrismaClassGenerator#setPrismaClientPath', () => {
 
 	it('client 생성기를 찾지 못하면 원인을 알 수 있는 에러를 던진다', () => {
 		const generator = makeGenerator([
-			{ provider: { value: 'some-other-generator' }, output: { value: '/x' } },
+			{
+				provider: { value: 'some-other-generator' },
+				output: { value: '/x' },
+			},
 		])
 		expect(() => generator.setPrismaClientPath()).toThrow(
 			GeneratorPathNotExists,
@@ -116,7 +124,9 @@ describe('PrismaClassGenerator#getConfig', () => {
 
 	it("boolean 옵션에 'true'/'false'가 아닌 문자열을 주면 에러를 던진다", () => {
 		const generator = makeGeneratorWithConfig({ dryRun: 'nope' })
-		expect(() => generator.getConfig()).toThrow(GeneratorFormatNotValidError)
+		expect(() => generator.getConfig()).toThrow(
+			GeneratorFormatNotValidError,
+		)
 	})
 })
 

@@ -1,9 +1,10 @@
 import { FieldComponent } from './field.component'
 
-const makeField = (
-	overrides: Partial<FieldComponent> = {},
-): FieldComponent => {
-	const field = new FieldComponent({ name: 'value', useUndefinedDefault: false })
+const makeField = (overrides: Partial<FieldComponent> = {}): FieldComponent => {
+	const field = new FieldComponent({
+		name: 'value',
+		useUndefinedDefault: false,
+	})
 	Object.assign(field, overrides)
 	return field
 }

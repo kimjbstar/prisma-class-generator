@@ -1,9 +1,15 @@
 import { getDMMF } from '@prisma/internals'
 import { PrismaConvertor } from '../convertor'
-import { PrismaClassGeneratorConfig, resolveRelationImports } from '../generator'
+import {
+	PrismaClassGeneratorConfig,
+	resolveRelationImports,
+} from '../generator'
 import { FileComponent } from './file.component'
 
-const baseSchema = (modelBlock: string, provider: 'postgresql' | 'mongodb' = 'postgresql') => `
+const baseSchema = (
+	modelBlock: string,
+	provider: 'postgresql' | 'mongodb' = 'postgresql',
+) => `
 datasource db {
   provider = "${provider}"
   url      = env("DATABASE_URL")
@@ -44,8 +50,10 @@ const buildFiles = async (
 	return files
 }
 
-const findImportFrom = (file: FileComponent, item: string): string | undefined =>
-	file.imports.find((i) => i.items.includes(item))?.from
+const findImportFrom = (
+	file: FileComponent,
+	item: string,
+): string | undefined => file.imports.find((i) => i.items.includes(item))?.from
 
 describe('relation import 경로 해석 (FileComponent + resolveRelationImports)', () => {
 	// regression test for #57 / #73: 생성된 파일명(snake_case)과 다른 클래스가
@@ -64,7 +72,9 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
       }
     `)
 
-		const userFriendFile = files.find((f) => f.prismaClass.name === 'UserFriend')
+		const userFriendFile = files.find(
+			(f) => f.prismaClass.name === 'UserFriend',
+		)
 		const userFile = files.find((f) => f.prismaClass.name === 'User')
 
 		expect(userFriendFile.filename).toBe('user_friend.ts')

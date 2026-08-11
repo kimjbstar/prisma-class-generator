@@ -69,7 +69,9 @@ describe('getRelativeTSPath', () => {
 
 describe('wrapArrowFunction / wrapQuote', () => {
 	const stringTypeField = { type: 'Foo' } as DMMF.Field
-	const nonStringTypeField = { type: { name: 'Foo' } } as unknown as DMMF.Field
+	const nonStringTypeField = {
+		type: { name: 'Foo' },
+	} as unknown as DMMF.Field
 
 	it('wrapArrowFunction은 필드 타입을 () => Type으로 감싼다', () => {
 		expect(wrapArrowFunction(stringTypeField)).toBe('() => Foo')
@@ -126,13 +128,19 @@ describe('prettierFormat', () => {
 
 describe('writeTSFile', () => {
 	it('dryRun이면 실제 파일을 쓰지 않는다', () => {
-		const target = path.join(os.tmpdir(), `prisma-class-generator-test-${Date.now()}.ts`)
+		const target = path.join(
+			os.tmpdir(),
+			`prisma-class-generator-test-${Date.now()}.ts`,
+		)
 		writeTSFile(target, 'export const x = 1', true)
 		expect(fs.existsSync(target)).toBe(false)
 	})
 
 	it('dryRun이 아니면 디렉토리를 만들고 파일을 쓴다', () => {
-		const dir = path.join(os.tmpdir(), `prisma-class-generator-test-${Date.now()}`)
+		const dir = path.join(
+			os.tmpdir(),
+			`prisma-class-generator-test-${Date.now()}`,
+		)
 		const target = path.join(dir, 'out.ts')
 		writeTSFile(target, 'export const x = 1', false)
 		expect(fs.readFileSync(target, 'utf-8')).toBe('export const x = 1')
