@@ -541,3 +541,120 @@ describe('PrismaConvertor#convertField — /// @ApiHideProperty 필드 디렉티
 		expect(echoed).not.toContain('ApiHideProperty')
 	})
 })
+
+describe('PrismaConvertor#extractValidationDecoratorsFromField (useValidation)', () => {
+	it('useValidation이 꺼져 있으면(기본값) validator 데코레이터를 붙이지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int    @id
+        value String
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).not.toContain('IsString')
+	})
+
+	it.each([
+		['Int', 'IsInt'],
+		['Float', 'IsNumber'],
+		['Decimal', 'IsNumber'],
+		['String', 'IsString'],
+		['Boolean', 'IsBoolean'],
+	])('%s 필드는 @%s()가 붙는다', async (prismaType, validatorName) => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value ${prismaType}
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		expect(echoed).toContain(`@${validatorName}()`)
+	})
+
+	// DateTime uses IsDateString (not IsDate) on purpose: it validates the raw string a JSON
+	// body actually contains, without requiring class-transformer's @Type(() => Date) first.
+	it('DateTime 필드는 @IsDate()가 아니라 @IsDateString()이 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int      @id
+        value DateTime
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		expect(echoed).toContain('@IsDateString()')
+		expect(echoed).not.toContain('@IsDate()')
+	})
+
+	it('nullable 필드는 @IsOptional()이 다른 validator보다 먼저 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int     @id
+        value String?
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		const optionalIndex = echoed.indexOf('@IsOptional()')
+		const stringIndex = echoed.indexOf('@IsString()')
+		expect(optionalIndex).toBeGreaterThan(-1)
+		expect(optionalIndex).toBeLessThan(stringIndex)
+	})
+
+	it('리스트 필드는 @IsArray()와 { each: true } 옵션이 붙은 validator를 함께 받는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int      @id
+        value String[]
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		expect(echoed).toContain('@IsArray()')
+		expect(echoed).toContain('@IsString({each: true})')
+	})
+
+	it('enum 필드는 @IsEnum(EnumName)이 붙는다', async () => {
+		const model = await getModel(`
+      enum Status {
+        ACTIVE
+        INACTIVE
+      }
+      model Foo {
+        id     Int    @id
+        status Status
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		expect(echoed).toContain('@IsEnum(Status)')
+	})
+
+	it('BigInt/Bytes/Json 필드는 타입 전용 validator가 없다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id     Int    @id
+        amount BigInt
+        blob   Bytes
+        raw    Json
+      }
+    `)
+		const echoed = convert(model, { useValidation: true }).echo()
+		expect(echoed).not.toContain('@IsBigInt')
+		expect(echoed).not.toContain('@IsBytes')
+		expect(echoed).not.toMatch(/raw:[\s\S]{0,40}@Is/)
+	})
+
+	it('relation 필드는 validator를 받지 않는다 (DTO 구성은 사용자 책임)', async () => {
+		// getModel()은 첫 번째 모델(Bar)을 돌려준다 — Bar.foo가 relation 필드다.
+		const barModel = await getModel(`
+      model Bar {
+        id    Int @id
+        fooId Int @unique
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+      model Foo {
+        id  Int   @id
+        bar Bar?
+      }
+    `)
+		const echoed = convert(barModel, { useValidation: true }).echo()
+		expect(echoed).not.toMatch(/foo:[\s\S]{0,40}@Is/)
+	})
+})

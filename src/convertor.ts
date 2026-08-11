@@ -40,6 +40,20 @@ export type PrimitiveMapTypeKeys = keyof typeof primitiveMapType
 export type PrimitiveMapTypeValues =
 	typeof primitiveMapType[PrimitiveMapTypeKeys]
 
+// class-validator has no direct equivalent for BigInt/Bytes/Json, so those are left without
+// a type-specific validator (they still get @IsOptional() when nullable).
+const validationDecoratorMap: Partial<Record<DefaultPrismaFieldType, string>> =
+	{
+		Int: 'IsInt',
+		Float: 'IsNumber',
+		Decimal: 'IsNumber',
+		String: 'IsString',
+		Boolean: 'IsBoolean',
+		// a plain string field, not `Date` -- validates the raw string a JSON body actually
+		// contains without requiring class-transformer's @Type(() => Date) to run first.
+		DateTime: 'IsDateString',
+	}
+
 export interface SwaggerDecoratorParams {
 	isArray?: boolean
 	type?: string
@@ -197,6 +211,60 @@ export class PrismaConvertor {
 
 		decorator.params.push(options)
 		return decorator
+	}
+
+	/**
+	 * Returns zero or more class-validator decorators for a field. Unlike the swagger/graphql
+	 * extractors this can return several decorators for one field (e.g. `@IsOptional()` +
+	 * `@IsString()`), so it returns an array instead of a single DecoratorComponent.
+	 *
+	 * Relation and composite-type fields are intentionally left without a validator: this
+	 * generator hands DTO composition to the caller rather than deciding what a create/update
+	 * payload should look like (see the README FAQ) — validating a nested object would require
+	 * assuming that shape.
+	 */
+	extractValidationDecoratorsFromField = (
+		dmmfField: DMMF.Field,
+	): DecoratorComponent[] => {
+		const decorators: DecoratorComponent[] = []
+		const importFrom = 'class-validator'
+		const eachOption = dmmfField.isList ? { each: true } : undefined
+
+		if (dmmfField.isRequired === false) {
+			decorators.push(new DecoratorComponent({ name: 'IsOptional', importFrom }))
+		}
+
+		if (dmmfField.isList) {
+			decorators.push(new DecoratorComponent({ name: 'IsArray', importFrom }))
+		}
+
+		if (dmmfField.relationName || dmmfField.kind === 'object') {
+			return decorators
+		}
+
+		if (dmmfField.kind === 'enum') {
+			const params = eachOption ? [dmmfField.type, eachOption] : [dmmfField.type]
+			decorators.push(
+				new DecoratorComponent({ name: 'IsEnum', importFrom, params }),
+			)
+			return decorators
+		}
+
+		if (typeof dmmfField.type === 'string') {
+			const validatorName =
+				validationDecoratorMap[dmmfField.type as DefaultPrismaFieldType]
+			if (validatorName) {
+				decorators.push(
+					new DecoratorComponent({
+						name: validatorName,
+						importFrom,
+						params: eachOption ? [eachOption] : [],
+					}),
+				)
+			}
+		}
+
+		return decorators
 	}
 
 	getClass = (input: ConvertModelInput): ClassComponent => {
@@ -386,6 +454,12 @@ export class PrismaConvertor {
 			if (decorator) {
 				field.decorators.push(decorator)
 			}
+		}
+
+		if (this.config.useValidation) {
+			field.decorators.push(
+				...this.extractValidationDecoratorsFromField(dmmfField),
+			)
 		}
 
 		if (dmmfField.isRequired === false) {

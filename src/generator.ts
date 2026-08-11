@@ -69,6 +69,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'use graphql',
 		defaultValue: false,
 	},
+	useValidation: {
+		desc: 'generate class-validator decorators',
+		defaultValue: false,
+	},
 	useUndefinedDefault: {
 		desc: 'use undefined default',
 		defaultValue: false,

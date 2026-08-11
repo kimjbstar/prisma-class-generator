@@ -268,6 +268,11 @@ export class ProductDto extends IntersectionType(
     -   generates swagger decorator (`@ApiProperty`/`@ApiPropertyOptional` from `@nestjs/swagger`). default value is **true**
 -   _useGraphQL_
     -   generates TypeGraphQL decorator (`@Field` from `@nestjs/graphql`). default value is **false**
+-   _useValidation_
+    -   generates [class-validator](https://github.com/typestack/class-validator) decorators (`@IsInt`, `@IsString`, `@IsOptional`, `@IsEnum`, `@IsArray`, ...) based on each field's Prisma type, for use with NestJS's `ValidationPipe`. default value is **false**
+        -   relation and composite-type fields are intentionally left without a validator — this library hands DTO composition to the caller (see the FAQ below), so it doesn't guess what a nested payload should look like
+        -   `DateTime` fields use `@IsDateString()` rather than `@IsDate()`, so it validates the raw string a JSON request body actually contains without requiring `class-transformer`'s `@Type(() => Date)` to run first
+        -   `BigInt`/`Bytes`/`Json` fields get no type-specific validator — class-validator has no direct equivalent for those
 -   _makeIndexFile_
     -   makes index file, default value is **true**
 -   _separateRelationFields_
@@ -348,13 +353,13 @@ It is defined as an additional generator in the `schema.prisma` file and will op
 -   Support Basic Type and Relation
 -   Support option to generate Swagger Decorator
 -   Support option to generate TypeGraphQL Decorator
+-   Support option to generate class-validator decorators
 -   Format generated Classes with prettier, using the user's prettier config file if present
 -   Per-field `/// @skip` and `/// @ApiHideProperty` directives
 -   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 
 ### **Future Plan**
 
--   Support class-validator decorators
 -   Support DTO (Create/Update/Connect style classes generated per model)
 -   Support custom path, case or name per each model
 

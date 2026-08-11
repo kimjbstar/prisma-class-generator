@@ -216,3 +216,37 @@ describe('preserveDecimal — Prisma 네임스페이스 import', () => {
 		expect(findImportFrom(fooFile, 'Prisma')).toBeUndefined()
 	})
 })
+
+describe('useValidation — class-validator import', () => {
+	it('useValidation이 켜지면 class-validator에서 필요한 validator만 import한다', async () => {
+		const files = await buildFiles(
+			`
+      model Foo {
+        id    Int    @id
+        name  String
+      }
+    `,
+			{ useValidation: true },
+		)
+		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		const validatorImport = fooFile.imports.find(
+			(i) => i.from === 'class-validator',
+		)
+		expect(validatorImport.items).toContain('IsInt')
+		expect(validatorImport.items).toContain('IsString')
+	})
+
+	it('useValidation이 꺼져 있으면 class-validator를 import하지 않는다', async () => {
+		const files = await buildFiles(`
+      model Foo {
+        id   Int    @id
+        name String
+      }
+    `)
+		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		expect(findImportFrom(fooFile, 'IsInt')).toBeUndefined()
+		expect(fooFile.imports.some((i) => i.from === 'class-validator')).toBe(
+			false,
+		)
+	})
+})
