@@ -1,0 +1,37 @@
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaClassGenerator {
+  provider               = "node -r ts-node/register/transpile-only src/index.ts"
+  output                 = "../src/_gen/prisma-class"
+  dryRun                 = "false"
+  separateRelationFields = "false"
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+model Category {
+  id       BigInt    @id @default(sequence())
+  name     String
+  products Product[]
+}
+
+model Product {
+  id         BigInt   @id @default(sequence())
+  title      String
+  price      Decimal  @db.Decimal(10, 2)
+  status     Status   @default(ACTIVE)
+  tags       String[]
+  categoryId BigInt
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @default(now())
+}

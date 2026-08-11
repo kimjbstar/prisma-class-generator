@@ -18,6 +18,8 @@ const FIXTURES = [
 	{ name: 'mysql', file: 'mysql.prisma' },
 	{ name: 'mongodb', file: 'mongodb.prisma' },
 	{ name: 'mssql', file: 'mssql.prisma' },
+	{ name: 'sqlite', file: 'sqlite.prisma' },
+	{ name: 'cockroachdb', file: 'cockroachdb.prisma' },
 ] as const
 
 const generateFixture = async (fixtureFile: string) => {

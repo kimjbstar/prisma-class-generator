@@ -1,0 +1,42 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaClassGenerator {
+  provider               = "node -r ts-node/register/transpile-only src/index.ts"
+  output                 = "../src/_gen/prisma-class"
+  dryRun                 = "false"
+  separateRelationFields = "false"
+}
+
+// SQLite has no native enum support either (like sqlserver), and no native list/array
+// type for scalars -- Prisma rejects both on this connector.
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  isActive    Boolean  @default(true)
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Node {
+  id       Int    @id @default(autoincrement())
+  parentId Int?
+  parent   Node?  @relation("NodeToNodeParent", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Node[] @relation("NodeToNodeParent")
+}
