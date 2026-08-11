@@ -1,0 +1,300 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`DB 픽스처 골든 테스트: mongodb prisma/mongodb.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
+"// address.ts
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Address {
+	@ApiProperty({type: String})
+	city: string 
+	
+	@ApiProperty({type: String})
+	postalCode: string 
+	
+	@ApiProperty({type: String})
+	street: string 
+	
+	@ApiProperty({type: String})
+	streetNumber: string 
+	
+}
+
+
+// dealer.ts
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+import { Address } from './address'
+
+
+export class Dealer {
+	@ApiProperty({type: String})
+	id: string 
+	
+	@ApiPropertyOptional({type: Date})
+	createdAt?: Date 
+	
+	@ApiProperty({type: Date})
+	modifiedAt: Date 
+	
+	@ApiProperty({type: String})
+	name: string 
+	
+	@ApiProperty({type: String})
+	slug: string 
+	
+	@ApiProperty()
+	address: Address 
+	
+}
+
+"
+`;
+
+exports[`DB 픽스처 골든 테스트: mysql prisma/mysql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
+"// category.ts
+import { Product } from './product'
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Category {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({isArray: true, type: () => Product})
+	products: Product[] 
+	
+}
+
+
+// company.ts
+import { Product } from './product'
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Company {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	name: string 
+	
+	@ApiProperty({type: BigInt})
+	totalIncome: BigInt = BigInt(100)
+	
+	@ApiProperty({type: Number})
+	lat: number 
+	
+	@ApiProperty({type: Number})
+	lng: number 
+	
+	@ApiProperty({type: Buffer})
+	by: Buffer 
+	
+	@ApiProperty({isArray: true, type: () => Product})
+	products: Product[] 
+	
+	@ApiProperty({type: Date})
+	establishedAt: Date = new Date('2000-01-01T01:00:00+00:00')
+	
+}
+
+
+// node.ts
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+
+
+export class Node {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiPropertyOptional({type: Number})
+	parentId?: number 
+	
+	@ApiPropertyOptional({type: () => Node})
+	parent?: Node 
+	
+	@ApiProperty({isArray: true, type: () => Node})
+	children: Node[] 
+	
+}
+
+
+// product.ts
+import { Category } from './category'
+import { Company } from './company'
+import { ProductType,ProductAnotherType } from '@prisma/client'
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+
+
+export class Product {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	title: string 
+	
+	@ApiProperty({type: String})
+	desc: string = 'abc'
+	
+	@ApiProperty({type: Object})
+	images: object 
+	
+	@ApiPropertyOptional({type: Boolean})
+	isShown?: boolean = false
+	
+	@ApiPropertyOptional({type: Number})
+	stock?: number = 0
+	
+	@ApiProperty({enum: ProductType, enumName: 'ProductType'})
+	type: ProductType 
+	
+	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType'})
+	anotherType: ProductAnotherType = ProductAnotherType.AA
+	
+	@ApiPropertyOptional({type: Number})
+	averageRating?: number 
+	
+	@ApiProperty({type: Number})
+	categoryId: number 
+	
+	@ApiProperty({type: Number})
+	companyId: number 
+	
+	@ApiProperty({type: () => Category})
+	category: Category 
+	
+	@ApiProperty({type: () => Company})
+	company: Company 
+	
+	@ApiProperty({type: Date})
+	createdAt: Date 
+	
+	@ApiProperty({type: Date})
+	updatedAt: Date 
+	
+}
+
+"
+`;
+
+exports[`DB 픽스처 골든 테스트: postgresql prisma/postgresql.prisma의 전체 모델이 기대한 형태로 생성된다 1`] = `
+"// category.ts
+import { Product } from './product'
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Category {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({isArray: true, type: () => Product})
+	products: Product[] 
+	
+}
+
+
+// company.ts
+import { Product } from './product'
+import { ApiProperty } from '@nestjs/swagger'
+
+
+export class Company {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	name: string 
+	
+	@ApiProperty({type: BigInt})
+	totalIncome: BigInt = BigInt(100)
+	
+	@ApiProperty({type: Number})
+	lat: number 
+	
+	@ApiProperty({type: Number})
+	lng: number 
+	
+	@ApiProperty({type: Buffer})
+	by: Buffer 
+	
+	@ApiProperty({isArray: true, type: () => Product})
+	products: Product[] 
+	
+	@ApiProperty({isArray: true, type: String})
+	tags: string[] 
+	
+	@ApiProperty({isArray: true, type: String})
+	tagsWithEmptyDefault: string[] = []
+	
+	@ApiProperty({isArray: true, type: String})
+	tagsWithDefault: string[] = ['a','b']
+	
+	@ApiProperty({isArray: true, type: Number})
+	numTags: number[] 
+	
+	@ApiProperty({isArray: true, type: Number})
+	numTagsWithEmptyDefault: number[] = []
+	
+	@ApiProperty({isArray: true, type: Number})
+	numTagsWithDefault: number[] = [1,2]
+	
+}
+
+
+// product.ts
+import { Category } from './category'
+import { Company } from './company'
+import { ProductType,ProductAnotherType } from '@prisma/client'
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger'
+
+
+export class Product {
+	@ApiProperty({type: Number})
+	id: number 
+	
+	@ApiProperty({type: String})
+	title: string 
+	
+	@ApiProperty({type: String})
+	desc: string = 'abc'
+	
+	@ApiProperty({type: Object})
+	images: object 
+	
+	@ApiPropertyOptional({type: Boolean})
+	isShown?: boolean = false
+	
+	@ApiPropertyOptional({type: Number})
+	stock?: number = 0
+	
+	@ApiProperty({enum: ProductType, enumName: 'ProductType'})
+	type: ProductType 
+	
+	@ApiProperty({enum: ProductAnotherType, enumName: 'ProductAnotherType'})
+	anotherType: ProductAnotherType = ProductAnotherType.AA
+	
+	@ApiPropertyOptional({type: Number})
+	averageRating?: number 
+	
+	@ApiProperty({type: Number})
+	categoryId: number 
+	
+	@ApiProperty({type: Number})
+	companyId: number 
+	
+	@ApiProperty({type: () => Category})
+	category: Category 
+	
+	@ApiProperty({type: () => Company})
+	company: Company 
+	
+	@ApiProperty({type: Date})
+	createdAt: Date 
+	
+	@ApiProperty({type: Date})
+	updatedAt: Date 
+	
+}
+
+"
+`;
