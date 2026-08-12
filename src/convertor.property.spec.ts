@@ -219,11 +219,7 @@ describe('PrismaConvertor#getPrimitiveMapTypeFromDMMF (property-based)', () => {
 			fc.property(allScalarTypes, fc.boolean(), (type, isList) => {
 				const field = convertField({ type, isList })
 				expect(field.type).toBeTruthy()
-				if (isList) {
-					expect(field.type.endsWith('[]')).toBe(true)
-				} else {
-					expect(field.type.endsWith('[]')).toBe(false)
-				}
+				expect(field.type?.endsWith('[]')).toBe(isList)
 			}),
 		)
 	})

@@ -104,6 +104,24 @@ npm run generate:*      # regenerate a fixture under prisma/*.prisma (postgresql
   `type`-only import has no runtime value, so TS can't emit a reference to it. Keep both the value
   import (the decorator, e.g. `type: () => Book`, still needs it) and the type-only alias.
 
+## Type safety
+
+`tsconfig.json` has `strict: true` and `src/` is clean under it (specs included — ts-jest
+type-checks them with the same tsconfig, so a spec that ignores a possibly-`undefined` lookup
+fails the test run, not just `npm run typecheck`). Two conventions came out of adopting it, both
+deliberate:
+
+- **Definite-assignment (`!`) is reserved for late-injected singleton state** — `PrismaConvertor`'s
+  `_dmmf`/`_config` and `PrismaClassGenerator`'s `_options`/`rootPath`/`clientPath`, all of which
+  are set through setters right after construction rather than passed in. Don't paper over an
+  ordinary "might be undefined" with `!`; either give the field a real default or make the type
+  admit `undefined` and handle it.
+- **`PrismaClassGeneratorConfig` stays all-optional** so specs can build partial configs, which
+  means call sites that need a concrete value supply the same default `PrismaClassGeneratorOptions`
+  declares (see `run()`'s `config.dryRun ?? true`). `getConfig()` builds its result through a
+  string-keyed record and casts once at the end — indexing the interface with a *union* of keys
+  narrows the assignable type to nothing, so a per-key loop can't be written against it directly.
+
 ## Style
 
 - Tabs, no semicolons, single quotes — see `.prettierrc.json`, run `npm run format`.

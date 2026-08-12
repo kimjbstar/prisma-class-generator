@@ -6,11 +6,7 @@
 		// ts-jest transpiles one file at a time and needs to know it can do that safely under
 		// the node16 module kind — see ts-jest's TS151002 warning.
 		"isolatedModules": true,
-		// TypeScript 6+ defaults "strict" to true when omitted. This codebase predates strict
-		// mode and isn't strict-clean (~60 errors: strictNullChecks, noImplicitAny,
-		// strictPropertyInitialization). Pinning it off keeps current behavior; adopting strict
-		// mode is a real, separate undertaking, not a side effect of a tsconfig modernization.
-		"strict": false,
+		"strict": true,
 		"allowSyntheticDefaultImports": true,
 		"paths": {
 			"@src/*": ["./src/*"]

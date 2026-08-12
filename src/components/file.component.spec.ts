@@ -5,6 +5,7 @@ import {
 	resolveRelationImports,
 } from '../generator'
 import { FileComponent } from './file.component'
+import { ImportComponent } from './import.component'
 
 const baseSchema = (
 	modelBlock: string,
@@ -49,6 +50,25 @@ const buildFiles = async (
 	return files
 }
 
+// throwing (rather than returning undefined and letting the assertion below blow up on a
+// property access) keeps a broken lookup reported as "no generated file for class X" instead
+// of "cannot read properties of undefined".
+const findFile = (files: FileComponent[], className: string): FileComponent => {
+	const file = files.find((f) => f.prismaClass.name === className)
+	if (!file) {
+		throw new Error(`no generated file for class "${className}"`)
+	}
+	return file
+}
+
+const findImport = (file: FileComponent, from: string): ImportComponent => {
+	const importRow = file.imports.find((i) => i.from === from)
+	if (!importRow) {
+		throw new Error(`${file.filename} has no import from "${from}"`)
+	}
+	return importRow
+}
+
 const findImportFrom = (
 	file: FileComponent,
 	item: string,
@@ -71,10 +91,8 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
       }
     `)
 
-		const userFriendFile = files.find(
-			(f) => f.prismaClass.name === 'UserFriend',
-		)
-		const userFile = files.find((f) => f.prismaClass.name === 'User')
+		const userFriendFile = findFile(files, 'UserFriend')
+		const userFile = findFile(files, 'User')
 
 		expect(userFriendFile.filename).toBe('user_friend.ts')
 		expect(userFile.filename).toBe('user.ts')
@@ -99,8 +117,8 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
       }
     `)
 
-		const authorFile = files.find((f) => f.prismaClass.name === 'Author')
-		const bookFile = files.find((f) => f.prismaClass.name === 'Book')
+		const authorFile = findFile(files, 'Author')
+		const bookFile = findFile(files, 'Book')
 
 		expect(findImportFrom(authorFile, 'Book')).toBe('./book')
 		expect(findImportFrom(bookFile, 'Author')).toBe('./author')
@@ -127,14 +145,14 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
       }
     `)
 
-		const authorFile = files.find((f) => f.prismaClass.name === 'Author')
-		const bookFile = files.find((f) => f.prismaClass.name === 'Book')
+		const authorFile = findFile(files, 'Author')
+		const bookFile = findFile(files, 'Book')
 
-		const bookImport = authorFile.imports.find((i) => i.from === './book')
+		const bookImport = findImport(authorFile, './book')
 		expect(bookImport.items).toContain('Book')
 		expect(bookImport.items).toContain('type Book as BookAsType')
 
-		const authorImport = bookFile.imports.find((i) => i.from === './author')
+		const authorImport = findImport(bookFile, './author')
 		expect(authorImport.items).toContain('Author')
 		expect(authorImport.items).toContain('type Author as AuthorAsType')
 	})
@@ -154,10 +172,8 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
 			{ separateRelationFields: true },
 		)
 
-		const relationsFile = files.find(
-			(f) => f.prismaClass.name === 'CategoryRelations',
-		)
-		const baseFile = files.find((f) => f.prismaClass.name === 'Category')
+		const relationsFile = findFile(files, 'CategoryRelations')
+		const baseFile = findFile(files, 'Category')
 
 		expect(relationsFile.filename).toBe('category_relations.ts')
 		expect(baseFile.filename).toBe('category.ts')
@@ -187,10 +203,8 @@ describe('relation import 경로 해석 (FileComponent + resolveRelationImports)
 			'mongodb',
 		)
 
-		const dealerFile = files.find((f) => f.prismaClass.name === 'Dealer')
-		const addressFile = files.find(
-			(f) => f.prismaClass.name === 'ShippingAddress',
-		)
+		const dealerFile = findFile(files, 'Dealer')
+		const addressFile = findFile(files, 'ShippingAddress')
 
 		expect(addressFile.filename).toBe('shipping_address.ts')
 		expect(findImportFrom(dealerFile, 'ShippingAddress')).toBe(
@@ -210,7 +224,7 @@ describe('preserveDecimal — Prisma 네임스페이스 import', () => {
     `,
 			{ preserveDecimal: true },
 		)
-		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		const fooFile = findFile(files, 'Foo')
 		expect(findImportFrom(fooFile, 'Prisma')).toBe('@prisma/client')
 	})
 
@@ -221,7 +235,7 @@ describe('preserveDecimal — Prisma 네임스페이스 import', () => {
         amt Decimal
       }
     `)
-		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		const fooFile = findFile(files, 'Foo')
 		expect(findImportFrom(fooFile, 'Prisma')).toBeUndefined()
 	})
 })
@@ -237,10 +251,8 @@ describe('useValidation — class-validator import', () => {
     `,
 			{ useValidation: true },
 		)
-		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
-		const validatorImport = fooFile.imports.find(
-			(i) => i.from === 'class-validator',
-		)
+		const fooFile = findFile(files, 'Foo')
+		const validatorImport = findImport(fooFile, 'class-validator')
 		expect(validatorImport.items).toContain('IsInt')
 		expect(validatorImport.items).toContain('IsString')
 	})
@@ -252,7 +264,7 @@ describe('useValidation — class-validator import', () => {
         name String
       }
     `)
-		const fooFile = files.find((f) => f.prismaClass.name === 'Foo')
+		const fooFile = findFile(files, 'Foo')
 		expect(findImportFrom(fooFile, 'IsInt')).toBeUndefined()
 		expect(fooFile.imports.some((i) => i.from === 'class-validator')).toBe(
 			false,

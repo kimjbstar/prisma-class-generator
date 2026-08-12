@@ -5,11 +5,19 @@ import { BaseComponent } from './base.component'
 
 export class ClassComponent extends BaseComponent implements Echoable {
 	name: string
-	fields?: FieldComponent[]
-	relationTypes?: string[]
-	enumTypes?: string[] = []
-	extra?: string = ''
+	// filled in by PrismaConvertor#getClass right after construction, which is also why these
+	// start empty rather than being constructor params -- the convertor needs the instance
+	// before it can work out its fields and related type names.
+	fields: FieldComponent[] = []
+	relationTypes: string[] = []
+	enumTypes: string[] = []
+	extra = ''
 	types?: string[]
+
+	constructor(obj: { name: string }) {
+		super(obj)
+		this.name = obj.name
+	}
 
 	echo = () => {
 		const fieldContent = this.fields.map((_field) => _field.echo())

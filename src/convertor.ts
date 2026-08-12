@@ -137,8 +137,13 @@ export interface ConvertModelInput {
 
 export class PrismaConvertor {
 	static instance: PrismaConvertor
-	private _config: PrismaClassGeneratorConfig
-	private _dmmf: DMMF.Document
+	// injected through the setters below immediately after getInstance()/new (see
+	// PrismaClassGenerator#buildFileComponents) rather than passed to the constructor, so
+	// there is nothing sensible to initialize them to here. Defaulting `_config` to `{}`
+	// would be worse than leaving it unset: a forgotten `convertor.config = ...` would then
+	// silently generate output with every option off instead of failing loudly.
+	private _config!: PrismaClassGeneratorConfig
+	private _dmmf!: DMMF.Document
 
 	public get dmmf(): DMMF.Document {
 		return this._dmmf
@@ -164,13 +169,16 @@ export class PrismaConvertor {
 		return PrismaConvertor.instance
 	}
 
+	// `undefined` for every field that isn't a Prisma scalar (relations, enums, composite
+	// types) -- callers branch on that to decide whether the field needs an explicit
+	// `type: () => X` reference instead of a primitive TS type.
 	getPrimitiveMapTypeFromDMMF = (
 		dmmfField: DMMF.Field,
-	): PrimitiveMapTypeValues => {
+	): PrimitiveMapTypeValues | undefined => {
 		if (typeof dmmfField.type !== 'string') {
 			return 'unknown'
 		}
-		return primitiveMapType[dmmfField.type]
+		return primitiveMapType[dmmfField.type as DefaultPrismaFieldType]
 	}
 
 	extractTypeGraphQLDecoratorFromField = (
@@ -427,20 +435,16 @@ export class PrismaConvertor {
 	}
 
 	getClass = (input: ConvertModelInput): ClassComponent => {
-		/** options */
-		const options = Object.assign(
-			{
-				extractRelationFields: null,
-				useGraphQL: false,
-			},
-			input,
-		)
+		// `extractRelationFields` stays tri-state on purpose: `true` keeps only relation
+		// fields, `false` keeps only non-relation ones, and unset keeps everything (see the
+		// filter below) -- that's what makes one model produce both a base class and a
+		// *Relations class under separateRelationFields.
 		const {
 			model,
-			extractRelationFields = null,
+			extractRelationFields,
 			postfix,
-			useGraphQL,
-		} = options
+			useGraphQL = false,
+		} = input
 
 		/** set class name */
 		let className = model.name
@@ -589,7 +593,7 @@ export class PrismaConvertor {
 	convertField = (dmmfField: DMMF.Field): FieldComponent => {
 		const field = new FieldComponent({
 			name: dmmfField.name,
-			useUndefinedDefault: this._config.useUndefinedDefault,
+			useUndefinedDefault: !!this._config.useUndefinedDefault,
 		})
 		const type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 

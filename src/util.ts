@@ -52,12 +52,13 @@ export const log = (src: string) => {
 }
 
 export const parseBoolean = (value: unknown): boolean => {
-	if (['true', 'false'].includes(value.toString()) === false) {
+	const stringified = String(value)
+	if (['true', 'false'].includes(stringified) === false) {
 		throw new GeneratorFormatNotValidError(
 			`parseBoolean failed : "${value}" is not boolean type`,
 		)
 	}
-	return value.toString() === 'true'
+	return stringified === 'true'
 }
 
 export const parseNumber = (value: unknown): number => {
@@ -140,9 +141,12 @@ export const writeTSFile = (
 	fs.writeFileSync(fullPath, content)
 }
 
+// `null` is what prettier's own resolveConfig() returns when a project has no prettier
+// config at all (see PrismaClassGenerator#resolvePrettierOptions), so it's accepted here
+// rather than normalized upstream -- spreading it is already a no-op.
 export const prettierFormat = (
 	content: string,
-	options: Options = {},
+	options: Options | null = {},
 ): Promise<string> => {
 	return format(content, { ...options, parser: 'typescript' })
 }
