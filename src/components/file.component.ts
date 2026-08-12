@@ -99,12 +99,36 @@ export class FileComponent implements Echoable {
 	}
 
 	resolveImports() {
+		this.registerGeneratedClassImports()
+		this.registerExternalImports()
 		this.registerRelationImports()
 		this.registerEnumImports()
 		this.registerPrismaNamespaceImport()
 		this.registerDecoratorImports()
 		this.registerCompositeTypeImports()
 		this.registerGraphQLImports()
+	}
+
+	/** A DTO composes other generated classes and declares no fields of its own. */
+	private get isMappedTypeDto() {
+		return !!this.prismaClass.extendsExpression
+	}
+
+	private registerGeneratedClassImports() {
+		this.prismaClass.generatedClassImports.forEach((className) => {
+			// value import only, unlike relation fields: the name is used inside an `extends`
+			// clause, which is a real runtime reference, so a type-only import can't serve it.
+			this.registerImport(
+				className,
+				FileComponent.TEMP_PREFIX + className,
+			)
+		})
+	}
+
+	private registerExternalImports() {
+		this.prismaClass.externalImports.forEach(({ item, from }) => {
+			this.registerImport(item, from)
+		})
 	}
 
 	private registerRelationImports() {
@@ -172,6 +196,11 @@ export class FileComponent implements Echoable {
 	}
 
 	private registerGraphQLImports() {
+		// These are emitted for any class that *might* reference them from a field decorator.
+		// A DTO has no fields at all, so for those they'd be guaranteed-unused imports.
+		if (this.isMappedTypeDto) {
+			return
+		}
 		if (this._useGraphQL) {
 			this.registerImport('ID', '@nestjs/graphql')
 			this.registerImport('Int', '@nestjs/graphql')
