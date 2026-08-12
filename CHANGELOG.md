@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.6.0
+
+### Minor Changes
+
+- [`da90bb2`](https://github.com/kimjbstar/prisma-class-generator/commit/da90bb29ab503a87b446eff73d6f1c4313682f4d) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Pushes the already-supported class-validator/class-transformer integrations further, verified
+  against Prisma's own schema reference docs and (for the class-validator claim below) the
+  `typestack/class-validator` source itself:
+
+    - `useValidation`: postgresql/cockroachdb's `@db.Inet` now generates `@IsIP()` (replacing the
+      generic `@IsString()`), and cockroachdb's `@db.String(n)` — its own name for what postgresql
+      calls `@db.VarChar(n)` — now generates `@MaxLength(n)` like the other length-constrained
+      string native types already did.
+    - `useSerialization`: a new `/// @expose` per-field directive generates class-transformer's
+      `@Expose()`, mirroring the existing `/// @exclude` → `@Exclude()`, for projects that use
+      `plainToInstance(cls, data, { excludeExtraneousValues: true })`'s allow-list model instead of
+      `@Exclude()`'s deny-list one.
+
+    Deliberately **not** adding MySQL's `@db.UnsignedBigInt` → `@Min(0)`: it maps to Prisma's
+    `BigInt` scalar, and class-validator's `Min`/`Max` require `typeof value === 'number'` — a JS
+    `BigInt` value's `typeof` is always `'bigint'`, so the decorator would reject every value,
+    including valid non-negative ones. Confirmed by reading `Min.ts` in class-validator's own
+    source, not guessed.
+
+- [`3d3ca0a`](https://github.com/kimjbstar/prisma-class-generator/commit/3d3ca0a9de20558140097063ce804c3dc70a8d8c) Thanks [@kimjbstar](https://github.com/kimjbstar)! - `useSerialization` now generates class-transformer's `@Type(() => X)` on relation and
+  composite-type fields, independently of `useValidation`. Previously `@Type()` was only
+  generated as a side effect of `validateNestedRelations` (which itself requires
+  `useValidation`) — so a project using `useSerialization` alone for
+  `ClassSerializerInterceptor`-based response serialization never got it, and a nested relation
+  in a response stayed a plain object instead of an instance of the related class, silently
+  skipping that class's own `@Exclude()`/`@Expose()` decorators.
+
+    `@Type()` generation is now a single shared code path: it fires when `useSerialization` is on,
+    or when `useValidation` + `validateNestedRelations` are both on, and doesn't duplicate the
+    decorator when more than one of those is true at once.
+
 ## 0.5.2
 
 ### Patch Changes
