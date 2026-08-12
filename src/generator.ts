@@ -1,11 +1,11 @@
 import { GeneratorOptions } from '@prisma/generator-helper'
-import { parseEnvValue } from '@prisma/internals'
 import * as path from 'path'
 import { PrismaConvertor } from './convertor'
 import {
 	getRelativeTSPath,
 	log,
 	parseBoolean,
+	parseEnvValue,
 	parseNumber,
 	prettierFormat,
 	writeTSFile,

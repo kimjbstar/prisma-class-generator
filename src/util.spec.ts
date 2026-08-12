@@ -12,6 +12,7 @@ import {
 	parseBoolean,
 	parseNumber,
 	prettierFormat,
+	parseEnvValue,
 	toArray,
 	toImportPath,
 	toSnakeCase,
@@ -65,6 +66,46 @@ describe('toSnakeCase', () => {
 		['___', ''],
 	])('%s -> %s', (input, expected) => {
 		expect(toSnakeCase(input)).toBe(expected)
+	})
+})
+
+// Replaces @prisma/internals' parseEnvValue (see util.ts for why it was inlined). These pin
+// the three behaviours that matter, including the `'null'`-as-a-string sentinel that Prisma
+// writes for a value which was never an env var -- reading process.env['null'] instead would
+// break every schema using a plain literal `output`.
+describe('parseEnvValue', () => {
+	const originalEnv = process.env
+
+	afterEach(() => {
+		process.env = originalEnv
+	})
+
+	it('리터럴 값은 그대로 반환한다', () => {
+		expect(parseEnvValue({ fromEnvVar: null, value: '../src/_gen' })).toBe(
+			'../src/_gen',
+		)
+	})
+
+	it("fromEnvVar가 문자열 'null'이면 env가 아니라 리터럴 값을 쓴다", () => {
+		process.env = { ...originalEnv, null: 'WRONG' }
+		expect(parseEnvValue({ fromEnvVar: 'null', value: './out' })).toBe(
+			'./out',
+		)
+	})
+
+	it('fromEnvVar가 있으면 환경변수 값을 읽는다', () => {
+		process.env = { ...originalEnv, PCG_OUTPUT: '/from/env' }
+		expect(
+			parseEnvValue({ fromEnvVar: 'PCG_OUTPUT', value: '/ignored' }),
+		).toBe('/from/env')
+	})
+
+	it('환경변수가 비어 있으면 어떤 변수가 없는지 알려주는 에러를 던진다', () => {
+		process.env = { ...originalEnv }
+		delete process.env.PCG_MISSING
+		expect(() =>
+			parseEnvValue({ fromEnvVar: 'PCG_MISSING', value: null }),
+		).toThrow('PCG_MISSING')
 	})
 })
 

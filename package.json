@@ -3,6 +3,7 @@
 	"version": "0.6.5",
 	"description": "Prisma generator that emits TypeScript classes decorated for @nestjs/swagger, class-validator, and TypeGraphQL — DTO/entity classes generated straight from schema.prisma.",
 	"main": "dist/index.js",
+	"type": "commonjs",
 	"license": "MIT",
 	"keywords": [
 		"prisma",
@@ -25,11 +26,13 @@
 	"homepage": "https://github.com/kimjbstar/prisma-class-generator",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/kimjbstar/prisma-class-generator.git"
+		"url": "git+https://github.com/kimjbstar/prisma-class-generator.git"
 	},
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
+		"format:check": "prettier --check \"src/**/*.ts\"",
 		"lint": "eslint src",
+		"lint:package": "publint --pack npm",
 		"test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
 		"test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
 		"typecheck": "tsc --noEmit",
@@ -45,7 +48,9 @@
 		"generate:mongodb": "prisma generate --schema prisma/mongodb.prisma",
 		"generate:mssql": "prisma generate --schema prisma/mssql.prisma",
 		"generate:sqlite": "prisma generate --schema prisma/sqlite.prisma",
-		"generate:cockroachdb": "prisma generate --schema prisma/cockroachdb.prisma"
+		"generate:cockroachdb": "prisma generate --schema prisma/cockroachdb.prisma",
+		"verify:packed": "bash scripts/verify-packed-tarball.sh",
+		"prepare": "husky || true"
 	},
 	"bin": {
 		"prisma-class-generator": "dist/bin.js"
@@ -62,7 +67,6 @@
 	},
 	"dependencies": {
 		"@prisma/generator-helper": "^7.9.1",
-		"@prisma/internals": "^7.9.1",
 		"prettier": "3.9.6"
 	},
 	"devDependencies": {
@@ -70,6 +74,7 @@
 		"@changesets/cli": "2.31.1",
 		"@eslint/js": "9.39.5",
 		"@prisma/client": "^6.19.3",
+		"@prisma/internals": "^7.9.1",
 		"@types/jest": "30.0.0",
 		"@types/node": "^18.15.11",
 		"@types/prettier": "^3.0.0",
@@ -77,8 +82,11 @@
 		"eslint": "^9.39.5",
 		"eslint-config-prettier": "^10.1.8",
 		"fast-check": "4.9.0",
+		"husky": "^9.1.7",
 		"jest": "30.4.2",
+		"lint-staged": "^15.5.2",
 		"prisma": "^6.19.3",
+		"publint": "^0.3.23",
 		"rimraf": "^5.0.10",
 		"ts-jest": "29.4.12",
 		"ts-node": "^10.9.1",
@@ -90,5 +98,11 @@
 	},
 	"resolutions": {
 		"chokidar": "^4.0.3"
+	},
+	"lint-staged": {
+		"src/**/*.ts": [
+			"prettier --write",
+			"eslint --fix"
+		]
 	}
 }
