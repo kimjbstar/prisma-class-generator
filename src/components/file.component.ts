@@ -98,6 +98,15 @@ export class FileComponent implements Echoable {
 	}
 
 	resolveImports() {
+		this.registerRelationImports()
+		this.registerEnumImports()
+		this.registerPrismaNamespaceImport()
+		this.registerDecoratorImports()
+		this.registerCompositeTypeImports()
+		this.registerGraphQLImports()
+	}
+
+	private registerRelationImports() {
 		this.prismaClass.relationTypes.forEach((relationClassName) => {
 			this.registerImport(
 				`${relationClassName}`,
@@ -118,10 +127,15 @@ export class FileComponent implements Echoable {
 				FileComponent.TEMP_PREFIX + relationClassName,
 			)
 		})
+	}
+
+	private registerEnumImports() {
 		this.prismaClass.enumTypes.forEach((enumName) => {
 			this.registerImport(enumName, this._clientImportPath)
 		})
+	}
 
+	private registerPrismaNamespaceImport() {
 		// preserveDecimal fields use `Prisma.Decimal` as their type (see convertor.ts) —
 		// bring in the `Prisma` namespace from the same place the client itself comes from.
 		if (
@@ -131,7 +145,9 @@ export class FileComponent implements Echoable {
 		) {
 			this.registerImport('Prisma', this._clientImportPath)
 		}
+	}
 
+	private registerDecoratorImports() {
 		this.prismaClass.decorators.forEach((decorator) => {
 			this.registerImport(decorator.name, decorator.importFrom)
 		})
@@ -141,7 +157,9 @@ export class FileComponent implements Echoable {
 				this.registerImport(decorator.name, decorator.importFrom)
 			})
 		})
+	}
 
+	private registerCompositeTypeImports() {
 		if (this.prismaClass.types) {
 			this.prismaClass.types.forEach((type) => {
 				// must match the snake_case filename FileComponent itself generates below,
@@ -150,7 +168,9 @@ export class FileComponent implements Echoable {
 				this.registerImport(type, './' + snakeCase(type))
 			})
 		}
+	}
 
+	private registerGraphQLImports() {
 		if (this._useGraphQL) {
 			this.registerImport('ID', '@nestjs/graphql')
 			this.registerImport('Int', '@nestjs/graphql')

@@ -518,6 +518,59 @@ describe('PrismaConvertor#getClass — /// @skip 필드 디렉티브', () => {
 	})
 })
 
+// getClass's `useGraphQL` param (distinct from config.useGraphQL, which only drives
+// per-field @Field() decorators) gates the class-level @ObjectType() decorator and the
+// registerEnumType(...) extra-code block. The `convert()` helper above never passes
+// useGraphQL through to getClass, so this path had no direct test coverage before.
+describe('PrismaConvertor#getClass — useGraphQL (@ObjectType / registerEnumType)', () => {
+	it('useGraphQL이 켜지면 클래스에 @ObjectType()이 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id   Int @id
+        name String
+      }
+    `)
+		const convertor = new PrismaConvertor()
+		convertor.config = { ...defaultConfig, useGraphQL: true }
+		const echoed = convertor.getClass({ model, useGraphQL: true }).echo()
+		expect(echoed).toContain('@ObjectType(')
+	})
+
+	it('useGraphQL이 켜지고 enum 필드가 있으면 registerEnumType이 추가 코드로 생성된다', async () => {
+		const model = await getModel(`
+      enum Status {
+        ACTIVE
+        INACTIVE
+      }
+      model Foo {
+        id     Int    @id
+        status Status
+      }
+    `)
+		const convertor = new PrismaConvertor()
+		convertor.config = { ...defaultConfig, useGraphQL: true }
+		const echoed = convertor.getClass({ model, useGraphQL: true }).echo()
+		expect(echoed).toContain('registerEnumType(Status, {')
+		expect(echoed).toContain('name: "Status"')
+	})
+
+	it('useGraphQL이 꺼지면 @ObjectType()도 registerEnumType도 생성되지 않는다', async () => {
+		const model = await getModel(`
+      enum Status {
+        ACTIVE
+        INACTIVE
+      }
+      model Foo {
+        id     Int    @id
+        status Status
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).not.toContain('@ObjectType(')
+		expect(echoed).not.toContain('registerEnumType')
+	})
+})
+
 // regression tests for #39: `/// @ApiHideProperty` hides a field from Swagger docs without
 // removing it from the class.
 describe('PrismaConvertor#convertField — /// @ApiHideProperty 필드 디렉티브', () => {

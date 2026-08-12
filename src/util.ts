@@ -69,6 +69,13 @@ export const toArray = <T>(value: T | T[]): T[] => {
 	return Array.isArray(value) ? value : [value]
 }
 
+export const dedupePush = <T>(arr: T[], item: T): void => {
+	if (arr.includes(item)) {
+		return
+	}
+	arr.push(item)
+}
+
 /**
  * Checks a Prisma field's `///` doc comment for a `@directive` token (e.g. `/// @skip`).
  * Only triple-slash comments are visible here — DMMF drops regular `//` comments entirely,

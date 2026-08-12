@@ -148,6 +148,55 @@ describe('PrismaConvertor#convertField 기본값 포맷팅 (property-based)', ()
 			),
 		)
 	})
+
+	// BigInt is the one type whose literal default needs a runtime-valid initializer
+	// expression (`BigInt(100)`, not the bare literal `100`) -- this locks that wrapping in
+	// against any future reshaping of the default-formatting chain.
+	it('BigInt 기본값은 항상 BigInt(...)로 감싸진다', () => {
+		fc.assert(
+			fc.property(fc.integer(), (value) => {
+				const field = convertField({
+					type: 'BigInt',
+					default: value,
+					hasDefaultValue: true,
+				})
+				expect(field.default).toBe(`BigInt(${value})`)
+			}),
+		)
+	})
+
+	// list-scalar defaults (`Int[] @default([1, 2, 3])`) take a separate branch from the
+	// single-value formatting above -- covers Array.isArray(dmmfField.default) for both a
+	// quoted-element type (String) and a bare-element type (Int).
+	it('리스트 String 기본값은 각 원소가 따옴표로 감싸진 배열 리터럴로 나온다', () => {
+		fc.assert(
+			fc.property(
+				fc.array(fc.string().filter((s) => !s.includes("'"))),
+				(values) => {
+					const field = convertField({
+						type: 'String',
+						default: values,
+						hasDefaultValue: true,
+					})
+					const expected = `[${values.map((v) => `'${v}'`).toString()}]`
+					expect(field.default).toBe(expected)
+				},
+			),
+		)
+	})
+
+	it('리스트 Int 기본값은 원소가 그대로 나열된 배열 리터럴로 나온다', () => {
+		fc.assert(
+			fc.property(fc.array(fc.integer()), (values) => {
+				const field = convertField({
+					type: 'Int',
+					default: values,
+					hasDefaultValue: true,
+				})
+				expect(field.default).toBe(`[${values.toString()}]`)
+			}),
+		)
+	})
 })
 
 describe('PrismaConvertor#getPrimitiveMapTypeFromDMMF (property-based)', () => {

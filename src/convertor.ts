@@ -110,6 +110,27 @@ const unsignedIntegerNativeTypes = [
 	'UnsignedMediumInt',
 ]
 
+/**
+ * True when a field references another generated class -- either a relation field or a
+ * MongoDB composite `type` field (kind === 'object') -- rather than holding a primitive value
+ * or enum directly. The swagger/graphql/validation extractors and convertField all need this
+ * same check to decide whether the field needs an explicit `type: () => X` reference.
+ */
+const isRelationOrComposite = (dmmfField: DMMF.Field): boolean => {
+	return !!dmmfField.relationName || dmmfField.kind === 'object'
+}
+
+/**
+ * Formats an enum field's literal default as `EnumName.MemberName` -- identical whether it's
+ * being used as a swagger `example` (getExampleValueFromDefault) or as the field's actual
+ * `= value` initializer (convertField). Everything else about those two default-formatting
+ * chains genuinely differs (see convertField's inline comments on BigInt/DateTime handling),
+ * so only this one sub-piece is shared.
+ */
+const formatEnumDefault = (dmmfField: DMMF.Field): string => {
+	return `${dmmfField.type}.${dmmfField.default}`
+}
+
 export interface SwaggerDecoratorParams {
 	isArray?: boolean
 	type?: string
@@ -182,6 +203,11 @@ export class PrismaConvertor {
 			decorator.params.push(`(type) => GraphQLJSONObject`)
 		}
 
+		// GraphQL's decorator factory takes a bracketed array literal (`[Type]`), not TS's
+		// `Type[]` suffix -- wrapping consistently here keeps the branches below in sync.
+		const wrapIfList = (fieldType: string): string =>
+			dmmfField.isList ? `[${fieldType}]` : fieldType
+
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
 		if (type && type !== 'any' && !isJson) {
@@ -196,29 +222,18 @@ export class PrismaConvertor {
 						? 'Float'
 						: 'Int'
 			}
-			if (dmmfField.isList) {
-				grahQLType = `[${grahQLType}]`
-			}
-			decorator.params.push(`(type) => ${grahQLType}`)
+			decorator.params.push(`(type) => ${wrapIfList(grahQLType)}`)
 		}
 
 		// relation fields and MongoDB composite `type` fields both reference another
 		// generated class, so both need an explicit `(type) => X` — GraphQL can't infer
 		// this from reflection metadata alone.
-		if (dmmfField.relationName || dmmfField.kind === 'object') {
-			let type = dmmfField.type
-			if (dmmfField.isList) {
-				type = `[${type}]`
-			}
-			decorator.params.push(`(type) => ${type}`)
+		if (isRelationOrComposite(dmmfField)) {
+			decorator.params.push(`(type) => ${wrapIfList(dmmfField.type)}`)
 		}
 
 		if (dmmfField.kind === 'enum') {
-			let type = dmmfField.type
-			if (dmmfField.isList) {
-				type = arrayify(type)
-			}
-			decorator.params.push(`(type) => ${type}`)
+			decorator.params.push(`(type) => ${wrapIfList(dmmfField.type)}`)
 		}
 
 		if (dmmfField.isRequired === false) {
@@ -254,7 +269,7 @@ export class PrismaConvertor {
 			// relation fields and MongoDB composite `type` fields both reference another
 			// generated class, so both need an explicit type — Swagger can't reliably infer
 			// this from TS reflection metadata, especially for arrays.
-			if (dmmfField.relationName || dmmfField.kind === 'object') {
+			if (isRelationOrComposite(dmmfField)) {
 				options.type = wrapArrowFunction(dmmfField)
 			} else if (dmmfField.kind === 'enum') {
 				options.enum = dmmfField.type
@@ -294,7 +309,7 @@ export class PrismaConvertor {
 		}
 		if (typeof dmmfField.default !== 'object') {
 			if (dmmfField.kind === 'enum') {
-				return `${dmmfField.type}.${dmmfField.default}`
+				return formatEnumDefault(dmmfField)
 			}
 			if (dmmfField.type === 'BigInt' || dmmfField.type === 'DateTime') {
 				return undefined
@@ -343,7 +358,7 @@ export class PrismaConvertor {
 			)
 		}
 
-		if (dmmfField.relationName || dmmfField.kind === 'object') {
+		if (isRelationOrComposite(dmmfField)) {
 			if (this.config.validateNestedRelations) {
 				decorators.push(
 					new DecoratorComponent({
@@ -450,28 +465,26 @@ export class PrismaConvertor {
 			(field) => !hasFieldDirective(field.documentation, 'skip'),
 		)
 
+		// shared filter -> map -> uniquify scaffolding for the "related type names" lists
+		// below. The predicate is intentionally passed in rather than unified across call
+		// sites -- relationTypes/typesTypes/enums each have genuinely different filter rules.
+		const namesOf = (predicate: (field: DMMF.Field) => boolean): string[] =>
+			uniquify(visibleFields.filter(predicate).map((field) => field.type))
+
 		/** relation & enums */
-		const relationTypes = uniquify(
-			visibleFields
-				.filter(
-					(field) =>
-						field.relationName &&
-						(this._config.separateRelationFields
-							? true
-							: model.name !== field.type),
-				)
-				.map((v) => v.type),
+		const relationTypes = namesOf(
+			(field) =>
+				!!field.relationName &&
+				(this._config.separateRelationFields
+					? true
+					: model.name !== field.type),
 		)
 
-		const typesTypes = uniquify(
-			visibleFields
-				.filter(
-					(field) =>
-						field.kind == 'object' &&
-						model.name !== field.type &&
-						!field.relationName,
-				)
-				.map((v) => v.type),
+		const typesTypes = namesOf(
+			(field) =>
+				field.kind === 'object' &&
+				model.name !== field.type &&
+				!field.relationName,
 		)
 
 		const enums = visibleFields.filter((field) => field.kind === 'enum')
@@ -498,31 +511,44 @@ export class PrismaConvertor {
 		classComponent.types = typesTypes
 
 		if (useGraphQL) {
-			const deco = new DecoratorComponent({
-				name: 'ObjectType',
-				importFrom: '@nestjs/graphql',
-			})
-			deco.params.push(
-				JSON.stringify({
-					description: `generated by [prisma-class-generator](${REPO_URL})`,
-				}),
+			this.applyGraphQLClassDecoration(
+				classComponent,
+				classComponent.enumTypes,
 			)
-			classComponent.decorators.push(deco)
-
-			if (classComponent.enumTypes.length > 0) {
-				const extra = classComponent.enumTypes
-					.map(
-						(enumType) => `registerEnumType(${enumType}, {
-	name: "${enumType}"
-})`,
-					)
-					.join('\r\n\r\n')
-
-				classComponent.extra = extra
-			}
 		}
 
 		return classComponent
+	}
+
+	/** Adds the class-level `@ObjectType()` decorator and, if the class has enum fields, the
+	 * `registerEnumType(...)` extra-code block that must run once per enum for @nestjs/graphql
+	 * to resolve it. */
+	private applyGraphQLClassDecoration(
+		classComponent: ClassComponent,
+		enumTypes: string[],
+	): void {
+		const deco = new DecoratorComponent({
+			name: 'ObjectType',
+			importFrom: '@nestjs/graphql',
+		})
+		deco.params.push(
+			JSON.stringify({
+				description: `generated by [prisma-class-generator](${REPO_URL})`,
+			}),
+		)
+		classComponent.decorators.push(deco)
+
+		if (enumTypes.length > 0) {
+			const extra = enumTypes
+				.map(
+					(enumType) => `registerEnumType(${enumType}, {
+	name: "${enumType}"
+})`,
+				)
+				.join('\r\n\r\n')
+
+			classComponent.extra = extra
+		}
 	}
 
 	/**
@@ -532,46 +558,39 @@ export class PrismaConvertor {
 	 */
 	getClasses = (): ClassComponent[] => {
 		const models = this.dmmf.datamodel.models
+		const useGraphQL = this.config.useGraphQL
 
 		/** separateRelationFields */
 		if (this.config.separateRelationFields === true) {
+			const modelVariants: Pick<
+				ConvertModelInput,
+				'extractRelationFields' | 'postfix'
+			>[] = [
+				{ extractRelationFields: true, postfix: 'Relations' },
+				{ extractRelationFields: false },
+			]
 			return [
-				...models.map((model) =>
-					this.getClass({
-						model,
-						extractRelationFields: true,
-						postfix: 'Relations',
-						useGraphQL: this.config.useGraphQL,
-					}),
-				),
-				...models.map((model) =>
-					this.getClass({
-						model,
-						extractRelationFields: false,
-						useGraphQL: this.config.useGraphQL,
-					}),
+				...modelVariants.flatMap((variant) =>
+					models.map((model) =>
+						this.getClass({ model, useGraphQL, ...variant }),
+					),
 				),
 				// mongodb Types support
 				...this.dmmf.datamodel.types.map((model) =>
 					this.getClass({
 						model,
+						useGraphQL,
 						extractRelationFields: true,
-						useGraphQL: this.config.useGraphQL,
 					}),
 				),
 			]
 		}
 
 		return [
-			...models.map((model) =>
-				this.getClass({ model, useGraphQL: this.config.useGraphQL }),
-			),
+			...models.map((model) => this.getClass({ model, useGraphQL })),
 			// mongodb Types support
 			...this.dmmf.datamodel.types.map((model) =>
-				this.getClass({
-					model,
-					useGraphQL: this.config.useGraphQL,
-				}),
+				this.getClass({ model, useGraphQL }),
 			),
 		]
 	}
@@ -584,20 +603,7 @@ export class PrismaConvertor {
 		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
 		if (this.config.useSwagger) {
-			const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
-			field.decorators.push(decorator)
-
-			// `/// @ApiHideProperty` keeps the field on the class but hides it from the
-			// generated Swagger/OpenAPI docs — for fields like passwordHash that a DTO still
-			// needs at the type level but should never be documented.
-			if (hasFieldDirective(dmmfField.documentation, 'ApiHideProperty')) {
-				field.decorators.push(
-					new DecoratorComponent({
-						name: 'ApiHideProperty',
-						importFrom: '@nestjs/swagger',
-					}),
-				)
-			}
+			this.applySwaggerDecorators(dmmfField, field)
 		}
 
 		if (this.config.useGraphQL) {
@@ -614,34 +620,8 @@ export class PrismaConvertor {
 			)
 		}
 
-		// `/// @exclude` keeps the field on the class but adds class-transformer's @Exclude(),
-		// so a ClassSerializerInterceptor strips it from responses -- for fields like
-		// passwordHash that the class needs at the type level but should never be serialized.
-		if (
-			this.config.useSerialization &&
-			hasFieldDirective(dmmfField.documentation, 'exclude')
-		) {
-			field.decorators.push(
-				new DecoratorComponent({
-					name: 'Exclude',
-					importFrom: 'class-transformer',
-				}),
-			)
-		}
-
-		// `/// @expose` is @exclude's counterpart for the opposite class-transformer strategy:
-		// projects that call plainToInstance(cls, data, { excludeExtraneousValues: true }) treat
-		// every field as hidden unless explicitly marked, so @Expose() opts a field back in.
-		if (
-			this.config.useSerialization &&
-			hasFieldDirective(dmmfField.documentation, 'expose')
-		) {
-			field.decorators.push(
-				new DecoratorComponent({
-					name: 'Expose',
-					importFrom: 'class-transformer',
-				}),
-			)
+		if (this.config.useSerialization) {
+			this.applySerializationDirectives(dmmfField, field)
 		}
 
 		// class-transformer needs @Type(() => X) on a relation/composite field to turn a plain
@@ -651,11 +631,12 @@ export class PrismaConvertor {
 		// serializing a response. That makes this needed by useSerialization on its own, not
 		// just by useValidation's validateNestedRelations -- checked here once so it's never
 		// generated twice when both options are on.
-		const isNestedField = !!dmmfField.relationName || dmmfField.kind === 'object'
+		const isNestedField = isRelationOrComposite(dmmfField)
 		const needsTypeDecorator =
 			isNestedField &&
 			(this.config.useSerialization ||
-				(this.config.useValidation && this.config.validateNestedRelations))
+				(this.config.useValidation &&
+					this.config.validateNestedRelations))
 		if (needsTypeDecorator) {
 			field.decorators.push(
 				new DecoratorComponent({
@@ -682,7 +663,7 @@ export class PrismaConvertor {
 			if (typeof dmmfField.default !== 'object') {
 				field.default = dmmfField.default.toString()
 				if (dmmfField.kind === 'enum') {
-					field.default = `${dmmfField.type}.${dmmfField.default}`
+					field.default = formatEnumDefault(dmmfField)
 				} else if (dmmfField.type === 'BigInt') {
 					field.default = `BigInt(${field.default})`
 				} else if (dmmfField.type === 'String') {
@@ -725,5 +706,54 @@ export class PrismaConvertor {
 		}
 
 		return field
+	}
+
+	private applySwaggerDecorators(
+		dmmfField: DMMF.Field,
+		field: FieldComponent,
+	): void {
+		const decorator = this.extractSwaggerDecoratorFromField(dmmfField)
+		field.decorators.push(decorator)
+
+		// `/// @ApiHideProperty` keeps the field on the class but hides it from the
+		// generated Swagger/OpenAPI docs — for fields like passwordHash that a DTO still
+		// needs at the type level but should never be documented.
+		if (hasFieldDirective(dmmfField.documentation, 'ApiHideProperty')) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'ApiHideProperty',
+					importFrom: '@nestjs/swagger',
+				}),
+			)
+		}
+	}
+
+	private applySerializationDirectives(
+		dmmfField: DMMF.Field,
+		field: FieldComponent,
+	): void {
+		// `/// @exclude` keeps the field on the class but adds class-transformer's @Exclude(),
+		// so a ClassSerializerInterceptor strips it from responses -- for fields like
+		// passwordHash that the class needs at the type level but should never be serialized.
+		if (hasFieldDirective(dmmfField.documentation, 'exclude')) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'Exclude',
+					importFrom: 'class-transformer',
+				}),
+			)
+		}
+
+		// `/// @expose` is @exclude's counterpart for the opposite class-transformer strategy:
+		// projects that call plainToInstance(cls, data, { excludeExtraneousValues: true }) treat
+		// every field as hidden unless explicitly marked, so @Expose() opts a field back in.
+		if (hasFieldDirective(dmmfField.documentation, 'expose')) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'Expose',
+					importFrom: 'class-transformer',
+				}),
+			)
+		}
 	}
 }

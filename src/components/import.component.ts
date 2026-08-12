@@ -1,4 +1,4 @@
-import { toArray } from '../util'
+import { dedupePush, toArray } from '../util'
 import { Echoable } from '../interfaces/echoable'
 import { FileComponent } from './file.component'
 
@@ -20,10 +20,7 @@ export class ImportComponent implements Echoable {
 	}
 
 	add(item: any) {
-		if (this.items.includes(item)) {
-			return
-		}
-		this.items.push(item)
+		dedupePush(this.items, item)
 	}
 
 	getReplacePath(classToPath: Record<string, string>): string {

@@ -1,4 +1,5 @@
 import { Echoable } from '../interfaces/echoable'
+import { dedupePush } from '../util'
 
 export class DecoratorComponent implements Echoable {
 	name: string
@@ -37,9 +38,6 @@ export class DecoratorComponent implements Echoable {
 	}
 
 	add(param: any) {
-		if (this.params.includes(param)) {
-			return
-		}
-		this.params.push(param)
+		dedupePush(this.params, param)
 	}
 }
