@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.6
+
+### Patch Changes
+
+- [#104](https://github.com/kimjbstar/prisma-class-generator/pull/104) [`3188d7a`](https://github.com/kimjbstar/prisma-class-generator/commit/3188d7aef8cf4105636a89618eeaa3df85e7fca4) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Cut what this package costs to install. `@prisma/internals` moves to devDependencies: the specs
+  still use its `getDMMF`, but it installs 28MB, `prisma` itself doesn't depend on it (so it never
+  dedupes with a project's existing install), and the generator only needed two things from it —
+  `parseEnvValue` and `logger.info` — both now transcribed into `util.ts` with their behaviour and
+  output unchanged. Sourcemaps are also no longer published: `files` ships only `dist`, so their
+  `sources: ["../src/*.ts"]` pointed at files that were never in the tarball.
+
+    Runtime dependencies are now `@prisma/generator-helper` and `prettier`. The published tarball is
+    29% smaller (130.8kB → 93.0kB unpacked), and `@prisma/internals`' 28MB is gone from every install.
+    `package.json` also declares `"type": "commonjs"` explicitly so Node doesn't have to detect it.
+
 ## 0.6.5
 
 ### Patch Changes
