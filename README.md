@@ -13,34 +13,36 @@ See [CHANGELOG.md](./CHANGELOG.md) for release notes. Found a bug or want a feat
 question instead? Ask in [Discussions](https://github.com/kimjbstar/prisma-class-generator/discussions) —
 it's faster for you and keeps the issue tracker focused on actual bugs.
 
-## **Prisma**
+## Prisma
 
-> [Prisma](https://www.prisma.io/) is Database ORM Library for Node.js, Typescript.
+> [Prisma](https://www.prisma.io/) is a database ORM library for Node.js and TypeScript.
 
-Prisma basically generate each models type definition defined in [`schema.prisma`](https://www.prisma.io/docs/concepts/components/prisma-schema).
-Therefore, it does not require additional entry classes or repository layers.
+Prisma generates each model's type definitions directly from
+[`schema.prisma`](https://www.prisma.io/docs/concepts/components/prisma-schema), so no
+additional entry classes or repository layers are required.
 
-This is Prisma's basic way of doing things, and I love this approach.
+That works well on its own, but it runs into a limitation with frameworks like NestJS: to use
+`@nestjs/swagger`, an entity has to be defined as a class, and Prisma Client's generated types
+aren't classes.
 
-However, there are limitations because of these characteristics.
-A typical example is NestJS. In order to use `@nestjs/swagger`, the entity must be defined as class.
+This tool closes that gap — it generates a TypeScript file per model based on `schema.prisma`.
+The generated classes are formatted with prettier, using the user's prettier config file if
+present, so defining classes by hand is no longer necessary while `schema.prisma` stays the
+single source of truth.
 
-So I created a simple tool that generates a typescript file based on `schema.prisma`. The generated Classes are formatted with prettier, using the user's prettier config file if present.
-This will reduce the effort to define classes directly while using the same single source of truth (`schema.prisma`)
+Prisma Client's returned objects don't include a model's relational fields. This generator can
+produce two separate files per model instead — one that matches Prisma Client's own interface,
+and one that holds only the relational fields — by setting the _separateRelationFields_ option
+to **true**. The default value is **false**.
 
-The Prisma JS Client returns objects that does not contain the model's relational fields. The Generator can create two separate files per model, one that matches the Prisma Js Client's interfaces, and one that contains only the relational fields. You can set the _separateRelationFields_ option to **true** if you want to generate two separate classes for each model. The default value is **false**.
-
-## **NestJS**
+## NestJS
 
 > [NestJS](https://nestjs.com/) is a framework for building efficient, scalable Node.js server-side applications.
 
-and also, this is one of the frameworks with class and decorator as the basic structure.
-
-Let's think about it like this: If the NestJS model is defined as class as below, it will be easier to apply [swagger](https://docs.nestjs.com/openapi/introduction), [TypeGraphQL](https://typegraphql.com/), etc. through decorator.
-
-And if the schema changes, redefine and create accordingly so that the schema and class syncs.
-
-Using this library, it becomes possible.
+NestJS builds on classes and decorators as its basic structure. Defining a model as a class,
+as below, makes it straightforward to apply [Swagger](https://docs.nestjs.com/openapi/introduction),
+[TypeGraphQL](https://typegraphql.com/), and similar tools through decorators — and
+regenerating the class whenever `schema.prisma` changes keeps the two in sync.
 
 ```typescript
 export class Company {
@@ -56,8 +58,10 @@ export class Company {
 }
 ```
 
-If you set the _separateRelationFields_ option to **true** and generate separate relational classes, you can compose a class from the two, only contanining the included relations.
-This example below is using methods from the `@nestjs/swagger` package. This example creates a class with all of the properties of the Product class and the category relational property from the generated relational class.
+With _separateRelationFields_ set to **true**, the two generated classes can be composed into a
+class that contains only the relations you actually want. The example below uses
+`@nestjs/swagger`'s composition helpers to create a class with all of `Product`'s own properties
+plus just the `category` relation from the generated relations class.
 
 ```typescript
 import { IntersectionType, PickType } from '@nestjs/swagger'
@@ -70,7 +74,7 @@ export class ProductDto extends IntersectionType(
 ) {}
 ```
 
-### **Usage**
+### Usage
 
 1. **Install**
 
@@ -79,7 +83,7 @@ export class ProductDto extends IntersectionType(
     yarn add prisma-class-generator
     ```
 
-2. **Define Generator in `schema.prisma`**
+2. **Define the generator in `schema.prisma`**
 
     ```prisma
     generator prismaClassGenerator {
@@ -92,9 +96,9 @@ export class ProductDto extends IntersectionType(
     `provider = "prisma-client-js"` or the newer `provider = "prisma-client"` (default since
     Prisma 7). Both are supported.
 
-3. **😎 done! Let's check out generated files.**
+3. **Check the generated files**
 
-    if this models were defined in your prisma.schema file — this is the exact
+    Given these models in `schema.prisma` — this is the exact
     `Product`/`Category`/`Company` example from [`prisma/postgresql.prisma`](./prisma/postgresql.prisma),
     the same schema this repo's own CI golden test runs against, so it won't drift out of sync
     with the real generator again:
@@ -152,7 +156,7 @@ export class ProductDto extends IntersectionType(
     }
     ```
 
-    then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class — this is the real,
+    these classes are generated in <PROJECT_PATH>/src/\_gen/prisma-class — this is the real,
     unedited output of running the generator against the schema above:
 
     ( The generating path can be customized through _output_ option. )
@@ -300,15 +304,17 @@ export class ProductDto extends IntersectionType(
     }
     ```
 
-    The reason why classes were grouped into the 'PrismaModel' namespace and distributed in the index.ts file.
+    Classes are grouped into the `PrismaModel` namespace and re-exported through `index.ts` for
+    two reasons:
 
-    1. First, generated classes can overlap with the model types generated by Prisma, causing confusion.
-    2. when using Swagger in Nest.JS, you can use this array data in Bootstrap code to scan classes into @nestjs/swagger without having to list them.
+    1. Generated class names can otherwise collide with the model types Prisma itself generates.
+    2. When wiring up Swagger in NestJS, `extraModels` can point at this one array instead of
+       listing every generated class individually in bootstrap code.
 
-    There is a reference code for this below.
+    For example:
 
     ```typescript
-    // main.ts in Nest.JS application
+    // main.ts in a NestJS application
     import { PrismaModel } from './_gen/prisma-class'
 
     const document = SwaggerModule.createDocument(app, options, {
@@ -318,11 +324,11 @@ export class ProductDto extends IntersectionType(
 
     You can also disable it through the _makeIndexFile_ option.
 
-#### **Supported options**
+#### Supported options
 
 -   _dryRun_
-    -   Decide whether to write file or just print result. default value is **true**
-        -   if you finished check result via terminal, then you should this options to **false**
+    -   Controls whether files are written to disk or just printed to the terminal. default value is **true**
+        -   once the printed preview looks right, set this option to **false** to actually write the files
 -   _output_
     -   sets output path. default is **'../src/\_gen/prisma-class'**
 -   _useSwagger_
@@ -360,9 +366,9 @@ export class ProductDto extends IntersectionType(
     -   set prisma client import path manually, default value is **@prisma/client**
         -   set this explicitly when using Prisma 7's `prisma-client` generator, since its output is no longer `@prisma/client` by default
 -   _useNonNullableAssertions_
-    -   Apply a ! after non-optional class fields to avoid strict mode warnings (Property has no initializer and is not definitely assigned in the constructor.)
+    -   Adds a `!` after non-optional class fields, to avoid TypeScript strict mode's "Property has no initializer and is not definitely assigned in the constructor" warning
 -   _preserveDefaultNullable_
-    -   Determines how null fields are handled. When set to **false** (default), it turns all null fields to undefined. Otherwise, it follows Prisma generation and adds null to the type.
+    -   Controls how nullable fields are typed. When **false** (default), nullable fields are typed as `undefined` instead of `null`. When **true**, the field keeps Prisma's own nullable type (`| null`) instead.
 -   _useUndefinedDefault_
     -   Assigns `= undefined` to fields with no default value, so every class field has an explicit initializer. default value is **false**
 -   _preserveDecimal_
@@ -372,7 +378,7 @@ export class ProductDto extends IntersectionType(
     -   generates class-transformer's `@Exclude()` for fields marked with the `/// @exclude` directive (see below), for use with NestJS's `ClassSerializerInterceptor`. default value is **false**
         -   the field stays on the class (unlike `/// @skip`) — only the serialized JSON response drops it
 
-#### **Per-field directives**
+#### Per-field directives
 
 These are set per-field with a `///` doc comment directly above the field in `schema.prisma` — a regular `//` comment won't work, since Prisma's DMMF only exposes triple-slash doc comments.
 
@@ -405,7 +411,7 @@ These are set per-field with a `///` doc comment directly above the field in `sc
         }
         ```
 
-### **Supported databases**
+### Supported databases
 
 Prisma normalizes every connector's column types down to the same DMMF scalar set, so this
 generator works the same way regardless of database. Verified end-to-end (and covered by
@@ -427,18 +433,18 @@ are worth knowing, though they're Prisma restrictions rather than anything this 
 Prisma's native `enum`, and Prisma's `Unsupported("...")` escape-hatch type is excluded from
 the DMMF entirely (so it never reaches Prisma Client either).
 
-### **Supported Prisma versions**
+### Supported Prisma versions
 
 Tested against Prisma **5, 6, and 7**, including both the legacy `prisma-client-js` generator
 and the `prisma-client` generator that became the default in Prisma 7.
 
-### **How it works?**
+### How it works?
 
-Prima internally defines metadata as a dmmf object.
+Prisma internally represents schema metadata as a DMMF (Data Model Meta Format) object.
 
-[prisma-class-generator](https://github.com/kimjbstar/prisma-class-generator) can automate class definition using this dmmf.
-
-It is defined as an additional generator in the `schema.prisma` file and will operate in the `prisma generate` process.
+[prisma-class-generator](https://github.com/kimjbstar/prisma-class-generator) reads that DMMF to
+automate class definitions. It's declared as an additional generator in `schema.prisma` and runs
+as part of the `prisma generate` process.
 
 ```mermaid
 flowchart LR
@@ -447,26 +453,26 @@ flowchart LR
     C -->|"one .ts per model"| D["*.ts classes<br/>(@nestjs/swagger / class-validator / TypeGraphQL)"]
 ```
 
-### **Feature**
+### Feature
 
--   generate Classes from prisma model definition
--   Support Basic Type and Relation
--   Support option to generate Swagger Decorator
--   Support option to generate TypeGraphQL Decorator
--   Support option to generate class-validator decorators, sharpened further by `@db.*` native types on Prisma 6+ (`@IsUUID()`, `@IsMongoId()`, `@MaxLength()`, `@Min(0)`)
--   Format generated Classes with prettier, using the user's prettier config file if present
+-   Generates classes from Prisma model definitions
+-   Supports basic scalar types and relations
+-   Optionally generates Swagger decorators
+-   Optionally generates TypeGraphQL decorators
+-   Optionally generates class-validator decorators, sharpened further by `@db.*` native types on Prisma 6+ (`@IsUUID()`, `@IsMongoId()`, `@MaxLength()`, `@Min(0)`)
+-   Formats generated classes with prettier, using the user's prettier config file if present
 -   Per-field `/// @skip`, `/// @ApiHideProperty`, and `/// @exclude` directives
 -   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 -   Doc comments and literal `@default(...)` values become Swagger `description`/`example`
 
-### **Future Plan**
+### Future Plan
 
 -   Support DTO (Create/Update/Connect style classes generated per model)
 -   Support custom path, case or name per each model
 
 ---
 
-### **Comparison with similar tools**
+### Comparison with similar tools
 
 A few other Prisma generators solve overlapping problems. This is meant to help you pick the
 right one, not to talk anyone out of the alternatives — they're good tools with a different
@@ -490,22 +496,21 @@ you'd rather have a full Create/Update/Connect DTO set generated for you out of 
 
 ---
 
-### **FAQ**
+### FAQ
 
-**1. Is it CRUD Generator?**
+**1. Is it a CRUD generator?**
 
-No. It will not provide functions such as "nestjs CRUD generate". I think it is outside the scope of this library.
-Instead, it will only serve as a bridge connecting the Prisma model and (entity)class.
+No — it doesn't provide functionality like `nestjs generate crud`. That's out of scope for this
+library, which focuses on **defining classes** and leaves how those classes get used up to the
+developer. It's meant as a bridge connecting a Prisma model to an entity/DTO class, not an
+end-to-end code generator — a narrower scope keeps it adaptable to different projects.
 
-It will focus on **defining classes** and then give the developer responsibility on how to use them.
+**2. Does it only work with NestJS?**
 
-This is because if too much is provided, the library becomes less adaptable accordingly.
-
-**2. Is only works with NestJS?**
-
-No, but of course, it goes well with NestJS. I'm also planning to support the library related to NestJS.
-
-But even if you don't use NestJS, this library will be useful for you if you use class decorator based on reflect-metadata to develop web services.
+No. It pairs particularly well with NestJS because the generated classes lean on the same
+class-and-decorator patterns NestJS already builds on (`@nestjs/swagger`, `@nestjs/graphql`,
+`class-validator`) — but any framework built around `reflect-metadata`-based class decorators can
+use the generated classes just as directly.
 
 **3. OK, so how do I actually build Create/Update DTOs from the generated class?**
 
@@ -531,3 +536,19 @@ the regular generated class is the simpler starting point. If you want this scaf
 generated automatically instead, `prisma-generator-nestjs-dto` does that out of the box (see
 the comparison table above) — this library deliberately stops one step short so the choice of
 which fields to omit stays explicit in your code, not implicit in generator config.
+
+**4. I'm getting a decorators error (e.g. Babel's `Missing plugin "decorators"`) when I import a generated class — what's missing?**
+
+The generated classes use TypeScript's experimental (legacy) decorators, so the project
+*consuming* them needs to support that syntax:
+
+-   **Compiling with `tsc`**: set `"experimentalDecorators": true` in `tsconfig.json` — and
+    `"emitDecoratorMetadata": true` too if you rely on decorator-derived type metadata (e.g.
+    NestJS's dependency injection, or `@nestjs/swagger`'s type inference).
+-   **Compiling with Babel** (e.g. a Next.js or Create React App-based toolchain): add
+    [`@babel/plugin-proposal-decorators`](https://babeljs.io/docs/babel-plugin-proposal-decorators)
+    with the `{ legacy: true }` option.
+
+A NestJS project already ships with `experimentalDecorators`/`emitDecoratorMetadata` enabled by
+default, so this typically only comes up when the generated classes are consumed from a
+non-NestJS TypeScript or Babel project.
