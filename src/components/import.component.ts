@@ -23,7 +23,7 @@ export class ImportComponent implements Echoable {
 		dedupePush(this.items, item)
 	}
 
-	getReplacePath(classToPath: Record<string, string>): string {
+	getReplacePath(classToPath: Record<string, string>): string | null {
 		if (this.from.includes(FileComponent.TEMP_PREFIX) === false) {
 			return null
 		}

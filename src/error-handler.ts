@@ -1,4 +1,8 @@
-import { PrismaClassGeneratorOptions, REPO_URL } from './generator'
+import {
+	PrismaClassGeneratorOptions,
+	PrismaClassGeneratorOptionsKeys,
+	REPO_URL,
+} from './generator'
 import { log } from './util'
 
 export class GeneratorFormatNotValidError extends Error {
@@ -9,9 +13,14 @@ export class GeneratorFormatNotValidError extends Error {
 
 export class GeneratorPathNotExists extends Error {}
 
-export const handleGenerateError = (e: Error) => {
+// `unknown` rather than `Error`: this is called straight from a `catch` block (see index.ts),
+// and JS lets anything be thrown -- narrowing is done below instead of assumed by the caller.
+export const handleGenerateError = (e: unknown) => {
 	if (e instanceof GeneratorFormatNotValidError) {
-		const options = Object.keys(PrismaClassGeneratorOptions).map((key) => {
+		const optionNames = Object.keys(
+			PrismaClassGeneratorOptions,
+		) as PrismaClassGeneratorOptionsKeys[]
+		const options = optionNames.map((key) => {
 			const value = PrismaClassGeneratorOptions[key]
 			return `\t${key} = (${value.defaultValue}) <- [${value.desc}]`
 		})
@@ -39,7 +48,7 @@ export const handleGenerateError = (e: Error) => {
 	// coding agent (Claude Code and similar), so "open an issue" alone tends to go nowhere —
 	// spelling out that a PR is just as welcome, with a link straight to the file to fix and
 	// how to verify it, gives an agent enough to actually act on instead of just reporting.
-	log(`Unexpected error: ${e.message}`)
+	log(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`)
 	console.error(e)
 	log(
 		[

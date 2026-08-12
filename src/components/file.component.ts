@@ -7,13 +7,13 @@ import { Echoable } from '../interfaces/echoable'
 import { ImportComponent } from './import.component'
 
 export class FileComponent implements Echoable {
-	private _dir?: string
-	private _filename?: string
-	private _imports?: ImportComponent[] = []
+	private _dir: string
+	private _filename: string
+	private _imports: ImportComponent[] = []
 	private _prismaClass: ClassComponent
 	private _clientImportPath: string
 	private _useGraphQL: boolean
-	private _prettierOptions: prettier.Options
+	private _prettierOptions: prettier.Options | null
 	static TEMP_PREFIX = '__TEMPORARY_CLASS_PATH__'
 
 	public get dir() {
@@ -53,7 +53,7 @@ export class FileComponent implements Echoable {
 		output: string
 		clientImportPath: string
 		useGraphQL: boolean
-		prettierOptions: prettier.Options
+		prettierOptions: prettier.Options | null
 	}) {
 		const {
 			classComponent,
@@ -63,8 +63,10 @@ export class FileComponent implements Echoable {
 			prettierOptions,
 		} = input
 		this._prismaClass = classComponent
-		this.dir = path.resolve(output)
-		this.filename = `${snakeCase(classComponent.name)}.ts`
+		// assigned through the backing fields rather than the `dir`/`filename` setters so
+		// TypeScript can see them as definitely initialized here.
+		this._dir = path.resolve(output)
+		this._filename = `${snakeCase(classComponent.name)}.ts`
 		this._clientImportPath = clientImportPath
 		this._useGraphQL = useGraphQL
 		this._prettierOptions = prettierOptions
@@ -72,12 +74,7 @@ export class FileComponent implements Echoable {
 	}
 
 	echoImports = () => {
-		return this.imports
-			.reduce((result, importRow) => {
-				result.push(importRow.echo())
-				return result
-			}, [])
-			.join('\r\n')
+		return this.imports.map((importRow) => importRow.echo()).join('\r\n')
 	}
 
 	echo = () => {
@@ -140,7 +137,7 @@ export class FileComponent implements Echoable {
 		// bring in the `Prisma` namespace from the same place the client itself comes from.
 		if (
 			this.prismaClass.fields.some((field) =>
-				field.type.startsWith('Prisma.'),
+				field.type?.startsWith('Prisma.'),
 			)
 		) {
 			this.registerImport('Prisma', this._clientImportPath)

@@ -133,10 +133,15 @@ export interface PrismaClassGeneratorConfig {
 
 export class PrismaClassGenerator {
 	static instance: PrismaClassGenerator
-	_options: GeneratorOptions
-	_prettierOptions: prettier.Options
-	rootPath: string
-	clientPath: string
+	// `_options` is set through the setter (from the constructor or by tests that build an
+	// instance with Object.create), `rootPath`/`clientPath` by setPrismaClientPath() at the
+	// start of run() -- none of them can be initialized where they're declared.
+	_options!: GeneratorOptions
+	rootPath!: string
+	clientPath!: string | null
+	// null is prettier's own "no config file found anywhere" answer, kept as-is rather than
+	// normalized to {} so callers can still tell the two apart.
+	_prettierOptions: prettier.Options | null = null
 
 	constructor(options?: GeneratorOptions) {
 		if (options) {
@@ -201,8 +206,10 @@ export class PrismaClassGenerator {
 	setPrismaClientPath(): void {
 		const { otherGenerators, schemaPath } = this.options
 
-		const clientGenerator = otherGenerators.find((g) =>
-			PRISMA_CLIENT_GENERATOR_PROVIDERS.includes(g.provider.value),
+		const clientGenerator = otherGenerators.find(
+			(g) =>
+				g.provider.value !== null &&
+				PRISMA_CLIENT_GENERATOR_PROVIDERS.includes(g.provider.value),
 		)
 		if (!clientGenerator) {
 			throw new GeneratorPathNotExists(
@@ -213,7 +220,7 @@ export class PrismaClassGenerator {
 		}
 
 		this.rootPath = schemaPath.replace('/prisma/schema.prisma', '')
-		this.clientPath = clientGenerator.output.value
+		this.clientPath = clientGenerator.output?.value ?? null
 	}
 
 	async run(): Promise<void> {
@@ -222,16 +229,20 @@ export class PrismaClassGenerator {
 		const config = this.getConfig()
 		this.setPrismaClientPath()
 
+		// getConfig() fills in every option from PrismaClassGeneratorOptions, so this can only
+		// fall back for a hand-built config -- match dryRun's own declared default if it does.
+		const dryRun = config.dryRun ?? true
+
 		const files = this.buildFileComponents(config, output)
 		resolveRelationImports(files)
 
-		await Promise.all(files.map((fileRow) => fileRow.write(config.dryRun)))
+		await Promise.all(files.map((fileRow) => fileRow.write(dryRun)))
 
 		if (config.makeIndexFile) {
-			await this.writeIndexFile(files, output, config.dryRun)
+			await this.writeIndexFile(files, output, dryRun)
 		}
 
-		if (config.dryRun) {
+		if (dryRun) {
 			this.logDryRunReminder(files.length)
 		}
 	}
@@ -312,8 +323,20 @@ export class PrismaClassGenerator {
 	getConfig(): PrismaClassGeneratorConfig {
 		const config = this.options.generator.config
 
-		const result: PrismaClassGeneratorConfig = {}
-		for (const optionName in PrismaClassGeneratorOptions) {
+		// built through a string-keyed record and cast once at the end: indexing
+		// PrismaClassGeneratorConfig with a *union* of keys narrows the assignable type to the
+		// intersection of every option's type (i.e. nothing), so a per-key assignment loop
+		// can't be expressed against that interface directly. Every key written here comes
+		// from PrismaClassGeneratorOptions, which the interface mirrors one-for-one.
+		const result: Record<
+			string,
+			boolean | number | string | string[] | undefined
+		> = {}
+		const optionNames = Object.keys(
+			PrismaClassGeneratorOptions,
+		) as PrismaClassGeneratorOptionsKeys[]
+
+		for (const optionName of optionNames) {
 			const { defaultValue } = PrismaClassGeneratorOptions[optionName]
 			result[optionName] = defaultValue
 
@@ -329,6 +352,6 @@ export class PrismaClassGenerator {
 			}
 		}
 
-		return result
+		return result as PrismaClassGeneratorConfig
 	}
 }
