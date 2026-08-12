@@ -26,6 +26,33 @@ updates:
       # still supports and tests in CI (build-and-test's node-version matrix includes 18).
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # `prisma`/`@prisma/client` (devDependencies only -- the runtime `dependencies`
+      # @prisma/generator-helper and @prisma/internals are already on 7.x) stay on 6.19.3 on
+      # purpose: their own `preinstall` script hard-fails on Node < 20.19 (confirmed via a real
+      # failed install, not guessed), which would break every Node 18 CI leg outright. A
+      # grouped PR proposing 6.19.3 -> 7.9.1 for both already did exactly this once.
+      - dependency-name: 'prisma'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@prisma/client'
+        update-types: ['version-update:semver-major']
+      # rimraf 6.x requires Node >=20 (5.x supports 18) -- it's only used for this repo's own
+      # `clean` script, no reason to risk the Node 18 CI leg for it.
+      - dependency-name: 'rimraf'
+        update-types: ['version-update:semver-major']
+      # @changesets/cli 3.x and @changesets/changelog-github 1.x both require Node >=22.11
+      # (confirmed via npm view, not guessed) on top of the already-known yarn >=4.5.2
+      # requirement that breaks this repo's Yarn Classic 1.x setup (see
+      # release.yml's own comment on the changesets/action pin). Revisit both together if this
+      # repo ever moves off Yarn Classic.
+      - dependency-name: '@changesets/cli'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@changesets/changelog-github'
+        update-types: ['version-update:semver-major']
+      # change-case 5.x is ESM-only -- untested against this repo's CommonJS-ish build
+      # (tsconfig `module: node16`). Not a hard blocker like the others above, just unverified;
+      # revisit with an actual compatibility check before accepting.
+      - dependency-name: 'change-case'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'chore'
       include: 'scope'
