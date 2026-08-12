@@ -763,6 +763,7 @@ describe('PrismaConvertor#extractValidationDecoratorsFromField (네이티브 타
 		['Uuid', 'IsUUID'],
 		['UniqueIdentifier', 'IsUUID'],
 		['ObjectId', 'IsMongoId'],
+		['Inet', 'IsIP'],
 	])(
 		'nativeType %s는 기본 문자열 validator 대신 @%s()를 사용한다',
 		async (nativeTypeName, validatorName) => {
@@ -784,6 +785,9 @@ describe('PrismaConvertor#extractValidationDecoratorsFromField (네이티브 타
 		['NVarChar', ['255']],
 		['Char', ['5']],
 		['NChar', ['5']],
+		// CockroachDB의 STRING(x)/TEXT(x)/VARCHAR(x)는 전부 @db.String(x)라는 하나의
+		// attribute로 매핑된다 (Prisma 공식 schema reference로 확인).
+		['String', ['30']],
 	])(
 		'nativeType %s(n)는 @IsString()과 함께 @MaxLength(n)을 받는다',
 		async (nativeTypeName, args) => {
@@ -962,6 +966,60 @@ describe('PrismaConvertor#convertField (useSerialization만으로도 @Type()이 
 		const typeOccurrences = echoed.split('@Type(() => Foo)').length - 1
 		expect(typeOccurrences).toBe(1)
 		expect(echoed).toContain('@ValidateNested()')
+	})
+})
+
+// `/// @expose`는 `/// @exclude`의 대칭 짝이다 -- excludeExtraneousValues: true(화이트리스트
+// 방식)로 plainToInstance()를 쓰는 프로젝트를 위한 것.
+describe('PrismaConvertor#convertField (useSerialization / @expose)', () => {
+	it('useSerialization이 꺼져 있으면 @expose directive가 있어도 @Expose()가 붙지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        /// @expose
+        name  String
+      }
+    `)
+		const echoed = convert(model).echo()
+		expect(echoed).not.toContain('@Expose()')
+	})
+
+	it('useSerialization이 켜져 있어도 @expose directive가 없으면 @Expose()가 붙지 않는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        value String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).not.toContain('@Expose()')
+	})
+
+	it('useSerialization + @expose directive가 모두 있으면 @Expose()가 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id    Int @id
+        /// @expose
+        name  String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).toContain('@Expose()')
+	})
+
+	it('@exclude와 @expose는 서로 다른 필드에 독립적으로 붙는다', async () => {
+		const model = await getModel(`
+      model Foo {
+        id       Int @id
+        /// @expose
+        name     String
+        /// @exclude
+        password String
+      }
+    `)
+		const echoed = convert(model, { useSerialization: true }).echo()
+		expect(echoed).toMatch(/@Expose\(\)[\s\S]{0,20}name/)
+		expect(echoed).toMatch(/@Exclude\(\)[\s\S]{0,20}password/)
 	})
 })
 

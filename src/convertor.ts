@@ -71,19 +71,38 @@ const validationDecoratorMap: Partial<Record<DefaultPrismaFieldType, string>> =
 // `@db.*` native types that fully replace the generic type-based validator above, because
 // they describe a specific string *format* rather than just "a string". One validator name
 // per format, shared across the connectors that use it (postgresql/cockroachdb's `Uuid` and
-// sqlserver's `UniqueIdentifier` are both UUIDs; mongodb's `ObjectId` is its own format).
+// sqlserver's `UniqueIdentifier` are both UUIDs; mongodb's `ObjectId` is its own format;
+// postgresql/cockroachdb's `Inet` is an IP address, per Prisma's own schema reference docs).
 // Verified against real Prisma 6/7 DMMF output per connector, not guessed.
 const nativeTypeReplacementValidatorMap: Record<string, string> = {
 	Uuid: 'IsUUID',
 	UniqueIdentifier: 'IsUUID',
 	ObjectId: 'IsMongoId',
+	Inet: 'IsIP',
 }
 
 // `@db.VarChar(n)`/`@db.Char(n)` (and sqlserver's N-prefixed variants) carry a length
 // constraint that class-validator can check directly -- added alongside the base @IsString().
-const nativeTypesWithLengthConstraint = ['VarChar', 'NVarChar', 'Char', 'NChar']
+// `String` is CockroachDB's own name for the same thing: unlike postgresql's `@db.VarChar(x)`,
+// CockroachDB maps `STRING(x)`/`TEXT(x)`/`VARCHAR(x)` all to a single `@db.String(x)` attribute
+// (per Prisma's schema reference docs) -- without this, CockroachDB length-constrained string
+// fields silently got no @MaxLength() at all.
+const nativeTypesWithLengthConstraint = [
+	'VarChar',
+	'NVarChar',
+	'Char',
+	'NChar',
+	'String',
+]
 
 // mysql's unsigned integer native types -- added alongside the base @IsInt().
+//
+// Deliberately excludes `UnsignedBigInt`: it maps to Prisma's `BigInt` scalar (see
+// primitiveMapType above), and class-validator's own `Min`/`Max` (typestack/class-validator's
+// src/decorator/number/Min.ts) require `typeof num === 'number'` -- a JS `BigInt` value's
+// `typeof` is always `'bigint'`, never `'number'`, so `@Min(0)` would reject every value,
+// including valid non-negative ones. Don't add it until class-validator itself supports bigint
+// comparison.
 const unsignedIntegerNativeTypes = [
 	'UnsignedInt',
 	'UnsignedTinyInt',
@@ -605,6 +624,21 @@ export class PrismaConvertor {
 			field.decorators.push(
 				new DecoratorComponent({
 					name: 'Exclude',
+					importFrom: 'class-transformer',
+				}),
+			)
+		}
+
+		// `/// @expose` is @exclude's counterpart for the opposite class-transformer strategy:
+		// projects that call plainToInstance(cls, data, { excludeExtraneousValues: true }) treat
+		// every field as hidden unless explicitly marked, so @Expose() opts a field back in.
+		if (
+			this.config.useSerialization &&
+			hasFieldDirective(dmmfField.documentation, 'expose')
+		) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'Expose',
 					importFrom: 'class-transformer',
 				}),
 			)

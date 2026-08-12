@@ -346,10 +346,15 @@ export class ProductDto extends IntersectionType(
         -   a field's `@db.*` native type sharpens the validator further when it describes a real
             constraint, on **Prisma 6+ only** (Prisma 5's DMMF doesn't expose native types at all —
             this silently falls back to the type-based validator above, no error): `@db.Uuid`/
-            `@db.UniqueIdentifier` → `@IsUUID()`, MongoDB's `@db.ObjectId` → `@IsMongoId()` (both
-            replace the generic `@IsString()`), `@db.VarChar(n)`/`@db.Char(n)`/sqlserver's
-            N-prefixed variants → `@IsString()` + `@MaxLength(n)`, MySQL's unsigned integer types
-            → `@IsInt()` + `@Min(0)`
+            `@db.UniqueIdentifier` → `@IsUUID()`, MongoDB's `@db.ObjectId` → `@IsMongoId()`,
+            postgresql/cockroachdb's `@db.Inet` → `@IsIP()` (all three replace the generic
+            `@IsString()`), `@db.VarChar(n)`/`@db.Char(n)`/sqlserver's N-prefixed variants/
+            cockroachdb's `@db.String(n)` → `@IsString()` + `@MaxLength(n)`, MySQL's unsigned
+            integer types → `@IsInt()` + `@Min(0)`
+            -   deliberately *not* covered: MySQL's `@db.UnsignedBigInt` — it maps to Prisma's
+                `BigInt` scalar, and class-validator's `@Min()`/`@Max()` require
+                `typeof value === 'number'`, which a `BigInt` value never satisfies (its `typeof`
+                is `'bigint'`) — adding it would reject every value, including valid ones
 -   _validateNestedRelations_
     -   requires `useValidation`. Adds `@ValidateNested()` (`{ each: true }` for list relations)
         to relation and composite-type fields, so NestJS's `ValidationPipe` (with
@@ -378,7 +383,7 @@ export class ProductDto extends IntersectionType(
     -   Generates `Decimal` fields as `Prisma.Decimal` instead of `number`, avoiding precision loss for values like money. default value is **false**
         -   only changes the field's own TS type — the swagger/graphql decorator options stay `Number`/`Float`, since `Decimal` has no OpenAPI/GraphQL representation of its own
 -   _useSerialization_
-    -   generates class-transformer's `@Exclude()` for fields marked with the `/// @exclude` directive (see below), for use with NestJS's `ClassSerializerInterceptor`. default value is **false**
+    -   generates class-transformer's `@Exclude()`/`@Expose()` for fields marked with the `/// @exclude`/`/// @expose` directives (see below), for use with NestJS's `ClassSerializerInterceptor`. default value is **false**
         -   the field stays on the class (unlike `/// @skip`) — only the serialized JSON response drops it
         -   also adds `@Type(() => X)` to relation and composite-type fields, independently of
             `useValidation` — without it, a `ClassSerializerInterceptor`/`plainToInstance()` call
@@ -415,6 +420,18 @@ These are set per-field with a `///` doc comment directly above the field in `sc
           id Int @id @default(autoincrement())
           /// @exclude
           passwordHash String
+        }
+        ```
+-   `/// @expose`
+    -   `@exclude`'s counterpart, for the opposite class-transformer strategy: adds `@Expose()`
+        so the field survives a `plainToInstance(cls, data, { excludeExtraneousValues: true })`
+        call, where every field is hidden by default unless explicitly marked. Only applies when
+        `useSerialization` is on.
+        ```prisma
+        model User {
+          id Int @id @default(autoincrement())
+          /// @expose
+          displayName String
         }
         ```
 
@@ -466,11 +483,12 @@ flowchart LR
 -   Supports basic scalar types and relations
 -   Optionally generates Swagger decorators
 -   Optionally generates TypeGraphQL decorators
--   Optionally generates class-validator decorators, sharpened further by `@db.*` native types on Prisma 6+ (`@IsUUID()`, `@IsMongoId()`, `@MaxLength()`, `@Min(0)`)
+-   Optionally generates class-validator decorators, sharpened further by `@db.*` native types on Prisma 6+ (`@IsUUID()`, `@IsMongoId()`, `@IsIP()`, `@MaxLength()`, `@Min(0)`)
 -   Formats generated classes with prettier, using the user's prettier config file if present
--   Per-field `/// @skip`, `/// @ApiHideProperty`, and `/// @exclude` directives
--   Optionally generates class-transformer decorators (`@Exclude()` from `/// @exclude`,
-    `@Type()` on relation/composite fields) for use with `ClassSerializerInterceptor`
+-   Per-field `/// @skip`, `/// @ApiHideProperty`, `/// @exclude`, and `/// @expose` directives
+-   Optionally generates class-transformer decorators (`@Exclude()`/`@Expose()` from
+    `/// @exclude`/`/// @expose`, `@Type()` on relation/composite fields) for use with
+    `ClassSerializerInterceptor`
 -   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 -   Doc comments and literal `@default(...)` values become Swagger `description`/`example`
 
@@ -496,7 +514,7 @@ shape.
 | Databases verified against | postgresql, mysql, mongodb, sqlserver, sqlite, cockroachdb ([golden-tested](./prisma)) | not specified in their docs | not specified in their docs |
 | Prisma versions | 5, 6, 7 (both `prisma-client-js` and `prisma-client`) | `>=6.19 <8` (peer dependency) | not version-pinned |
 | Per-field customization | `/// @skip`, `/// @ApiHideProperty`, `/// @exclude` doc-comment directives | schema-comment annotations (e.g. `@description`) | schema-comment annotations (e.g. `@description`, `@minimum`) |
-| Native-type-aware validators | `@db.Uuid`/`@db.ObjectId`/`@db.VarChar(n)`/unsigned ints → sharper class-validator decorators (Prisma 6+) | not specified in their docs | not specified in their docs |
+| Native-type-aware validators | `@db.Uuid`/`@db.ObjectId`/`@db.Inet`/`@db.VarChar(n)`/unsigned ints → sharper class-validator decorators (Prisma 6+) | not specified in their docs | not specified in their docs |
 
 If you want a single class per model that mirrors what Prisma Client actually returns, and you
 compose your own Create/Update DTOs from it (see the FAQ below), this library is a good fit. If
