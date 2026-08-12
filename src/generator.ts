@@ -110,9 +110,26 @@ export const PrismaClassGeneratorOptions = {
 
 export type PrismaClassGeneratorOptionsKeys =
 	keyof typeof PrismaClassGeneratorOptions
-export type PrismaClassGeneratorConfig = Partial<
-	Record<PrismaClassGeneratorOptionsKeys, any>
->
+// every option is a boolean except clientImportPath (string | string[] | undefined, see its
+// defaultValue above) -- named explicitly (rather than derived from
+// PrismaClassGeneratorOptions) so each property gets its real type instead of one union
+// covering all of them, which every `config.dryRun`/`config.useGraphQL`/etc. call site relies
+// on being a plain boolean without a cast.
+export interface PrismaClassGeneratorConfig {
+	makeIndexFile?: boolean
+	dryRun?: boolean
+	separateRelationFields?: boolean
+	useSwagger?: boolean
+	useGraphQL?: boolean
+	useValidation?: boolean
+	validateNestedRelations?: boolean
+	useSerialization?: boolean
+	useUndefinedDefault?: boolean
+	clientImportPath?: string | string[]
+	useNonNullableAssertions?: boolean
+	preserveDefaultNullable?: boolean
+	preserveDecimal?: boolean
+}
 
 export class PrismaClassGenerator {
 	static instance: PrismaClassGenerator
