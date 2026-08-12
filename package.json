@@ -30,6 +30,7 @@
 	"scripts": {
 		"format": "prettier --write \"src/**/*.ts\"",
 		"test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+		"test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
 		"typecheck": "tsc --noEmit",
 		"clean": "rimraf dist",
 		"build": "npm run clean && tsc",
@@ -76,10 +77,8 @@
 		"jest": "30.4.2",
 		"prisma": "^6.19.3",
 		"rimraf": "^5.0.10",
-		"swagger-ui-express": "^4.4.0",
 		"ts-jest": "29.4.12",
 		"ts-node": "^10.9.1",
-		"ts-toolbelt": "^9.6.0",
 		"typescript": "^5.0.4"
 	},
 	"_moduleAliases": {

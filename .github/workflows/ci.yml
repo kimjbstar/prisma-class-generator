@@ -26,6 +26,17 @@ jobs:
       - run: npm run build
       - run: npm test
 
+      # Coverage doesn't vary by Node version, so this only needs to run once per CI run
+      # rather than on every matrix leg -- surfaced in the Actions job summary rather than a
+      # hosted badge, since that needs no external service/account to set up.
+      - name: Coverage summary
+        if: matrix.node-version == 22
+        run: |
+          echo '## Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          npm run test:coverage -- --coverageReporters=text-summary --silent 2>&1 | grep -A5 "Coverage summary" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
   windows-smoke:
     # Windows is the one OS where Node's `path` module behaves differently enough to matter --
     # path.relative() returns `\`-separated paths, which would produce an invalid
