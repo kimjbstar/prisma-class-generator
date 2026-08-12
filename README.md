@@ -370,6 +370,14 @@ export class ProductDto extends IntersectionType(
     -   makes index file, default value is **true**
 -   _separateRelationFields_
     -   puts relational fields into different file for each model. This way the class will match the object returned by a Prisma query, default value is **false**
+-   _makeDtoFiles_
+    -   also generates `Create<Model>` and `Update<Model>` classes for each model, default value is **false**
+        -   they're **compositions**, not copies: `CreateUser extends OmitType(User, [...] as const)` and `UpdateUser extends PartialType(CreateUser)`, so each field's type, Swagger metadata and validators stay declared in exactly one place (NestJS's mapped types carry all three through)
+        -   imported from `@nestjs/swagger` when `useSwagger` is on, otherwise from `@nestjs/mapped-types`
+        -   a field is omitted from `Create` only when the schema itself says the client can't supply it: a **function-based** `@default(...)` (`autoincrement()`, `uuid()`, `cuid()`, `now()`, `auto()`, `dbgenerated(...)`), `@updatedAt`, or a relation field. A *literal* default like `@default(0)` is kept — "there's a fallback" isn't "you may not set it" — and so is a relation's foreign-key scalar (`authorId`), which is the value a REST client actually posts
+        -   an `@id` **without** a default (e.g. `id String @id`) is kept too: the caller has to provide it
+        -   composite types (MongoDB `type` blocks) get no DTOs — they're embedded values, not entities with their own endpoints
+        -   with `separateRelationFields`, the DTOs compose the base class (never the `*Relations` one)
 -   _clientImportPath_
     -   set prisma client import path manually, default value is **@prisma/client**
         -   set this explicitly when using Prisma 7's `prisma-client` generator, since its output is no longer `@prisma/client` by default
@@ -491,10 +499,11 @@ flowchart LR
     `ClassSerializerInterceptor`
 -   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 -   Doc comments and literal `@default(...)` values become Swagger `description`/`example`
+-   Optional `Create`/`Update` DTO classes (`makeDtoFiles`), generated as NestJS mapped-type
+    compositions so field definitions are never duplicated
 
 ### Future Plan
 
--   Support DTO (Create/Update/Connect style classes generated per model)
 -   Support custom path, case or name per each model
 
 ---
@@ -510,16 +519,17 @@ shape.
 | Swagger decorators | ✅ | ✅ | ✅ |
 | class-validator decorators | ✅ | ✅ | ✅ |
 | GraphQL (TypeGraphQL) decorators | ✅ | — | — |
-| Classes generated per model | 1 (or 2 with `separateRelationFields`) | 1 (or 2 with `separateRelationFields`) | 5 (`Entity`, `Dto`, `CreateDto`, `UpdateDto`, `ConnectDto`) |
+| Classes generated per model | 1, or 3 with `makeDtoFiles` (`Model`, `CreateModel`, `UpdateModel`), or 2 with `separateRelationFields` | 1 (or 2 with `separateRelationFields`) | 5 (`Entity`, `Dto`, `CreateDto`, `UpdateDto`, `ConnectDto`) |
+| Create/Update DTO strategy | mapped-type composition — `OmitType`/`PartialType` over the model class, so a field is declared once | — | fully expanded classes, each field re-declared per DTO |
 | Databases verified against | postgresql, mysql, mongodb, sqlserver, sqlite, cockroachdb ([golden-tested](./prisma)) | not specified in their docs | not specified in their docs |
 | Prisma versions | 5, 6, 7 (both `prisma-client-js` and `prisma-client`) | `>=6.19 <8` (peer dependency) | not version-pinned |
 | Per-field customization | `/// @skip`, `/// @ApiHideProperty`, `/// @exclude` doc-comment directives | schema-comment annotations (e.g. `@description`) | schema-comment annotations (e.g. `@description`, `@minimum`) |
 | Native-type-aware validators | `@db.Uuid`/`@db.ObjectId`/`@db.Inet`/`@db.VarChar(n)`/unsigned ints → sharper class-validator decorators (Prisma 6+) | not specified in their docs | not specified in their docs |
 
-If you want a single class per model that mirrors what Prisma Client actually returns, and you
-compose your own Create/Update DTOs from it (see the FAQ below), this library is a good fit. If
-you'd rather have a full Create/Update/Connect DTO set generated for you out of the box,
-`prisma-generator-nestjs-dto` does more of that decision-making for you.
+If you want a class per model that mirrors what Prisma Client actually returns — optionally with
+`Create`/`Update` DTOs composed from it rather than duplicated out of it — this library is a good
+fit. If you'd rather have a full Create/Update/**Connect** DTO set with each field expanded per
+class, `prisma-generator-nestjs-dto` makes more of those decisions for you.
 
 ---
 
@@ -541,9 +551,25 @@ use the generated classes just as directly.
 
 **3. OK, so how do I actually build Create/Update DTOs from the generated class?**
 
-The generated class is decorated with `@nestjs/swagger`'s `@ApiProperty`, which is exactly
-what `@nestjs/swagger`'s `PartialType`/`OmitType`/`PickType` helpers are designed to compose —
-no extra code generation needed, it already works out of the box:
+Set `makeDtoFiles = "true"` and they're generated for you (see the option above) — as
+compositions of the model class, so no field is ever declared twice:
+
+```typescript
+// create_user.ts
+export class CreateUser extends OmitType(User, ['id', 'createdAt', 'updatedAt'] as const) {}
+
+// update_user.ts
+export class UpdateUser extends PartialType(CreateUser) {}
+```
+
+The omit list comes only from things the schema states outright — a function-based
+`@default(...)`, `@updatedAt`, or a relation field — never from guessing at field names.
+
+If your API's create payload differs from that (an admin route that *does* set `id`, a
+`ConnectDto`-style nested write, a field you want dropped for reasons the schema doesn't
+express), write it by hand — the generated class is decorated with `@nestjs/swagger`'s
+`@ApiProperty`, which is exactly what `PartialType`/`OmitType`/`PickType` are designed to
+compose, so this has always worked without any generator support:
 
 ```typescript
 import { OmitType, PartialType } from '@nestjs/swagger'
@@ -556,13 +582,8 @@ export class CreateUserDto extends OmitType(User, ['id', 'createdAt', 'updatedAt
 export class UpdateUserDto extends PartialType(CreateUserDto) {}
 ```
 
-If you'd rather not repeat the field list per model, pair this with `/// @skip` (see
-[Per-field directives](#per-field-directives)) on a *separate* generator run with a different
-`output` path to produce an already-trimmed base class — but for most projects, `OmitType` on
-the regular generated class is the simpler starting point. If you want this scaffolding
-generated automatically instead, `prisma-generator-nestjs-dto` does that out of the box (see
-the comparison table above) — this library deliberately stops one step short so the choice of
-which fields to omit stays explicit in your code, not implicit in generator config.
+A hand-written DTO and `makeDtoFiles` coexist fine — the generated `CreateUser`/`UpdateUser`
+are ordinary classes you can ignore, extend, or `OmitType` further.
 
 **4. I'm getting a decorators error (e.g. Babel's `Missing plugin "decorators"`) when I import a generated class — what's missing?**
 

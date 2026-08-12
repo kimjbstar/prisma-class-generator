@@ -271,3 +271,69 @@ describe('useValidation — class-validator import', () => {
 		)
 	})
 })
+
+describe('makeDtoFiles — DTO 파일의 import 경로 해석', () => {
+	const DTO_SCHEMA = `
+      model Post {
+        id       Int    @id @default(autoincrement())
+        title    String
+        authorId String
+        author   Author @relation(fields: [authorId], references: [id])
+      }
+
+      model Author {
+        id    String @id
+        posts Post[]
+      }
+    `
+
+	// DTO는 자기 base 클래스를 값으로(extends 절에서) 참조하므로, relation 필드와 달리
+	// type-only alias로는 대체할 수 없다. 그래서 값 import 하나만 등록돼야 한다.
+	it('Create DTO는 base 클래스를 실제 생성 파일명 경로로 값 import한다', async () => {
+		const files = await buildFiles(DTO_SCHEMA, { makeDtoFiles: true })
+
+		const createPost = findFile(files, 'CreatePost')
+		expect(createPost.filename).toBe('create_post.ts')
+
+		const baseImport = findImport(createPost, './post')
+		expect(baseImport.items).toEqual(['Post'])
+		// 이 스펙의 buildFiles는 useSwagger: false가 기본이라 mapped type이
+		// @nestjs/mapped-types에서 온다 (출처 분기 자체는 convertor.spec.ts가 검증).
+		expect(findImportFrom(createPost, 'OmitType')).toBe(
+			'@nestjs/mapped-types',
+		)
+	})
+
+	it('Update DTO는 모델이 아니라 Create DTO를 import한다', async () => {
+		const files = await buildFiles(DTO_SCHEMA, { makeDtoFiles: true })
+
+		const updatePost = findFile(files, 'UpdatePost')
+		expect(updatePost.filename).toBe('update_post.ts')
+		expect(findImport(updatePost, './create_post').items).toEqual([
+			'CreatePost',
+		])
+		expect(findImportFrom(updatePost, 'PartialType')).toBe(
+			'@nestjs/mapped-types',
+		)
+	})
+
+	// DTO에는 필드가 하나도 없으니 GraphQL 헬퍼(ID/Int/registerEnumType/GraphQLJSONObject)를
+	// 참조할 곳도 없다 -- 넣으면 100% 미사용 import가 된다.
+	it('useGraphQL이 켜져 있어도 DTO 파일에는 GraphQL import를 넣지 않는다', async () => {
+		const files = await buildFiles(DTO_SCHEMA, {
+			makeDtoFiles: true,
+			useGraphQL: true,
+		})
+
+		const createPost = findFile(files, 'CreatePost')
+		expect(
+			createPost.imports.some((i) => i.from === '@nestjs/graphql'),
+		).toBe(false)
+		// 반면 모델 클래스에는 그대로 들어간다
+		expect(
+			findFile(files, 'Post').imports.some(
+				(i) => i.from === '@nestjs/graphql',
+			),
+		).toBe(true)
+	})
+})

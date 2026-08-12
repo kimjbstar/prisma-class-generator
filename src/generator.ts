@@ -66,6 +66,10 @@ export const PrismaClassGeneratorOptions = {
 		desc: 'separate relation fields',
 		defaultValue: false,
 	},
+	makeDtoFiles: {
+		desc: 'generate Create<Model>/Update<Model> DTO classes composed from the model class with NestJS mapped types -- fields the schema says the database produces (function @default(...), @updatedAt) and relation fields are omitted from Create; Update is PartialType of Create',
+		defaultValue: false,
+	},
 	useSwagger: {
 		desc: 'use swagger decorstor',
 		defaultValue: true,
@@ -119,6 +123,7 @@ export interface PrismaClassGeneratorConfig {
 	makeIndexFile?: boolean
 	dryRun?: boolean
 	separateRelationFields?: boolean
+	makeDtoFiles?: boolean
 	useSwagger?: boolean
 	useGraphQL?: boolean
 	useValidation?: boolean

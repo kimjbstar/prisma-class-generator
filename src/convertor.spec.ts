@@ -1,6 +1,7 @@
 import { getDMMF } from '@prisma/internals'
 import { DMMF } from '@prisma/generator-helper'
 import { PrismaConvertor } from './convertor'
+import { ClassComponent } from './components/class.component'
 import { PrismaClassGeneratorConfig } from './generator'
 
 type SupportedProvider = 'postgresql' | 'mysql' | 'mongodb'
@@ -1174,5 +1175,165 @@ describe('PrismaConvertor#extractSwaggerDecoratorFromField (description / exampl
     `)
 		const echoed = convert(model, { useSwagger: true }).echo()
 		expect(echoed).not.toContain('example:')
+	})
+})
+
+// The DTO classes are compositions rather than expanded copies, so what's worth pinning is the
+// *omit list*: which fields the schema says a client can't supply on create. Everything here is
+// derived from a schema fact (a function-based @default, @updatedAt, being a relation), never
+// from a field's name -- the same rule the rest of this generator follows.
+describe('PrismaConvertor#getClasses (makeDtoFiles)', () => {
+	const DTO_SCHEMA = `
+      model Post {
+        id        Int      @id @default(autoincrement())
+        title     String
+        views     Int      @default(0)
+        createdAt DateTime @default(now())
+        updatedAt DateTime @updatedAt
+        authorId  String
+        author    Author   @relation(fields: [authorId], references: [id])
+      }
+
+      model Author {
+        id    String @id
+        name  String
+        posts Post[]
+      }
+    `
+
+	const getClasses = async (
+		modelBlock: string,
+		config: Partial<PrismaClassGeneratorConfig> = {},
+		provider: SupportedProvider = 'postgresql',
+	) => {
+		const dmmf = await getDMMF({
+			datamodel: baseSchema(modelBlock, provider),
+		})
+		const convertor = new PrismaConvertor()
+		convertor.dmmf = dmmf
+		convertor.config = {
+			...defaultConfig,
+			useSwagger: true,
+			makeDtoFiles: true,
+			...config,
+		}
+		return convertor.getClasses()
+	}
+
+	const findClass = (classes: ClassComponent[], name: string) => {
+		const found = classes.find((c) => c.name === name)
+		if (!found) {
+			throw new Error(
+				`no generated class named "${name}" (got: ${classes
+					.map((c) => c.name)
+					.join(', ')})`,
+			)
+		}
+		return found
+	}
+
+	it('makeDtoFiles가 꺼져 있으면(기본값) DTO 클래스를 만들지 않는다', async () => {
+		const classes = await getClasses(DTO_SCHEMA, { makeDtoFiles: false })
+		expect(classes.map((c) => c.name)).toEqual(['Post', 'Author'])
+	})
+
+	it('모델마다 Create/Update 클래스를 추가로 만든다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		expect(classes.map((c) => c.name)).toEqual([
+			'Post',
+			'CreatePost',
+			'UpdatePost',
+			'Author',
+			'CreateAuthor',
+			'UpdateAuthor',
+		])
+	})
+
+	// autoincrement()/now()는 DB가, @updatedAt은 Prisma가 채운다. relation은 다른 엔티티라
+	// 이 라이브러리가 한 번도 만든 적 없는 중첩 쓰기 모양을 가정해야 해서 뺀다.
+	it('DB/Prisma가 채우는 필드와 relation 필드를 Create에서 제외한다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		expect(findClass(classes, 'CreatePost').extendsExpression).toBe(
+			"OmitType(Post, ['id', 'createdAt', 'updatedAt', 'author'] as const)",
+		)
+	})
+
+	// relation을 뺀 자리에 남는 FK 스칼라(authorId)가 REST 클라이언트가 실제로 보내는 값이고,
+	// 리터럴 @default(0)은 "안 보내도 된다"이지 "보내면 안 된다"가 아니다.
+	it('FK 스칼라와 리터럴 기본값 필드는 Create에 남긴다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		const omitted = findClass(classes, 'CreatePost').extendsExpression
+		expect(omitted).not.toContain("'authorId'")
+		expect(omitted).not.toContain("'views'")
+		expect(omitted).not.toContain("'title'")
+	})
+
+	// `id String @id`는 기본값이 없으니 호출자가 반드시 줘야 한다 -- @id라는 이유만으로
+	// 빼면 그 모델은 아예 생성이 불가능해진다.
+	it('기본값 없는 @id는 Create에 남긴다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		expect(findClass(classes, 'CreateAuthor').extendsExpression).toBe(
+			"OmitType(Author, ['posts'] as const)",
+		)
+	})
+
+	it('Update는 모델이 아니라 Create의 PartialType이다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		const update = findClass(classes, 'UpdatePost')
+		expect(update.extendsExpression).toBe('PartialType(CreatePost)')
+		expect(update.generatedClassImports).toEqual(['CreatePost'])
+	})
+
+	it('useSwagger가 켜져 있으면 mapped type을 @nestjs/swagger에서 가져온다', async () => {
+		const classes = await getClasses(DTO_SCHEMA)
+		expect(findClass(classes, 'CreatePost').externalImports).toEqual([
+			{ item: 'OmitType', from: '@nestjs/swagger' },
+		])
+	})
+
+	it('useSwagger가 꺼져 있으면 @nestjs/mapped-types에서 가져온다', async () => {
+		const classes = await getClasses(DTO_SCHEMA, { useSwagger: false })
+		expect(findClass(classes, 'CreatePost').externalImports).toEqual([
+			{ item: 'OmitType', from: '@nestjs/mapped-types' },
+		])
+	})
+
+	// separateRelationFields를 켜면 base 클래스에 이미 relation이 없다. omit 키를 모델이 아니라
+	// base 클래스의 필드에서 뽑는 이유가 이것 -- 모델 기준으로 뽑으면 base에 없는 'author'를
+	// 빼려 해서 OmitType이 타입 에러가 난다.
+	it('separateRelationFields면 base 클래스를 확장하고 Relations에는 DTO를 만들지 않는다', async () => {
+		const classes = await getClasses(DTO_SCHEMA, {
+			separateRelationFields: true,
+		})
+		expect(findClass(classes, 'CreatePost').extendsExpression).toBe(
+			"OmitType(Post, ['id', 'createdAt', 'updatedAt'] as const)",
+		)
+		expect(
+			classes.find((c) => c.name === 'CreatePostRelations'),
+		).toBeUndefined()
+	})
+
+	// composite type은 문서에 박히는 값이지 자기 엔드포인트를 갖는 엔티티가 아니다.
+	it('MongoDB composite type에는 DTO를 만들지 않는다', async () => {
+		const classes = await getClasses(
+			`
+        model Dealer {
+          id      String          @id @default(auto()) @map("_id") @db.ObjectId
+          address ShippingAddress
+        }
+
+        type ShippingAddress {
+          city String
+        }
+      `,
+			{},
+			'mongodb',
+		)
+		expect(classes.map((c) => c.name)).toEqual([
+			'Dealer',
+			'CreateDealer',
+			'UpdateDealer',
+			'ShippingAddress',
+		])
 	})
 })

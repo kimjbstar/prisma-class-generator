@@ -119,6 +119,35 @@ const formatEnumDefault = (dmmfField: DMMF.Field): string => {
 	return `${dmmfField.type}.${dmmfField.default}`
 }
 
+/**
+ * True for a field a client can't meaningfully supply when *creating* a row, judged purely from
+ * what the schema states rather than from the field's name:
+ *
+ * - a function-based `@default(...)` (`autoincrement()`, `uuid()`, `cuid()`, `now()`,
+ *   `auto()`, `dbgenerated(...)`, `sequence()`) means the database or Prisma produces the value.
+ *   DMMF represents these as an `{ name, args }` object, which is what distinguishes them from a
+ *   literal default like `@default(0)` -- and a literal default is deliberately *kept*, since
+ *   "there's a fallback" isn't the same as "you may not set it".
+ * - `@updatedAt` is maintained by Prisma on every write.
+ * - a relation field holds another entity, not a value; this generator has never invented a
+ *   nested-write shape (see the README FAQ), so the relation's own foreign-key scalar -- which
+ *   is an ordinary field a REST client does post -- is what stays behind.
+ *
+ * Note an `@id` *without* a default stays: `id String @id` genuinely has to come from the caller.
+ */
+const isCreateDtoOmittedField = (dmmfField: DMMF.Field): boolean => {
+	if (dmmfField.relationName) {
+		return true
+	}
+	if (dmmfField.isUpdatedAt) {
+		return true
+	}
+	return (
+		typeof dmmfField.default === 'object' &&
+		!Array.isArray(dmmfField.default)
+	)
+}
+
 export interface SwaggerDecoratorParams {
 	isArray?: boolean
 	type?: string
@@ -547,6 +576,64 @@ export class PrismaConvertor {
 	}
 
 	/**
+	 * Create/Update DTO classes for one model, expressed as NestJS mapped-type compositions of
+	 * the model class rather than as expanded copies of it. That keeps each field's type and
+	 * validators declared in exactly one place, and it's the same composition the README FAQ
+	 * has always told people to write by hand.
+	 *
+	 * The omitted keys are read off `baseClass.fields` rather than off the model, so they're
+	 * guaranteed to be `keyof` the class being composed -- otherwise `separateRelationFields`
+	 * (whose base class has already dropped relations) or a `/// @skip`ped field would produce
+	 * an `OmitType` key that doesn't type-check.
+	 */
+	private getDtoClasses = (
+		model: DMMF.Model,
+		baseClass: ClassComponent,
+	): ClassComponent[] => {
+		// @nestjs/swagger re-exports the mapped types *and* carries OpenAPI metadata through
+		// them; @nestjs/mapped-types is the same API without the Swagger dependency, for
+		// projects not generating Swagger decorators in the first place.
+		const mappedTypesFrom = this.config.useSwagger
+			? '@nestjs/swagger'
+			: '@nestjs/mapped-types'
+
+		const omittedByName = new Map(
+			model.fields.map((field) => [field.name, field]),
+		)
+		const omittedKeys = baseClass.fields
+			.map((field) => field.name)
+			.filter((name) => {
+				const dmmfField = omittedByName.get(name)
+				return !!dmmfField && isCreateDtoOmittedField(dmmfField)
+			})
+
+		const createClass = new ClassComponent({
+			name: `Create${baseClass.name}`,
+		})
+		createClass.extendsExpression = `OmitType(${baseClass.name}, [${omittedKeys
+			.map((key) => `'${key}'`)
+			.join(', ')}] as const)`
+		createClass.generatedClassImports = [baseClass.name]
+		createClass.externalImports = [
+			{ item: 'OmitType', from: mappedTypesFrom },
+		]
+
+		// Update extends Create, not the model: everything Create already excluded (generated
+		// ids, @updatedAt, relations) has no business in an update payload either, and this
+		// way the two can't drift apart.
+		const updateClass = new ClassComponent({
+			name: `Update${baseClass.name}`,
+		})
+		updateClass.extendsExpression = `PartialType(${createClass.name})`
+		updateClass.generatedClassImports = [createClass.name]
+		updateClass.externalImports = [
+			{ item: 'PartialType', from: mappedTypesFrom },
+		]
+
+		return [createClass, updateClass]
+	}
+
+	/**
 	 * one prisma model could generate multiple classes!
 	 *
 	 * CASE 1: if you want separate model to normal class and relation class
@@ -557,19 +644,21 @@ export class PrismaConvertor {
 
 		/** separateRelationFields */
 		if (this.config.separateRelationFields === true) {
-			const modelVariants: Pick<
-				ConvertModelInput,
-				'extractRelationFields' | 'postfix'
-			>[] = [
-				{ extractRelationFields: true, postfix: 'Relations' },
-				{ extractRelationFields: false },
-			]
 			return [
-				...modelVariants.flatMap((variant) =>
-					models.map((model) =>
-						this.getClass({ model, useGraphQL, ...variant }),
-					),
+				...models.map((model) =>
+					this.getClass({
+						model,
+						useGraphQL,
+						extractRelationFields: true,
+						postfix: 'Relations',
+					}),
 				),
+				// DTOs compose the *base* class (the one without relation fields), never the
+				// *Relations one -- a relations-only class has nothing a client would post.
+				...this.getModelClassesWithDtos(models, {
+					useGraphQL,
+					extractRelationFields: false,
+				}),
 				// mongodb Types support
 				...this.dmmf.datamodel.types.map((model) =>
 					this.getClass({
@@ -582,12 +671,26 @@ export class PrismaConvertor {
 		}
 
 		return [
-			...models.map((model) => this.getClass({ model, useGraphQL })),
-			// mongodb Types support
+			...this.getModelClassesWithDtos(models, { useGraphQL }),
+			// mongodb Types support -- composite types are embedded values, not entities with
+			// their own create/update endpoints, so they get no DTOs.
 			...this.dmmf.datamodel.types.map((model) =>
 				this.getClass({ model, useGraphQL }),
 			),
 		]
+	}
+
+	private getModelClassesWithDtos = (
+		models: readonly DMMF.Model[],
+		input: Omit<ConvertModelInput, 'model'>,
+	): ClassComponent[] => {
+		return models.flatMap((model) => {
+			const baseClass = this.getClass({ model, ...input })
+			if (!this.config.makeDtoFiles) {
+				return [baseClass]
+			}
+			return [baseClass, ...this.getDtoClasses(model, baseClass)]
+		})
 	}
 
 	convertField = (dmmfField: DMMF.Field): FieldComponent => {
