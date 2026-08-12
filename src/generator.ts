@@ -200,18 +200,34 @@ export class PrismaClassGenerator {
 	}
 
 	async run(): Promise<void> {
-		const { generator, dmmf } = this.options
-		const output = parseEnvValue(generator.output!)
+		const output = parseEnvValue(this.options.generator.output!)
 		await this.resolvePrettierOptions()
 		const config = this.getConfig()
 		this.setPrismaClientPath()
 
+		const files = this.buildFileComponents(config, output)
+		resolveRelationImports(files)
+
+		await Promise.all(files.map((fileRow) => fileRow.write(config.dryRun)))
+
+		if (config.makeIndexFile) {
+			await this.writeIndexFile(files, output, config.dryRun)
+		}
+
+		if (config.dryRun) {
+			this.logDryRunReminder(files.length)
+		}
+	}
+
+	private buildFileComponents(
+		config: PrismaClassGeneratorConfig,
+		output: string,
+	): FileComponent[] {
 		const convertor = PrismaConvertor.getInstance()
-		convertor.dmmf = dmmf
+		convertor.dmmf = this.options.dmmf
 		convertor.config = config
 
-		const classes = convertor.getClasses()
-		const files = classes.map(
+		return convertor.getClasses().map(
 			(classComponent) =>
 				new FileComponent({
 					classComponent,
@@ -221,59 +237,59 @@ export class PrismaClassGenerator {
 					prettierOptions: this.prettierOptions,
 				}),
 		)
+	}
 
-		resolveRelationImports(files)
+	private async writeIndexFile(
+		files: FileComponent[],
+		output: string,
+		dryRun: boolean,
+	): Promise<void> {
+		const indexFilePath = path.resolve(output, 'index.ts')
+		const imports = files.map(
+			(fileRow) =>
+				new ImportComponent(
+					getRelativeTSPath(indexFilePath, fileRow.getPath()),
+					fileRow.prismaClass.name,
+				),
+		)
 
-		await Promise.all(files.map((fileRow) => fileRow.write(config.dryRun)))
-		if (config.makeIndexFile) {
-			const indexFilePath = path.resolve(output, 'index.ts')
-			const imports = files.map(
-				(fileRow) =>
-					new ImportComponent(
-						getRelativeTSPath(indexFilePath, fileRow.getPath()),
-						fileRow.prismaClass.name,
-					),
+		const content = INDEX_TEMPLATE.replace(
+			'#!{IMPORTS}',
+			imports.map((i) => i.echo('_')).join('\r\n'),
+		)
+			.replace(
+				'#!{RE_EXPORT_CLASSES}',
+				files
+					.map((f) => `	${f.prismaClass.reExportPrefixed('_')}`)
+					.join('\r\n'),
 			)
+			.replace(
+				'#!{CLASSES}',
+				files.map((f) => f.prismaClass.name).join(', '),
+			)
+		const formattedContent = await prettierFormat(
+			content,
+			this.prettierOptions,
+		)
+		writeTSFile(indexFilePath, formattedContent, dryRun)
+	}
 
-			const content = INDEX_TEMPLATE.replace(
-				'#!{IMPORTS}',
-				imports.map((i) => i.echo('_')).join('\r\n'),
-			)
-				.replace(
-					'#!{RE_EXPORT_CLASSES}',
-					files
-						.map((f) => `	${f.prismaClass.reExportPrefixed('_')}`)
-						.join('\r\n'),
-				)
-				.replace(
-					'#!{CLASSES}',
-					files.map((f) => f.prismaClass.name).join(', '),
-				)
-			const formattedContent = await prettierFormat(
-				content,
-				this.prettierOptions,
-			)
-			writeTSFile(indexFilePath, formattedContent, config.dryRun)
-		}
-
-		// dryRun defaults to true, and "I ran this and nothing showed up in my output folder"
-		// was a recurring first-time-setup report (see #59) — the content was printed above,
-		// but easy to miss that it's a preview rather than a failure. Say so explicitly.
-		if (config.dryRun) {
-			log(
-				[
-					'',
-					`This was a dry run — ${files.length} file(s) were only printed above, nothing was written to disk.`,
-					'Set dryRun = "false" in your generator block once the preview looks right:',
-					'',
-					'  generator prismaClassGenerator {',
-					'    provider = "prisma-class-generator"',
-					'    dryRun   = "false"',
-					'  }',
-				].join('\n'),
-			)
-		}
-		return
+	// dryRun defaults to true, and "I ran this and nothing showed up in my output folder"
+	// was a recurring first-time-setup report (see #59) — the content was printed above,
+	// but easy to miss that it's a preview rather than a failure. Say so explicitly.
+	private logDryRunReminder(fileCount: number): void {
+		log(
+			[
+				'',
+				`This was a dry run — ${fileCount} file(s) were only printed above, nothing was written to disk.`,
+				'Set dryRun = "false" in your generator block once the preview looks right:',
+				'',
+				'  generator prismaClassGenerator {',
+				'    provider = "prisma-class-generator"',
+				'    dryRun   = "false"',
+				'  }',
+			].join('\n'),
+		)
 	}
 
 	getConfig(): PrismaClassGeneratorConfig {
