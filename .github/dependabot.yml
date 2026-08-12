@@ -15,6 +15,17 @@ updates:
         exclude-patterns:
           - '@prisma/*'
           - 'prisma'
+    ignore:
+      # ts-jest doesn't expose TypeScript 7's restructured compiler API yet -- a grouped
+      # dev-dependencies PR bumping to 7.0.2 broke `npm test` on every CI leg (confirmed via a
+      # real failed run, not guessed). Revisit once ts-jest adds TS7 support.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      # pinned to track this repo's own `engines.node` floor (>=18) -- a newer @types/node
+      # major types against Node APIs that don't exist on the oldest Node version this project
+      # still supports and tests in CI (build-and-test's node-version matrix includes 18).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'chore'
       include: 'scope'
