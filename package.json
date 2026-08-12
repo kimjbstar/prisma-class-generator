@@ -1,6 +1,6 @@
 {
 	"name": "prisma-class-generator",
-	"version": "0.6.2",
+	"version": "0.6.3",
 	"description": "Prisma generator that emits TypeScript classes decorated for @nestjs/swagger, class-validator, and TypeGraphQL — DTO/entity classes generated straight from schema.prisma.",
 	"main": "dist/index.js",
 	"license": "MIT",
