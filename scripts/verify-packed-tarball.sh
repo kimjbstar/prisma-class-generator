@@ -27,9 +27,19 @@ WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 echo "--- npm pack ---"
-TARBALL_NAME="$(cd "$ROOT_DIR" && npm pack --silent --pack-destination "$WORK_DIR")"
-TARBALL="$WORK_DIR/$TARBALL_NAME"
-echo "packed: $TARBALL_NAME ($(wc -c <"$TARBALL") bytes)"
+# Deliberately NOT `TARBALL=$(npm pack ...)`: `npm pack` runs the `prepare` lifecycle script,
+# and anything that writes to stdout there lands in the command substitution along with the
+# filename. husky does exactly that when HUSKY=0 is set (it prints "HUSKY=0 skip install"),
+# which every workflow sets -- so capturing stdout works locally and produces a garbage path
+# only in CI. WORK_DIR is a fresh mktemp, so globbing it is unambiguous and immune to whatever
+# `prepare` decides to print.
+(cd "$ROOT_DIR" && npm pack --silent --pack-destination "$WORK_DIR" >/dev/null)
+TARBALL="$(echo "$WORK_DIR"/*.tgz)"
+if [ ! -f "$TARBALL" ]; then
+	echo "FAIL: npm pack produced no tarball in $WORK_DIR"
+	exit 1
+fi
+echo "packed: $(basename "$TARBALL") ($(wc -c <"$TARBALL") bytes)"
 
 PROJECT_DIR="$WORK_DIR/consumer"
 mkdir -p "$PROJECT_DIR"
