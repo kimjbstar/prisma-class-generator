@@ -1,0 +1,27 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator prismaClassGenerator {
+  provider = "node -r ts-node/register/transpile-only src/index.ts"
+  output   = "./generated"
+}
+
+model Category {
+  id       Int       @id
+  name     String
+  products Product[]
+}
+
+model Product {
+  id         Int      @id
+  title      String
+  price      Float
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+}

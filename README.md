@@ -6,6 +6,8 @@
 [![license](https://img.shields.io/npm/l/prisma-class-generator.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
+![demo: schema.prisma turned into a TypeScript class via `prisma generate`](https://raw.githubusercontent.com/kimjbstar/prisma-class-generator/main/assets/demo.gif)
+
 See [CHANGELOG.md](./CHANGELOG.md) for release notes. Found a bug or want a feature? Open an
 [issue](https://github.com/kimjbstar/prisma-class-generator/issues). Have a "how do I...?"
 question instead? Ask in [Discussions](https://github.com/kimjbstar/prisma-class-generator/discussions) —
@@ -92,24 +94,40 @@ export class ProductDto extends IntersectionType(
 
 3. **😎 done! Let's check out generated files.**
 
-    if this models were defined in your prisma.schema file,
+    if this models were defined in your prisma.schema file — this is the exact
+    `Product`/`Category`/`Company` example from [`prisma/postgresql.prisma`](./prisma/postgresql.prisma),
+    the same schema this repo's own CI golden test runs against, so it won't drift out of sync
+    with the real generator again:
 
     ```prisma
+    enum ProductType {
+      A
+      B
+      C
+    }
+
+    enum ProductAnotherType {
+      AA
+      BB
+      CC
+    }
+
     model Product {
-      id            Int         @id
-      title         String      @db.VarChar(255)
-      desc          String      @db.VarChar(1024)
-      images        Json        @db.Json
-      isShown       Boolean?    @default(false)
-      stock         Int?        @default(0)
+      id            Int                @id
+      title         String             @db.VarChar(255)
+      desc          String             @default("abc") @db.VarChar(1024)
+      images        Json               @db.Json
+      isShown       Boolean?           @default(false)
+      stock         Int?               @default(0)
       type          ProductType
+      anotherType   ProductAnotherType @default(AA)
       averageRating Float?
       categoryId    Int
       companyId     Int
-      category      Category    @relation(fields: [categoryId], references: [id])
-      company       Company     @relation(fields: [companyId], references: [id])
-      createdAt     DateTime    @default(now()) @db.Timestamp(6)
-      updatedAt     DateTime    @updatedAt @db.Timestamp(6)
+      category      Category           @relation(fields: [categoryId], references: [id])
+      company       Company            @relation(fields: [companyId], references: [id])
+      createdAt     DateTime           @default(now()) @db.Timestamp(6)
+      updatedAt     DateTime           @updatedAt @db.Timestamp(6)
     }
 
     model Category {
@@ -118,24 +136,30 @@ export class ProductDto extends IntersectionType(
     }
 
     model Company {
-      id          Int       @id
-      name        String
-      totalIncome BigInt
-      lat         Decimal
-      lng         Decimal
-      by          Bytes
-      products    Product[]
+      id                      Int       @id
+      name                    String
+      totalIncome             BigInt    @default(100)
+      lat                     Decimal
+      lng                     Decimal
+      by                      Bytes
+      products                Product[]
+      tags                    String[]
+      tagsWithEmptyDefault    String[]  @default([])
+      tagsWithDefault         String[]  @default(["a", "b"])
+      numTags                 Int[]
+      numTagsWithEmptyDefault Int[]     @default([])
+      numTagsWithDefault      Int[]     @default([1, 2])
     }
-
     ```
 
-    then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class.
+    then this class is generated in <PROJECT_PATH>/src/\_gen/prisma-class — this is the real,
+    unedited output of running the generator against the schema above:
 
     ( The generating path can be customized through _output_ option. )
 
     ```typescript
     // category.ts
-    import { Product } from './product'
+    import { Product, type Product as ProductAsType } from './product'
     import { ApiProperty } from '@nestjs/swagger'
 
     export class Category {
@@ -143,13 +167,13 @@ export class ProductDto extends IntersectionType(
     	id: number
 
     	@ApiProperty({ isArray: true, type: () => Product })
-    	products: Product[]
+    	products: ProductAsType[]
     }
     ```
 
     ```typescript
     // company.ts
-    import { Product } from './product'
+    import { Product, type Product as ProductAsType } from './product'
     import { ApiProperty } from '@nestjs/swagger'
 
     export class Company {
@@ -160,7 +184,7 @@ export class ProductDto extends IntersectionType(
     	name: string
 
     	@ApiProperty({ type: BigInt })
-    	totalIncome: BigInt
+    	totalIncome: BigInt = BigInt(100)
 
     	@ApiProperty({ type: Number })
     	lat: number
@@ -172,15 +196,33 @@ export class ProductDto extends IntersectionType(
     	by: Buffer
 
     	@ApiProperty({ isArray: true, type: () => Product })
-    	products: Product[]
+    	products: ProductAsType[]
+
+    	@ApiProperty({ isArray: true, type: String })
+    	tags: string[]
+
+    	@ApiProperty({ isArray: true, type: String })
+    	tagsWithEmptyDefault: string[] = []
+
+    	@ApiProperty({ isArray: true, type: String })
+    	tagsWithDefault: string[] = ['a', 'b']
+
+    	@ApiProperty({ isArray: true, type: Number })
+    	numTags: number[]
+
+    	@ApiProperty({ isArray: true, type: Number })
+    	numTagsWithEmptyDefault: number[] = []
+
+    	@ApiProperty({ isArray: true, type: Number })
+    	numTagsWithDefault: number[] = [1, 2]
     }
     ```
 
     ```typescript
     // product.ts
-    import { Category } from './category'
-    import { Company } from './company'
-    import { ProductType } from '@prisma/client'
+    import { Category, type Category as CategoryAsType } from './category'
+    import { Company, type Company as CompanyAsType } from './company'
+    import { ProductType, ProductAnotherType } from '@prisma/client'
     import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
     export class Product {
@@ -190,20 +232,27 @@ export class ProductDto extends IntersectionType(
     	@ApiProperty({ type: String })
     	title: string
 
-    	@ApiProperty({ type: String })
-    	desc: string
+    	@ApiProperty({ type: String, example: 'abc' })
+    	desc: string = 'abc'
 
     	@ApiProperty({ type: Object })
     	images: object
 
-    	@ApiPropertyOptional({ type: Boolean })
+    	@ApiPropertyOptional({ type: Boolean, example: false })
     	isShown?: boolean = false
 
-    	@ApiPropertyOptional({ type: Number })
+    	@ApiPropertyOptional({ type: Number, example: 0 })
     	stock?: number = 0
 
     	@ApiProperty({ enum: ProductType, enumName: 'ProductType' })
     	type: ProductType
+
+    	@ApiProperty({
+    		enum: ProductAnotherType,
+    		enumName: 'ProductAnotherType',
+    		example: ProductAnotherType.AA,
+    	})
+    	anotherType: ProductAnotherType = ProductAnotherType.AA
 
     	@ApiPropertyOptional({ type: Number })
     	averageRating?: number
@@ -215,10 +264,10 @@ export class ProductDto extends IntersectionType(
     	companyId: number
 
     	@ApiProperty({ type: () => Category })
-    	category: Category
+    	category: CategoryAsType
 
     	@ApiProperty({ type: () => Company })
-    	company: Company
+    	company: CompanyAsType
 
     	@ApiProperty({ type: Date })
     	createdAt: Date
@@ -228,9 +277,13 @@ export class ProductDto extends IntersectionType(
     }
     ```
 
-    Note that optional fields with a schema-level default (`isShown`, `stock` above) are
-    generated with that default value already assigned, so a `new Product()` starts in a
-    valid state without every caller having to set them.
+    Note that optional fields with a schema-level default (`isShown`, `stock`, `totalIncome`,
+    the `tags*`/`numTags*` arrays above) are generated with that default value already
+    assigned, so a `new Product()` starts in a valid state without every caller having to set
+    them. And notice that relation fields (`category`/`company`/`products` above) import both
+    the real class *and* a `type ... as ...AsType` alias — the field's own type annotation uses
+    the alias to avoid a circular-import crash under `emitDecoratorMetadata`; see this repo's
+    [CLAUDE.md](./CLAUDE.md) if you're curious why.
 
     ```typescript
     // index.ts
@@ -386,6 +439,13 @@ Prima internally defines metadata as a dmmf object.
 [prisma-class-generator](https://github.com/kimjbstar/prisma-class-generator) can automate class definition using this dmmf.
 
 It is defined as an additional generator in the `schema.prisma` file and will operate in the `prisma generate` process.
+
+```mermaid
+flowchart LR
+    A["schema.prisma"] -->|"prisma generate"| B["Prisma CLI"]
+    B -->|"DMMF (schema metadata)"| C["prisma-class-generator"]
+    C -->|"one .ts per model"| D["*.ts classes<br/>(@nestjs/swagger / class-validator / TypeGraphQL)"]
+```
 
 ### **Feature**
 
