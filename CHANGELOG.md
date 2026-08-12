@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- [#108](https://github.com/kimjbstar/prisma-class-generator/pull/108) [`5696c4c`](https://github.com/kimjbstar/prisma-class-generator/commit/5696c4c7dada8c449ef40649b9c16ff9ad974d5e) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Add `makeDtoFiles`, which generates `Create<Model>` and `Update<Model>` classes alongside each
+  model class. They're compositions rather than copies — `CreateUser extends OmitType(User, [...] as
+const)` and `UpdateUser extends PartialType(CreateUser)` — so a field's type, Swagger metadata and
+  validators stay declared in exactly one place, and NestJS's mapped types carry all three through.
+  Imported from `@nestjs/swagger` when `useSwagger` is on, `@nestjs/mapped-types` otherwise.
+
+    A field leaves the `Create` DTO only when the schema itself says a client can't supply it: a
+    function-based `@default(...)` (`autoincrement()`, `uuid()`, `now()`, `dbgenerated(...)`, …),
+    `@updatedAt`, or a relation field. Literal defaults like `@default(0)`, relation foreign-key
+    scalars, and an `@id` without a default all stay — nothing is inferred from field names. Off by
+    default, so existing output is unchanged.
+
+### Patch Changes
+
+- [#106](https://github.com/kimjbstar/prisma-class-generator/pull/106) [`5be2cb0`](https://github.com/kimjbstar/prisma-class-generator/commit/5be2cb009c4d6253a986279c8077880c0906a33e) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Fix `useNonNullableAssertions` producing TypeScript that doesn't compile. A field with a literal
+  `@default(...)` was emitted as `views!: number = 0`, which is TS1263 — "Declarations with
+  initializers cannot also have definite assignment assertions". Any model with at least one
+  defaulted field made the whole generated file fail to build, and `useUndefinedDefault` hit the
+  same thing. The assertion is now omitted whenever the field has an initializer, which is what
+  definite assignment already means.
+
 ## 0.6.6
 
 ### Patch Changes
