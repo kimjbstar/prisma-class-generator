@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.6.1
+
+### Patch Changes
+
+- [#91](https://github.com/kimjbstar/prisma-class-generator/pull/91) [`e8cfb37`](https://github.com/kimjbstar/prisma-class-generator/commit/e8cfb3786a7cb475ab0784faf68736c5da9746b2) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Bump the _runtime_ `dependencies` `@prisma/generator-helper` and `@prisma/internals` from
+  6.19.3 to 7.9.1. `devDependencies` `prisma` and `@prisma/client` stay on 6.19.3 -- those two
+  specifically refuse to install on Node < 20.19 (their own `preinstall` script hard-fails).
+
+    The first attempt at this bump broke `yarn install` on Node 18 in CI: `@prisma/internals@7.9.1`
+    pulls in `chokidar@5.0.0` transitively (via `@prisma/config` -> `c12`), and chokidar 5 requires
+    Node >= 20.19. Traced it: `c12` only reaches for chokidar via a lazy `await import("chokidar")`
+    inside its config-_watch_ feature, which this generator's code (`getDMMF`/`parseEnvValue`/
+    `logger` only) never triggers -- so the actual chokidar module is never loaded at runtime here.
+    Added a `resolutions` override pinning `chokidar` to `^4.0.3` (the same major that
+    `prisma@6.19.3`'s own `c12` dependency already resolves to, so it's a well-exercised version)
+    to sidestep the install-time engine check without touching any code path this package uses.
+    Verified with a clean `yarn install --frozen-lockfile` + full `typecheck`/`build`/`test` run on
+    real Node 18.20.8 (via nvm, with engine-strict actually enforced -- not just locally-lenient
+    npm/yarn config).
+
+    This also removes the local `FieldWithNativeType` type augmentation in convertor.ts --
+    `nativeType` is now part of the official `DMMF.Field` type as of `@prisma/generator-helper` 7.x,
+    so the workaround cast is redundant.
+
+    Prisma 7 also dropped the `url` field from `datasource` blocks entirely (moved to
+    `prisma.config.ts`), which broke every test that builds a schema string and feeds it through
+    `getDMMF` (now on 7.9.1). Fixed by dropping `url` from the inline schema templates in
+    convertor.spec.ts/file.component.spec.ts, and by stripping the `url` line at read-time in
+    fixtures.spec.ts before parsing -- the checked-in `prisma/*.prisma` fixture files themselves
+    keep `url` untouched, since `npm run generate:*` still drives them through the pinned Prisma 6
+    CLI, which still expects it.
+
+    Verified against real `prisma generate` runs for all 6 fixture databases (unaffected -- they go
+    through the pinned `prisma` devDependency, not the bumped runtime deps), and confirmed the
+    built `dist/index.js` (compiled against 7.9.1 types) still works correctly when invoked by the
+    Prisma 6.19.3 CLI, proving the generator-helper JSON-RPC protocol is compatible across that
+    version gap.
+
+- [`b1075f8`](https://github.com/kimjbstar/prisma-class-generator/commit/b1075f84094d7b524c756c3e0b1c88be8d4de612) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Bumps `ts-node` to its latest patch (10.9.2, no functional change -- devDependency only,
+  doesn't ship to consumers). Cherry-picked out of dependabot PR [#90](https://github.com/kimjbstar/prisma-class-generator/issues/90) (a grouped
+  dev-dependencies bump), which also tried to jump `typescript` 5.9.3 -> 7.0.2 and
+  `@types/node` 18 -> 26 in the same PR and broke `npm test` on every CI leg (`ts-jest`
+  doesn't expose TypeScript 7's restructured compiler API yet). Added `ignore` rules to
+  `.github/dependabot.yml` for major-version bumps on both `typescript` (until ts-jest
+  supports TS7) and `@types/node` (kept tracking this repo's own `engines.node` floor of
+  18, not a hypothetical future Node major) so this doesn't recur.
+
+- [`9752f41`](https://github.com/kimjbstar/prisma-class-generator/commit/9752f41abc974c545216bf112798f452175ba902) Thanks [@kimjbstar](https://github.com/kimjbstar)! - Fixes three Windows-specific bugs found while adding a `windows-latest` leg to CI:
+
+    - `getRelativeTSPath` (used to build every relation/index-barrel import path) fed
+      `path.relative()`'s output straight into a generated `import ... from '...'` string.
+      On Windows, `path.relative()` returns `\`-separated paths, which produced an invalid
+      module specifier like `import ... from '..\foo'`. Now normalized to forward slashes
+      unconditionally (a POSIX import specifier is required regardless of host OS).
+    - The `test` npm script used bash's `VAR=value command` syntax
+      (`NODE_OPTIONS=--experimental-vm-modules jest`), which fails outright under Windows'
+      default `cmd.exe` shell. Switched to `cross-env`.
+    - The `clean` script used `rm -rf dist`, also bash-only. Switched to `rimraf`.
+
+    Both `cross-env` and `rimraf` are pinned to majors that still support Node 18
+    (`cross-env@^7.0.3`, `rimraf@^5.0.10`) -- their latest majors require Node 20+, which would
+    have undone the Node 18 support this project maintains.
+
 ## 0.6.0
 
 ### Minor Changes
