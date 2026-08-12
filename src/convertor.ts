@@ -14,6 +14,18 @@ import {
 	wrapQuote,
 } from './util'
 
+/**
+ * `nativeType` was added to DMMF.Field in Prisma 6 and isn't declared on the pinned
+ * `@prisma/generator-helper` 5.x types this repo builds against — but the field object a
+ * Prisma 6/7 CLI actually hands to this generator at runtime does include it (verified via
+ * `getDMMF` against real 6.19.3/7.9.1 installs, not guessed). It's `undefined` on Prisma 5
+ * (the key is absent entirely), `null` when the field has no `@db.*` annotation, or
+ * `[typeName, args]`, e.g. `@db.VarChar(191)` -> `['VarChar', ['191']]`.
+ */
+type FieldWithNativeType = DMMF.Field & {
+	nativeType?: [string, string[]] | null
+}
+
 /** BigInt, Boolean, Bytes, DateTime, Decimal, Float, Int, JSON, String, $ModelName */
 type DefaultPrismaFieldType =
 	| 'BigInt'
@@ -370,12 +382,8 @@ export class PrismaConvertor {
 		}
 
 		if (typeof dmmfField.type === 'string') {
-			// `nativeType` is `undefined` when a Prisma 5 CLI hands this generator a field
-			// (the key is absent entirely -- still possible even though this repo's own pin
-			// is on 7.x, since a Prisma 5 project's `prisma generate` can still spawn this
-			// generator as a subprocess), `null` when the field has no `@db.*` annotation, or
-			// `[typeName, args]`, e.g. `@db.VarChar(191)` -> `['VarChar', ['191']]`.
-			const [nativeTypeName, nativeTypeArgs] = dmmfField.nativeType ?? []
+			const [nativeTypeName, nativeTypeArgs] =
+				(dmmfField as FieldWithNativeType).nativeType ?? []
 
 			// a native type that describes a specific string format (Uuid, ObjectId, ...)
 			// replaces the generic type-based validator instead of stacking alongside it.
