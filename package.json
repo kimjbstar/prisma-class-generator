@@ -69,16 +69,16 @@
 		"@changesets/cli": "2.31.1",
 		"@prisma/client": "^6.19.3",
 		"@types/jest": "30.0.0",
-		"@types/node": "^18.15.11",
+		"@types/node": "^26.2.0",
 		"@types/prettier": "^3.0.0",
 		"fast-check": "4.9.0",
 		"jest": "30.4.2",
 		"prisma": "^6.19.3",
-		"swagger-ui-express": "^4.4.0",
+		"swagger-ui-express": "^5.0.1",
 		"ts-jest": "29.4.12",
 		"ts-node": "^10.9.1",
 		"ts-toolbelt": "^9.6.0",
-		"typescript": "^5.0.4"
+		"typescript": "^7.0.2"
 	},
 	"_moduleAliases": {
 		"@src": "dist"
