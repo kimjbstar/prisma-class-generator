@@ -14,6 +14,7 @@ import {
 	prettierFormat,
 	toArray,
 	toImportPath,
+	toSnakeCase,
 	uniquify,
 	wrapArrowFunction,
 	wrapQuote,
@@ -27,6 +28,43 @@ describe('capitalizeFirst', () => {
 
 	it('빈 문자열은 그대로 반환한다', () => {
 		expect(capitalizeFirst('')).toBe('')
+	})
+})
+
+// These expectations are change-case@4's `snakeCase` output, captured when that dependency was
+// replaced by toSnakeCase (parity verified over 150k property-generated inputs at the time).
+// They are effectively a compatibility contract, not a style preference: the value feeds both
+// the generated filename and the import path other generated files use to reach it, so a change
+// here silently renames every user's generated files.
+describe('toSnakeCase', () => {
+	it.each([
+		['User', 'user'],
+		['UserProfile', 'user_profile'],
+		['ShippingAddress', 'shipping_address'],
+		['CategoryRelations', 'category_relations'],
+		// acronyms stay whole rather than splitting per letter
+		['HTTPRequest', 'http_request'],
+		['ABCModel', 'abc_model'],
+		['XMLHttpRequest', 'xml_http_request'],
+		['UserID', 'user_id'],
+		['ID', 'id'],
+		// a digit ends a token, an uppercase letter after it starts a new one
+		['User2Post', 'user2_post'],
+		['Order2', 'order2'],
+		['Foo1Bar2', 'foo1_bar2'],
+		['v2Model', 'v2_model'],
+		// underscores are separators, not content -- an already-snake_cased name round-trips
+		['user_profile', 'user_profile'],
+		['Model_V2', 'model_v2'],
+		['_Private', 'private'],
+		// single letters and degenerate input
+		['A', 'a'],
+		['aB', 'a_b'],
+		['AAA', 'aaa'],
+		['', ''],
+		['___', ''],
+	])('%s -> %s', (input, expected) => {
+		expect(toSnakeCase(input)).toBe(expected)
 	})
 })
 

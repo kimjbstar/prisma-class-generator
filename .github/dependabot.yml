@@ -48,17 +48,6 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: '@changesets/changelog-github'
         update-types: ['version-update:semver-major']
-      # change-case 5.x is ESM-only ("type": "module", exports expose only an `import`
-      # condition) and this package is published as CommonJS, so `require('change-case')`
-      # throws ERR_REQUIRE_ESM -- verified by actually installing 5.4.4 and requiring it under
-      # node 18.20.8 (fails), 20.19.4 (works) and 22.23.1 (works); require(ESM) landed in
-      # 22.12 and was backported to 20.19. So the only thing blocking this bump is the
-      # `engines.node: >=18` floor, not behavior: v4 and v5 `snakeCase` were also diffed over
-      # 20 Prisma-style identifiers (ABCModel, HTTPRequest, User2Post, Model_V2, ...) with
-      # zero differences, so generated filenames would not change. Drop this ignore rule as
-      # soon as this repo's Node floor moves to >=20.19.
-      - dependency-name: 'change-case'
-        update-types: ['version-update:semver-major']
       # eslint 10.x and @eslint/js 10.x both require Node >=20.19 (9.x supports 18) -- a
       # grouped dev-dependencies PR bumping both broke the node 18/20/22 CI legs the same day
       # ESLint was first added.

@@ -27,6 +27,13 @@ src/
 This is deliberately a string-template pipeline, not an AST transform. It's simple to reason
 about at this size — don't reach for ts-morph or similar without a concrete reason.
 
+Runtime `dependencies` are deliberately kept to three (`@prisma/generator-helper`,
+`@prisma/internals`, `prettier`). `util.ts`'s `toSnakeCase` used to be `change-case`'s
+`snakeCase`, inlined once that package's only remaining pull was one function and its 5.x line
+went ESM-only; its output is a **compatibility contract**, not a style choice — it produces both
+the generated filename and the import path other generated files reach it by, so changing it
+renames every existing user's generated files. `util.spec.ts` pins the cases that matter.
+
 `PrismaClassGenerator` and `PrismaConvertor` are singletons (`static instance` /
 `getInstance()`) — fine for a CLI that runs once per process. `FileComponent`, however, takes
 `clientImportPath`/`useGraphQL`/`prettierOptions` as explicit constructor params rather than

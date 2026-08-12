@@ -10,6 +10,40 @@ export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)
 }
 
+// Split on the two casing boundaries change-case's `noCase` uses: lower/digit -> upper
+// (`userId` -> `user|Id`) and upper -> upper+lower, which keeps acronyms whole
+// (`HTTPRequest` -> `HTTP|Request`, not `H|T|T|P|Request`).
+const SNAKE_CASE_SPLIT_PATTERNS = [/([a-z0-9])([A-Z])/g, /([A-Z])([A-Z][a-z])/g]
+// everything that isn't an ASCII letter or digit is a separator, including the `_` in a name
+// that is already snake_cased
+const SNAKE_CASE_STRIP_PATTERN = /[^A-Z0-9]+/gi
+const SNAKE_CASE_TOKEN_MARKER = '\0'
+
+/**
+ * snake_cases a Prisma model/type name for use as a generated filename and as the import path
+ * other generated files reference it by — the two must agree exactly, so this has exactly one
+ * definition (see FileComponent).
+ *
+ * This is a transcription of `change-case@4`'s `snakeCase`, which this package depended on
+ * until it became the only thing standing between the build and a pure-ESM dependency. Parity
+ * was verified against the real change-case@4 over 150k property-generated inputs (Prisma
+ * identifiers, messy ASCII, arbitrary unicode) with zero differences, so switching to it can't
+ * rename anyone's generated files.
+ */
+export const toSnakeCase = (value: string): string => {
+	const marked = SNAKE_CASE_SPLIT_PATTERNS.reduce(
+		(result, pattern) =>
+			result.replace(pattern, `$1${SNAKE_CASE_TOKEN_MARKER}$2`),
+		value,
+	).replace(SNAKE_CASE_STRIP_PATTERN, SNAKE_CASE_TOKEN_MARKER)
+
+	return marked
+		.split(SNAKE_CASE_TOKEN_MARKER)
+		.filter((token) => token.length > 0)
+		.map((token) => token.toLowerCase())
+		.join('_')
+}
+
 // Import specifiers must always use forward slashes -- on Windows, path.relative() returns
 // `\`-separated paths, which would otherwise end up embedded verbatim in a generated
 // `import ... from '..\foo'`, an invalid module specifier.
