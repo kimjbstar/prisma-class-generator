@@ -63,6 +63,14 @@ updates:
       # the same grouped PR as the eslint bump above.
       - dependency-name: 'cross-env'
         update-types: ['version-update:semver-major']
+      # lint-staged 16.x needs Node >=20.17 and 17.x needs >=22.22.1 (15.x supports 18.12+),
+      # confirmed via npm view before adding it. husky has no 10.x yet, but it's the same
+      # class of local-tooling dependency, so guard the major pre-emptively rather than find
+      # out from a red CI run.
+      - dependency-name: 'lint-staged'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'husky'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'chore'
       include: 'scope'

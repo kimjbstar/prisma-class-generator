@@ -27,8 +27,15 @@ src/
 This is deliberately a string-template pipeline, not an AST transform. It's simple to reason
 about at this size — don't reach for ts-morph or similar without a concrete reason.
 
-Runtime `dependencies` are deliberately kept to three (`@prisma/generator-helper`,
-`@prisma/internals`, `prettier`). `util.ts`'s `toSnakeCase` used to be `change-case`'s
+Runtime `dependencies` are deliberately kept to two (`@prisma/generator-helper`, `prettier`) —
+everything a user installs to run this generator. `@prisma/internals` is a **devDependency on
+purpose**: the specs use its `getDMMF`, but it installs 28MB and `prisma` itself doesn't depend
+on it (so it never dedupes), and the only two things the generator needed from it —
+`parseEnvValue` and `logger.info` — are transcribed into `util.ts`. Before adding any runtime
+import, check whether it's really worth what it costs a user; `npm run verify:packed` is what
+catches a runtime import that only resolves because this repo has everything installed.
+
+`util.ts`'s `toSnakeCase` used to be `change-case`'s
 `snakeCase`, inlined once that package's only remaining pull was one function and its 5.x line
 went ESM-only; its output is a **compatibility contract**, not a style choice — it produces both
 the generated filename and the import path other generated files reach it by, so changing it
@@ -45,6 +52,14 @@ seeding global state in every spec file.
 ```
 npm run build          # rm -rf dist && tsc — always clean-builds, never leaves stale output
 npm test                # jest
+npm run format:check    # what CI enforces — `npm run lint` can't catch formatting, because
+                         # eslint-config-prettier *disables* those rules rather than checking them
+npm run lint:package    # publint against the packed tarball. `--pack npm` is not optional:
+                         # publint mis-parses Yarn Classic's tarballs (bare directory entries)
+                         # and reports every entry point as missing from `files`
+npm run verify:packed   # pack, install the tarball into an empty project, run a real
+                         # `prisma generate` through it by provider name — the only check that
+                         # sees a bad files/bin field or a runtime import of a devDependency
 npm run generate:*      # regenerate a fixture under prisma/*.prisma (postgresql, mysql,
                          # mongodb, mssql, sqlite, cockroachdb) — useful for manually eyeballing
                          # output, but note prisma-client-js's auto-install can add

@@ -32,7 +32,11 @@
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"stripInternal": false,
-		"sourceMap": true,
+		// Off on purpose: `files` publishes only `dist`, so a .js.map's `sources: ["../src/*.ts"]`
+		// points at files that aren't in the tarball, and nothing inlines sourcesContent -- the
+		// maps were ~29% of the published unpacked size while being unusable by anyone. ts-jest
+		// supplies its own sourcemaps for test stack traces regardless of this setting.
+		"sourceMap": false,
 		"forceConsistentCasingInFileNames": true,
 		"allowJs": true,
 		"esModuleInterop": true,

@@ -1,9 +1,8 @@
-import { logger } from '@prisma/internals'
 import * as path from 'path'
 import * as fs from 'fs'
 import { GENERATOR_NAME } from './generator'
 import { GeneratorFormatNotValidError } from './error-handler'
-import { DMMF } from '@prisma/generator-helper'
+import { DMMF, GeneratorOptions } from '@prisma/generator-helper'
 import { Options, format } from 'prettier'
 
 export const capitalizeFirst = (src: string) => {
@@ -81,8 +80,45 @@ export const wrapQuote = (field: DMMF.Field): string => {
 	return `'${field.type}'`
 }
 
+// Reproduces `@prisma/internals`' `logger.info` output exactly, so this package doesn't pull
+// in 28MB of dependency for one console call. Prisma's own logger paints the tag cyan, but
+// only when stdout is a TTY -- a generator is always spawned by the Prisma CLI as a
+// subprocess with its stdio piped, so the tag is never actually colored in practice, and
+// matching the color would mean taking on a color dependency to reproduce bytes nobody sees.
+const PRISMA_INFO_TAG = 'prisma:info'
+
 export const log = (src: string) => {
-	logger.info(`[${GENERATOR_NAME}]:${src}`)
+	console.info(`${PRISMA_INFO_TAG} [${GENERATOR_NAME}]:${src}`)
+}
+
+/** The `{ fromEnvVar, value }` shape Prisma uses for any schema value that may be `env("...")`. */
+type EnvValue = NonNullable<GeneratorOptions['generator']['output']>
+
+/**
+ * Resolves a generator block value that may have been written as `env("VAR")` rather than a
+ * literal — a transcription of `@prisma/internals`' `parseEnvValue`, including its error
+ * message, kept here so that package stays a devDependency (the specs still use its
+ * `getDMMF`) instead of shipping to every user for this one function.
+ *
+ * `fromEnvVar` is compared against the *string* `'null'` on purpose: that's the literal
+ * Prisma writes into the DMMF for a value that wasn't an env var, not a JSON null.
+ */
+export const parseEnvValue = (envValue: EnvValue): string => {
+	if (envValue.fromEnvVar && envValue.fromEnvVar !== 'null') {
+		const fromEnv = process.env[envValue.fromEnvVar]
+		if (!fromEnv) {
+			throw new Error(
+				`Attempted to load provider value using \`env(${envValue.fromEnvVar})\` but it was not present. Please ensure that ${envValue.fromEnvVar} is present in your Environment Variables`,
+			)
+		}
+		return fromEnv
+	}
+	if (envValue.value === null) {
+		throw new Error(
+			`Attempted to read a generator value that Prisma left unset (neither a literal nor an \`env(...)\` reference)`,
+		)
+	}
+	return envValue.value
 }
 
 export const parseBoolean = (value: unknown): boolean => {

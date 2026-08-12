@@ -5,6 +5,13 @@ on:
   push:
     branches: [main]
 
+# husky's git hooks are a local developer convenience only -- they can't run in CI anyway
+# (Actions doesn't commit), and without this every `yarn install` would still spend a step
+# installing them. HUSKY=0 makes the `prepare` script a no-op instead. CI, not the hook, is
+# the source of truth: every check the hook runs is also run below, on the full tree.
+env:
+  HUSKY: 0
+
 jobs:
   build-and-test:
     name: build & test (node ${{ matrix.node-version }})
@@ -24,6 +31,10 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: npm run typecheck
       - run: npm run lint
+      # eslint-config-prettier *disables* formatting rules rather than checking them, so
+      # `npm run lint` alone lets an unformatted file through -- this is the only thing that
+      # actually enforces .prettierrc.json on CI.
+      - run: npm run format:check
       - run: npm run build
       - run: npm test
 
@@ -58,6 +69,29 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+
+  packaging:
+    # Everything above validates the *repo*. This validates the artifact npm would actually
+    # receive: publint checks package.json's entry points against the packed file list, and
+    # the smoke test installs the tarball into an empty project and drives a real
+    # `prisma generate` through it by provider name. That combination is what catches a bad
+    # `files`/`bin` field, or a runtime import of something that's only a devDependency --
+    # none of which the repo's own fully-populated node_modules can reveal.
+    name: packaging (tarball)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run lint:package
+      - run: npm run verify:packed
 
   prisma-compat:
     name: prisma ${{ matrix.prisma-version }} (${{ matrix.client-provider }})
