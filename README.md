@@ -13,6 +13,15 @@ See [CHANGELOG.md](./CHANGELOG.md) for release notes. Found a bug or want a feat
 question instead? Ask in [Discussions](https://github.com/kimjbstar/prisma-class-generator/discussions) —
 it's faster for you and keeps the issue tracker focused on actual bugs.
 
+**Contents** · [Usage](#usage) · [Supported options](#supported-options) ·
+[Per-field directives](#per-field-directives) · [Databases](#supported-databases) ·
+[Prisma versions](#supported-prisma-versions) · [Features](#feature) ·
+[Comparison with similar tools](#comparison-with-similar-tools) · [FAQ](#faq)
+
+> **In a hurry?** `dryRun` defaults to **`true`**, so the first run prints the classes to your
+> terminal instead of writing them. Set `dryRun = "false"` in the generator block once the
+> preview looks right — see [Supported options](#supported-options).
+
 ## Prisma
 
 > [Prisma](https://www.prisma.io/) is a database ORM library for Node.js and TypeScript.
@@ -76,11 +85,15 @@ export class ProductDto extends IntersectionType(
 
 ### Usage
 
-1. **Install**
+1. **Install** — as a dev dependency: it runs as part of `prisma generate` and the classes it
+   writes don't import it, so it never needs to ship to production.
 
     ```shell
-    npm install prisma-class-generator
-    yarn add prisma-class-generator
+    npm install --save-dev prisma-class-generator
+    ```
+
+    ```shell
+    yarn add --dev prisma-class-generator
     ```
 
 2. **Define the generator in `schema.prisma`**
@@ -326,6 +339,29 @@ export class ProductDto extends IntersectionType(
 
 #### Supported options
 
+Every value is written as a **string** in `schema.prisma` (`dryRun = "false"`, not `dryRun = false`) —
+that's how Prisma passes generator config through.
+
+| option | default | what it does |
+|---|---|---|
+| `output` | `../src/_gen/prisma-class` | where the files are written |
+| `dryRun` | **`true`** | print to the terminal instead of writing. **Set to `"false"` to actually generate files** |
+| `makeIndexFile` | `true` | also emit `index.ts` with the `PrismaModel` namespace and `extraModels` |
+| `makeDtoFiles` | `false` | also emit `Create<Model>`/`Update<Model>`, composed with NestJS mapped types |
+| `separateRelationFields` | `false` | move relation fields into a separate `<Model>Relations` class |
+| `useSwagger` | **`true`** | `@ApiProperty`/`@ApiPropertyOptional`, plus `description`/`example` from the schema |
+| `useGraphQL` | `false` | TypeGraphQL's `@Field` and `@ObjectType` |
+| `useValidation` | `false` | class-validator decorators, sharpened by `@db.*` native types on Prisma 6+ |
+| `validateNestedRelations` | `false` | adds `@ValidateNested()` to relation/composite fields (needs `useValidation`) |
+| `useSerialization` | `false` | class-transformer `@Exclude()`/`@Expose()`/`@Type()` |
+| `useNonNullableAssertions` | `false` | `!` on non-optional fields, for TypeScript strict mode |
+| `preserveDefaultNullable` | `false` | type nullable fields as `\| null` instead of making them optional |
+| `useUndefinedDefault` | `false` | `= undefined` for fields with no default |
+| `preserveDecimal` | `false` | `Prisma.Decimal` instead of `number` for `Decimal` fields |
+| `clientImportPath` | `@prisma/client` | where generated enums and the `Prisma` namespace are imported from |
+
+Details for each:
+
 -   _dryRun_
     -   Controls whether files are written to disk or just printed to the terminal. default value is **true**
         -   once the printed preview looks right, set this option to **false** to actually write the files
@@ -340,7 +376,7 @@ export class ProductDto extends IntersectionType(
     -   generates TypeGraphQL decorator (`@Field` from `@nestjs/graphql`). default value is **false**
 -   _useValidation_
     -   generates [class-validator](https://github.com/typestack/class-validator) decorators (`@IsInt`, `@IsString`, `@IsOptional`, `@IsEnum`, `@IsArray`, ...) based on each field's Prisma type, for use with NestJS's `ValidationPipe`. default value is **false**
-        -   relation and composite-type fields are intentionally left without a validator — this library hands DTO composition to the caller (see the FAQ below), so it doesn't guess what a nested payload should look like
+        -   relation and composite-type fields are intentionally left without a type-specific validator: validating one means assuming a shape for the nested payload, which the schema doesn't state. Turn on `validateNestedRelations` if the relation field *is* the payload you want validated as-is
         -   `DateTime` fields use `@IsDateString()` rather than `@IsDate()`, so it validates the raw string a JSON request body actually contains without requiring `class-transformer`'s `@Type(() => Date)` to run first
         -   `BigInt`/`Bytes`/`Json` fields get no type-specific validator — class-validator has no direct equivalent for those
         -   a field's `@db.*` native type sharpens the validator further when it describes a real
