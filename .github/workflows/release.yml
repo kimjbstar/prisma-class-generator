@@ -6,6 +6,11 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+# See ci.yml -- husky's git hooks are local-only. This also keeps `prepare` from running
+# husky during the publish step, where there is nothing for it to install.
+env:
+  HUSKY: 0
+
 jobs:
   release:
     runs-on: ubuntu-latest

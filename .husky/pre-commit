@@ -1,0 +1,6 @@
+# Local-only fast feedback: format + autofix just the staged TypeScript, nothing more.
+# CI stays the source of truth (it runs format:check, lint, typecheck, tests, publint and a
+# packed-tarball smoke test), so this hook is deliberately cheap enough to never be the reason
+# someone reaches for --no-verify. It never runs in CI: every workflow sets HUSKY=0, which
+# makes the `prepare` script a no-op there.
+npx lint-staged

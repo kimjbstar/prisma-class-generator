@@ -9,3 +9,5 @@ src/_gen/prisma-class/*.ts
 
 # internal-only planning/strategy docs — not meant for the public repo
 REVIEW.md
+# npm pack / yarn pack / publint leave these behind
+*.tgz
