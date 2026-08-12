@@ -26,6 +26,27 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  windows-smoke:
+    # Windows is the one OS where Node's `path` module behaves differently enough to matter --
+    # path.relative() returns `\`-separated paths, which would produce an invalid
+    # `import ... from '..\foo'` in generated output if ever embedded verbatim (see
+    # getRelativeTSPath in util.ts). The ubuntu-only matrix above can't catch that class of
+    # bug at all, since POSIX path.relative() never produces a backslash to begin with.
+    name: build & test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
   prisma-compat:
     name: prisma ${{ matrix.prisma-version }} (${{ matrix.client-provider }})
     runs-on: ubuntu-latest

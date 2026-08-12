@@ -13,6 +13,7 @@ import {
 	parseNumber,
 	prettierFormat,
 	toArray,
+	toImportPath,
 	uniquify,
 	wrapArrowFunction,
 	wrapQuote,
@@ -66,6 +67,24 @@ describe('getRelativeTSPath', () => {
 		expect(
 			getRelativeTSPath('/output/models/user.ts', '/output/index.ts'),
 		).toBe('../index')
+	})
+
+	// regression test: Windows에서 path.relative()는 백슬래시로 구분된 경로를 반환한다
+	// (path.win32.relative로 직접 확인: 'models\\product.ts') -- 그 문자열이 그대로 생성된
+	// TypeScript의 `import ... from '..\\foo'`에 박히면 유효하지 않은 모듈 경로가 된다.
+	// getRelativeTSPath 내부에서 실제로 Windows 스타일 상대 경로를 슬래시로 정규화하는지
+	// path.win32를 직접 써서 검증한다 (macOS/Linux 실행기에서도 재현 가능).
+	it('Windows 스타일(백슬래시) 상대 경로도 슬래시로 정규화된다', () => {
+		const windowsStyleRelative = path.win32.relative(
+			path.win32.dirname('C:\\project\\src\\_gen\\category.ts'),
+			'C:\\project\\src\\_gen\\models\\product.ts',
+		)
+		expect(windowsStyleRelative).toBe('models\\product.ts')
+		expect(toImportPath(windowsStyleRelative)).toBe('models/product.ts')
+	})
+
+	it('구분자가 없는 일반 경로는 그대로 둔다', () => {
+		expect(toImportPath('../index')).toBe('../index')
 	})
 })
 

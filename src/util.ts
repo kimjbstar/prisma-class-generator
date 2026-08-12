@@ -10,10 +10,15 @@ export const capitalizeFirst = (src: string) => {
 	return src.charAt(0).toUpperCase() + src.slice(1)
 }
 
+// Import specifiers must always use forward slashes -- on Windows, path.relative() returns
+// `\`-separated paths, which would otherwise end up embedded verbatim in a generated
+// `import ... from '..\foo'`, an invalid module specifier.
+export const toImportPath = (p: string): string => p.replace(/\\/g, '/')
+
 export const getRelativeTSPath = (from: string, to: string): string => {
-	let rel = path
-		.relative(path.resolve(path.dirname(from)), to)
-		.replace('.ts', '')
+	let rel = toImportPath(
+		path.relative(path.resolve(path.dirname(from)), to),
+	).replace('.ts', '')
 	if (path.dirname(from) === path.dirname(to)) {
 		rel = `./${rel}`
 	}
