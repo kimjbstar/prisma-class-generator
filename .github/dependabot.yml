@@ -53,6 +53,21 @@ updates:
       # revisit with an actual compatibility check before accepting.
       - dependency-name: 'change-case'
         update-types: ['version-update:semver-major']
+      # eslint 10.x and @eslint/js 10.x both require Node >=20.19 (9.x supports 18) -- a
+      # grouped dev-dependencies PR bumping both broke the node 18/20/22 CI legs the same day
+      # ESLint was first added.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      # typescript-eslint is pinned to the exact 8.55.0 (no caret) for the same reason -- see
+      # eslint.config.js/the commit that added it. 8.56.0+ bumps a transitive
+      # eslint-visitor-keys dependency to ^5.0.0, which also requires Node >=20.19.
+      - dependency-name: 'typescript-eslint'
+      # cross-env 10.x requires Node >=20 (7.x supports 18) -- same class of break, caught by
+      # the same grouped PR as the eslint bump above.
+      - dependency-name: 'cross-env'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'chore'
       include: 'scope'
