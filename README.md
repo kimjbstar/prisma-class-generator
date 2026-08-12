@@ -352,12 +352,15 @@ export class ProductDto extends IntersectionType(
             → `@IsInt()` + `@Min(0)`
 -   _validateNestedRelations_
     -   requires `useValidation`. Adds `@ValidateNested()` (`{ each: true }` for list relations)
-        and class-transformer's `@Type(() => X)` to relation and composite-type fields, so
-        NestJS's `ValidationPipe` (with `transform: true`) recurses into nested payloads instead
-        of leaving them unvalidated. default value is **false**
+        to relation and composite-type fields, so NestJS's `ValidationPipe` (with
+        `transform: true`) recurses into nested payloads instead of leaving them unvalidated.
+        default value is **false**
     -   off by default because it's an opt-in to a specific DTO shape (see the FAQ) — turn it on
         if your relation fields *are* the nested payload you want validated as-is, not a DTO
         with a different nested shape
+    -   pulls in class-transformer's `@Type(() => X)` alongside `@ValidateNested()` — see
+        `useSerialization` below, which generates the same `@Type()` independently of
+        validation; the two don't double up if both are on
 -   _makeIndexFile_
     -   makes index file, default value is **true**
 -   _separateRelationFields_
@@ -377,6 +380,10 @@ export class ProductDto extends IntersectionType(
 -   _useSerialization_
     -   generates class-transformer's `@Exclude()` for fields marked with the `/// @exclude` directive (see below), for use with NestJS's `ClassSerializerInterceptor`. default value is **false**
         -   the field stays on the class (unlike `/// @skip`) — only the serialized JSON response drops it
+        -   also adds `@Type(() => X)` to relation and composite-type fields, independently of
+            `useValidation` — without it, a `ClassSerializerInterceptor`/`plainToInstance()` call
+            leaves a nested relation as a plain object instead of an instance of the related
+            class, so that class's own `@Exclude()`/`@Expose()` decorators never get applied to it
 
 #### Per-field directives
 
@@ -462,6 +469,8 @@ flowchart LR
 -   Optionally generates class-validator decorators, sharpened further by `@db.*` native types on Prisma 6+ (`@IsUUID()`, `@IsMongoId()`, `@MaxLength()`, `@Min(0)`)
 -   Formats generated classes with prettier, using the user's prettier config file if present
 -   Per-field `/// @skip`, `/// @ApiHideProperty`, and `/// @exclude` directives
+-   Optionally generates class-transformer decorators (`@Exclude()` from `/// @exclude`,
+    `@Type()` on relation/composite fields) for use with `ClassSerializerInterceptor`
 -   `preserveDecimal` option to keep `Decimal` fields precision-safe as `Prisma.Decimal`
 -   Doc comments and literal `@default(...)` values become Swagger `description`/`example`
 

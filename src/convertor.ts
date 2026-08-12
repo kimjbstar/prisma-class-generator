@@ -299,8 +299,11 @@ export class PrismaConvertor {
 	 * default: this generator hands DTO composition to the caller rather than deciding what a
 	 * create/update payload should look like (see the README FAQ) — validating a nested object
 	 * would require assuming that shape. The `validateNestedRelations` option opts back in to
-	 * `@ValidateNested()` + `@Type(() => X)` for callers who *do* want NestJS's `ValidationPipe`
-	 * (with `transform: true`) to recurse into relation/composite payloads as-is.
+	 * `@ValidateNested()` for callers who *do* want NestJS's `ValidationPipe` (with
+	 * `transform: true`) to recurse into relation/composite payloads as-is. The `@Type(() => X)`
+	 * that makes `@ValidateNested()` actually recurse is generated separately in `convertField`
+	 * — it's also needed by `useSerialization` independently of validation, so it has a single
+	 * shared emission point instead of living inside this validator-specific method.
 	 */
 	extractValidationDecoratorsFromField = (
 		dmmfField: DMMF.Field,
@@ -328,16 +331,6 @@ export class PrismaConvertor {
 						name: 'ValidateNested',
 						importFrom: 'class-validator',
 						params: eachOption ? [eachOption] : [],
-					}),
-				)
-				// class-transformer's @Type is what makes @ValidateNested actually recurse:
-				// without it, a plain JSON payload's nested object is never turned into an
-				// instance of the related class, so class-validator has nothing to validate.
-				decorators.push(
-					new DecoratorComponent({
-						name: 'Type',
-						importFrom: 'class-transformer',
-						params: [wrapArrowFunction(dmmfField)],
 					}),
 				)
 			}
@@ -613,6 +606,28 @@ export class PrismaConvertor {
 				new DecoratorComponent({
 					name: 'Exclude',
 					importFrom: 'class-transformer',
+				}),
+			)
+		}
+
+		// class-transformer needs @Type(() => X) on a relation/composite field to turn a plain
+		// nested object into an instance of the related class -- without it, neither
+		// class-validator's @ValidateNested() has anything to recurse into, nor does a
+		// ClassSerializerInterceptor apply the nested class's own @Exclude()/@Expose() when
+		// serializing a response. That makes this needed by useSerialization on its own, not
+		// just by useValidation's validateNestedRelations -- checked here once so it's never
+		// generated twice when both options are on.
+		const isNestedField = !!dmmfField.relationName || dmmfField.kind === 'object'
+		const needsTypeDecorator =
+			isNestedField &&
+			(this.config.useSerialization ||
+				(this.config.useValidation && this.config.validateNestedRelations))
+		if (needsTypeDecorator) {
+			field.decorators.push(
+				new DecoratorComponent({
+					name: 'Type',
+					importFrom: 'class-transformer',
+					params: [wrapArrowFunction(dmmfField)],
 				}),
 			)
 		}

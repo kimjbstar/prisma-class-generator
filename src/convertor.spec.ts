@@ -912,6 +912,59 @@ describe('PrismaConvertor#convertField (useSerialization / @exclude)', () => {
 	})
 })
 
+// regression coverage: @Type()는 예전에 validateNestedRelations(= useValidation 필요) 아래에만
+// 있어서, 검증 없이 직렬화만 쓰는 사용자는 relation 필드가 plainToInstance()로 클래스 인스턴스로
+// 안 바뀌는 실제 동작 공백이 있었다. useValidation과 무관하게 useSerialization만으로도 붙어야
+// 하고, 둘 다 켜져도 중복 생성되면 안 된다.
+describe('PrismaConvertor#convertField (useSerialization만으로도 @Type()이 붙는지)', () => {
+	const barFooSchema = `
+    model Bar {
+      id    Int @id
+      fooId Int @unique
+      foo   Foo @relation(fields: [fooId], references: [id])
+    }
+    model Foo {
+      id  Int   @id
+      bar Bar?
+    }
+  `
+
+	it('useSerialization만 켜면 relation 필드에 @Type(() => X)이 붙지만 @ValidateNested()는 안 붙는다', async () => {
+		const barModel = await getModel(barFooSchema)
+		const echoed = convert(barModel, { useSerialization: true }).echo()
+		expect(echoed).toContain('@Type(() => Foo)')
+		expect(echoed).not.toContain('@ValidateNested')
+	})
+
+	it('useSerialization + 리스트 relation도 @Type(() => X)을 받는다', async () => {
+		const fooModel = await getModel(`
+      model Foo {
+        id  Int   @id
+        bar Bar[]
+      }
+      model Bar {
+        id    Int @id
+        fooId Int
+        foo   Foo @relation(fields: [fooId], references: [id])
+      }
+    `)
+		const echoed = convert(fooModel, { useSerialization: true }).echo()
+		expect(echoed).toContain('@Type(() => Bar)')
+	})
+
+	it('useSerialization과 validateNestedRelations를 동시에 켜도 @Type()이 중복 생성되지 않는다', async () => {
+		const barModel = await getModel(barFooSchema)
+		const echoed = convert(barModel, {
+			useSerialization: true,
+			useValidation: true,
+			validateNestedRelations: true,
+		}).echo()
+		const typeOccurrences = echoed.split('@Type(() => Foo)').length - 1
+		expect(typeOccurrences).toBe(1)
+		expect(echoed).toContain('@ValidateNested()')
+	})
+})
+
 describe('PrismaConvertor#extractSwaggerDecoratorFromField (description / example)', () => {
 	it('doc-comment가 없으면 description이 붙지 않는다', async () => {
 		const model = await getModel(`
