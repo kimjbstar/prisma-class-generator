@@ -1,8 +1,12 @@
-import { snakeCase } from 'change-case'
 import * as prettier from 'prettier'
 import { ClassComponent } from './class.component'
 import * as path from 'path'
-import { getRelativeTSPath, prettierFormat, writeTSFile } from '../util'
+import {
+	getRelativeTSPath,
+	prettierFormat,
+	toSnakeCase,
+	writeTSFile,
+} from '../util'
 import { Echoable } from '../interfaces/echoable'
 import { ImportComponent } from './import.component'
 
@@ -66,7 +70,7 @@ export class FileComponent implements Echoable {
 		// assigned through the backing fields rather than the `dir`/`filename` setters so
 		// TypeScript can see them as definitely initialized here.
 		this._dir = path.resolve(output)
-		this._filename = `${snakeCase(classComponent.name)}.ts`
+		this._filename = `${toSnakeCase(classComponent.name)}.ts`
 		this._clientImportPath = clientImportPath
 		this._useGraphQL = useGraphQL
 		this._prettierOptions = prettierOptions
@@ -162,7 +166,7 @@ export class FileComponent implements Echoable {
 				// must match the snake_case filename FileComponent itself generates below,
 				// otherwise multi-word MongoDB composite type names (e.g. ShippingAddress)
 				// import from a path that doesn't match the file actually written to disk.
-				this.registerImport(type, './' + snakeCase(type))
+				this.registerImport(type, './' + toSnakeCase(type))
 			})
 		}
 	}
