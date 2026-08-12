@@ -23,10 +23,16 @@ const FIXTURES = [
 ] as const
 
 const generateFixture = async (fixtureFile: string) => {
-	const datamodel = fs.readFileSync(
+	const rawDatamodel = fs.readFileSync(
 		path.resolve(__dirname, '../prisma', fixtureFile),
 		'utf-8',
 	)
+	// The checked-in fixture files keep `url = env("DATABASE_URL")` because
+	// `npm run generate:*` still drives them through the pinned Prisma 6 CLI, which expects
+	// it. Prisma 7's getDMMF (used here) rejects that field entirely -- it doesn't affect
+	// the DMMF output either way (no live connection is made), so it's stripped only for
+	// this in-process parse.
+	const datamodel = rawDatamodel.replace(/^\s*url\s*=.*$\n?/m, '')
 	const dmmf = await getDMMF({ datamodel })
 
 	const convertor = new PrismaConvertor()
