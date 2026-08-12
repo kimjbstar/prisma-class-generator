@@ -1,4 +1,4 @@
-import { pascalCase, snakeCase } from 'change-case'
+import { snakeCase } from 'change-case'
 import * as prettier from 'prettier'
 import { ClassComponent } from './class.component'
 import * as path from 'path'

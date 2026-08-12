@@ -1,12 +1,9 @@
-import { Dictionary } from '@prisma/internals'
 import { PrismaClassGeneratorOptions, REPO_URL } from './generator'
 import { log } from './util'
 
 export class GeneratorFormatNotValidError extends Error {
-	config: Dictionary<string>
-	constructor(config: any) {
-		super()
-		this.config = config
+	constructor(message: string) {
+		super(message)
 	}
 }
 
@@ -28,7 +25,7 @@ export const handleGenerateError = (e: Error) => {
 				'}',
 			].join('\n'),
 		)
-		log(`Your Input : ${JSON.stringify(e.config)}`)
+		log(`Your Input : ${e.message}`)
 		return
 	}
 	if (e instanceof GeneratorPathNotExists) {

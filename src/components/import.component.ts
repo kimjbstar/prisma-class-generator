@@ -19,7 +19,7 @@ export class ImportComponent implements Echoable {
 		return `import { ${content.join(',')} } from '${this.from}'`
 	}
 
-	add(item: any) {
+	add(item: string) {
 		dedupePush(this.items, item)
 	}
 

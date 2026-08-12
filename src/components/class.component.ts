@@ -13,7 +13,7 @@ export class ClassComponent extends BaseComponent implements Echoable {
 
 	echo = () => {
 		const fieldContent = this.fields.map((_field) => _field.echo())
-		let str = CLASS_TEMPLATE.replace(
+		const str = CLASS_TEMPLATE.replace(
 			'#!{DECORATORS}',
 			this.echoDecorators(),
 		)

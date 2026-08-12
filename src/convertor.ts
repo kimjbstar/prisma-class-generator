@@ -176,7 +176,6 @@ export class PrismaConvertor {
 	extractTypeGraphQLDecoratorFromField = (
 		dmmfField: DMMF.Field,
 	): DecoratorComponent => {
-		const options: SwaggerDecoratorParams = {}
 		const decorator = new DecoratorComponent({
 			name: 'Field',
 			importFrom: '@nestjs/graphql',
@@ -196,7 +195,7 @@ export class PrismaConvertor {
 		const wrapIfList = (fieldType: string): string =>
 			dmmfField.isList ? `[${fieldType}]` : fieldType
 
-		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
+		const type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
 		if (type && type !== 'any' && !isJson) {
 			let grahQLType = capitalizeFirst(type)
@@ -592,7 +591,7 @@ export class PrismaConvertor {
 			name: dmmfField.name,
 			useUndefinedDefault: this._config.useUndefinedDefault,
 		})
-		let type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
+		const type = this.getPrimitiveMapTypeFromDMMF(dmmfField)
 
 		if (this.config.useSwagger) {
 			this.applySwaggerDecorators(dmmfField, field)

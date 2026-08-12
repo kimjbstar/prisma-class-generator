@@ -20,13 +20,17 @@ describe('handleGenerateError', () => {
 
 	it('GeneratorFormatNotValidError는 옵션 사용법과 입력값을 출력한다', () => {
 		handleGenerateError(
-			new GeneratorFormatNotValidError({ dryRun: 'nope' }),
+			new GeneratorFormatNotValidError(
+				'parseBoolean failed : "nope" is not boolean type',
+			),
 		)
 		const logged = loggedText()
 		expect(logged).toContain('Usage :')
 		expect(logged).toContain('dryRun')
 		expect(logged).toContain('Your Input')
-		expect(logged).toContain('"dryRun":"nope"')
+		expect(logged).toContain(
+			'parseBoolean failed : "nope" is not boolean type',
+		)
 	})
 
 	it('GeneratorPathNotExists는 에러 메시지를 그대로 출력한다', () => {
