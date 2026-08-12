@@ -16,15 +16,6 @@ export class FieldComponent extends BaseComponent implements Echoable {
 	echo = () => {
 		let name = this.name
 		let type = this.type
-		if (this.nullable === true) {
-			if (this.preserveDefaultNullable) {
-				type = this.type + ' | null'
-			} else {
-				name += '?'
-			}
-		} else if (this.nonNullableAssertion === true) {
-			name += '!'
-		}
 
 		let defaultValue = ''
 		if (this.default) {
@@ -33,6 +24,20 @@ export class FieldComponent extends BaseComponent implements Echoable {
 			if (this.useUndefinedDefault === true) {
 				defaultValue = `= undefined`
 			}
+		}
+
+		if (this.nullable === true) {
+			if (this.preserveDefaultNullable) {
+				type = this.type + ' | null'
+			} else {
+				name += '?'
+			}
+		} else if (this.nonNullableAssertion === true && defaultValue === '') {
+			// `views!: number = 0` is TS1263 ("Declarations with initializers cannot also have
+			// definite assignment assertions") -- it doesn't compile at all. The assertion is
+			// also redundant there: an initializer is precisely what "definitely assigned"
+			// means, which is the only thing the `!` was claiming.
+			name += '!'
 		}
 
 		return FIELD_TEMPLATE.replace('#!{NAME}', name)

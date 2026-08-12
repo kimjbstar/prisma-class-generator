@@ -31,6 +31,32 @@ describe('FieldComponent#echo', () => {
 		expect(field.echo()).toContain('value!: string')
 	})
 
+	// regression test: `value!: number = 1` is TS1263 ("Declarations with initializers cannot
+	// also have definite assignment assertions") — it doesn't compile, so useNonNullableAssertions
+	// used to produce a broken file for any model with a literal @default(...). The initializer
+	// already proves definite assignment, which is all the `!` was asserting.
+	it('기본값이 있으면 nonNullableAssertion이 켜져 있어도 !를 붙이지 않는다', () => {
+		const field = makeField({
+			type: 'number',
+			nonNullableAssertion: true,
+			default: '1',
+		})
+		const echoed = field.echo()
+		expect(echoed).toContain('value: number = 1')
+		expect(echoed).not.toContain('!')
+	})
+
+	it('useUndefinedDefault로 대입식이 생겨도 !를 붙이지 않는다', () => {
+		const field = makeField({
+			type: 'string',
+			nonNullableAssertion: true,
+			useUndefinedDefault: true,
+		})
+		const echoed = field.echo()
+		expect(echoed).toContain('value: string = undefined')
+		expect(echoed).not.toContain('!')
+	})
+
 	// regression test for #34/#56/#76: echo()가 더 이상 Date.parse 휴리스틱으로
 	// 기본값을 추측하지 않고, convertor가 넘겨준 문자열을 그대로 출력해야 한다.
 	it('숫자 문자열 기본값을 Date로 추측해서 감싸지 않는다', () => {
