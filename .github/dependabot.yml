@@ -79,6 +79,13 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    ignore:
+      # The npm-side pin above covers @changesets/cli; this is the action that pairs with
+      # it. v2 requires cli v3, which hard-fails on this repo's Yarn Classic. v1 already
+      # supports trusted publishing (changesets/action#545), so there is nothing to gain
+      # by moving. Revisit together with the cli pin if this repo leaves Yarn Classic.
+      - dependency-name: 'changesets/action'
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: 'ci'
       include: 'scope'
