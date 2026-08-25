@@ -63,7 +63,7 @@ jobs:
       # as this package's trusted publisher on npmjs.com. Provenance is generated
       # automatically under trusted publishing, so NPM_CONFIG_PROVENANCE is not needed.
       - name: Create release PR or publish to npm
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           version: npm run changeset:version
           publish: npm run changeset:publish
