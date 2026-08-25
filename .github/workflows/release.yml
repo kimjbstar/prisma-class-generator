@@ -22,22 +22,29 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # A checked-out credential would stay available to every later step.
+          persist-credentials: false
 
       # No `registry-url` here on purpose: actions/setup-node's registry-url option writes
       # its own .npmrc (pointed to via NPM_CONFIG_USERCONFIG) that expects a NODE_AUTH_TOKEN
-      # env var. That .npmrc takes npm config precedence over the one changesets/action
-      # writes for NPM_TOKEN below, so with only NPM_TOKEN set (no NODE_AUTH_TOKEN), npm ended
-      # up reading the setup-node one with an empty token -- an effectively-unauthenticated
-      # publish that failed with a 404 (npm's way of saying "no permission"), not the clearer
-      # 401 you'd expect. Reproduced on a real run, not guessed.
+      # env var, and it takes npm config precedence over anything else. Under token auth that
+      # produced an effectively-unauthenticated publish failing with a confusing 404 rather
+      # than a 401 -- reproduced on a real run. Under OIDC it would shadow the credential npm
+      # mints for itself, so it stays off.
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: yarn
+          # Cache deliberately off: a poisoned cache would be restored into the job that
+          # publishes to npm.
 
       - run: yarn install --frozen-lockfile
       - run: npm run build
       - run: npm test
+
+      # Trusted publishing needs npm >= 11.5.1; the version bundled with Node 22 is older.
+      # Done after install so nothing else is affected by the newer npm.
+      - run: npm install -g npm@latest
+      - run: npm --version
 
       # Opens/updates a "Version Packages" PR while changesets are pending in .changeset/.
       # Once that PR is merged (no changesets left), this same job publishes to npm and
@@ -47,6 +54,14 @@ jobs:
       # than the newer v2 action + cli 3.x: cli 3.x declares `engines.yarn: >=4.5.2`, which
       # Yarn Classic 1.x (what this repo/CI actually uses) hard-fails on -- confirmed by an
       # actual failed run, not assumed.
+      #
+      # v1 still works with trusted publishing: since v1.7.0 the action only writes an auth
+      # token into .npmrc when NPM_TOKEN is set, leaving OIDC to npm itself when it is not.
+      #
+      # Authentication is OIDC: no NPM_TOKEN anywhere. npm mints a short-lived credential
+      # from this job's identity, scoped to the repository and workflow filename registered
+      # as this package's trusted publisher on npmjs.com. Provenance is generated
+      # automatically under trusted publishing, so NPM_CONFIG_PROVENANCE is not needed.
       - name: Create release PR or publish to npm
         uses: changesets/action@v1
         with:
@@ -54,5 +69,3 @@ jobs:
           publish: npm run changeset:publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true

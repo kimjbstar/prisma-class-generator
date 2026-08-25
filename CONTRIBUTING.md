@@ -80,8 +80,15 @@ need to be a maintainer to trigger this, just to add a changeset to your PR (see
    whatever changesets have landed since the last release, and keeps itself up to date as more
    PRs merge.
 2. When a maintainer merges that "Version Packages" PR, the same CI job detects there are no
-   pending changesets left and instead runs the actual release: `npm publish` (with
-   provenance), a GitHub Release, and a git tag.
+   pending changesets left and instead runs the actual release: `npm publish`, a GitHub
+   Release, and a git tag.
+
+   Publishing authenticates with [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)
+   over OIDC — there is no npm token in this repository's secrets. npm issues a short-lived
+   credential to the release workflow based on the repository and workflow filename registered
+   as this package's trusted publisher, and provenance attestations are generated
+   automatically. If the workflow file is ever renamed, that registration has to be updated
+   to match.
 3. There's no manual `npm version` step anymore — the version number is entirely derived from
    the changeset files' bump types (`patch`/`minor`/`major`) accumulated since the last release.
 
